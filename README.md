@@ -58,6 +58,8 @@ pip install -r requirements.txt
 
 from this project's root directory.
 
+docker build -t multi-node2vec --platform=linux/amd64 .
+docker run -itd -v /Users/michal/Development/multi-node2vec:/app --platform linux/amd64 --name multi-node2vec multi-node2vec 
 
 ## Usage
 ```
@@ -84,7 +86,7 @@ __Quick Test example__
 
 This example runs **multi-node2vec** on a small test multilayer network with 2 layers and 264 nodes in each layer. It takes about 2 minutes to run on a personal computer using 8 cores.
 ```
-python3 multi_node2vec.py --dir data/test --output results/test --d 100 --window_size 2 --n_samples 1 --thresh 0.5 --rvals 0.25
+python multi_node2vec.py --dir data/test --output results/test --d 100 --window_size 2 --n_samples 1 --thresh 0.5 --rvals 0.25
 ```
 
 __fMRI Case Study__

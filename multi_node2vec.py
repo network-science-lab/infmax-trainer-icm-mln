@@ -65,7 +65,17 @@ def parse_args():
                         help='Exploration walk parameter for neighborhood search. Default is 0.50')
   
 
-    return parser.parse_args()
+    return parser.parse_args(
+        [
+            "--dir", "data/toy_network",
+            "--output", "results/toy_network",
+            "--d", "2",
+            "--window_size", "2",
+            "--n_samples", "1",
+            "--thresh", "0.5",
+            "--rvals", "0.25"
+        ]
+    )
 
 
 def main(args):
