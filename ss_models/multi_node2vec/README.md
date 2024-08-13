@@ -51,13 +51,6 @@ two core steps
     log-likelihood of **F** | **N**. This is done through the application of stochastic gradient
     descent on a two-layer Skip-gram neural network model.
 
-## Running multi-node2vec
-
-```bash
-docker build -t multi-node2vec --platform=linux/amd64 .
-docker run -itd -v .:/app --platform linux/amd64 --name multi-node2vec multi-node2vec 
-```
-
 ### Example
 
 This example runs **multi-node2vec** on a small test multilayer network with 2 layers and 264 nodes

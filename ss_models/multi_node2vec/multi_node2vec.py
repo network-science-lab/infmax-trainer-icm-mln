@@ -20,7 +20,7 @@ Questions or Bugs? Contact James D. Wilson at jdwilson4@usfca.edu
 import os
 import src as mltn2v
 
-from cli_args import parse_args
+from src.cli_args import parse_args
 import time
 
 
@@ -64,14 +64,14 @@ def main(args):
 
 if __name__ == '__main__':
     args = parse_args(
-        [
-            "--dir", "data/toy_network",
-            "--output", "results/toy_network",
-            "--d", "2",
-            "--window_size", "2",
-            "--n_samples", "1",
-            "--thresh", "0.5",
-            "--rvals", "0.25"
-        ]
+        # [
+        #     "--dir", "data/toy_network",
+        #     "--output", "results/toy_network",
+        #     "--d", "2",
+        #     "--window_size", "2",
+        #     "--n_samples", "1",
+        #     "--thresh", "0.5",
+        #     "--rvals", "0.25"
+        # ]
     )
     main(args)
