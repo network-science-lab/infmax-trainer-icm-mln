@@ -51,36 +51,18 @@ two core steps
     log-likelihood of **F** | **N**. This is done through the application of stochastic gradient
     descent on a two-layer Skip-gram neural network model.
 
-The following image provides a schematic:
-
-![multi-node2vec schematic](https://github.com/jdwilson4/multi-node2vec/blob/master/mn2vec_toy.png)
-
 ## Running multi-node2vec
 
-
+```bash
 docker build -t multi-node2vec --platform=linux/amd64 .
-
 docker run -itd -v .:/app --platform linux/amd64 --name multi-node2vec multi-node2vec 
+```
 
-### Examples
-
-__Quick Test example__
+### Example
 
 This example runs **multi-node2vec** on a small test multilayer network with 2 layers and 264 nodes
 in each layer. It takes about 2 minutes to run on a personal computer using 8 cores.
 
-```
-python multi_node2vec.py --dir data/test --output results/test --d 100 --window_size 2 --n_samples 1 --thresh 0.5 --rvals 0.25
-```
-
-__fMRI Case Study__
-
-This example runs **multi-node2vec** on the multilayer network representing group fMRI of 74 healthy
-controls as run in the paper *Fast Embedding of Multilayer Networks: An Algorithm and Application to Group fMRI*.
-The model will generate 100 features for each of 264 unique nodes using a walk parameter *r = 0.25*.
-The values of *p* (=1) and *q* (=0.50) are set to the default of what is available in the original
-**node2vec** specification. It takes about an hour to run on a personal computer using 8 cores.
-
-```
-python3 multi_node2vec.py --dir data/CONTROL_fmt --output results/control --d 100 --window_size 10 --n_samples 1 --rvals 0.25 --pvals 1 --thresh 0.5 --qvals 0.5
+```bash
+python multi_node2vec.py --dir data/test --output results/test --d 100 --window_size 10 --n_samples 1 --rvals 0.25 --pvals 1 --thresh 0.5 --qvals 0.5
 ```
