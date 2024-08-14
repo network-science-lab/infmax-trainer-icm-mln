@@ -9,14 +9,16 @@ A repository to train and evaluate Influence Maximisation ML models for multilay
 
 ```bash
 conda env create -f env/conda.yaml
-conda activate infmax-simulator-icm-mln
+conda activate infmax-trainer-icm-mln
 ```
 
 `multi_node2vec` is an external codebase that can be executed with a deprecated Python version. Hence,
 it has been contenerised. Before using it, please build the docker image:
 
 ```bash
-cd ss_models/multi_node2vec && docker build -t multi-node2vec --platform=linux/amd64 . && cd ../..
+cd infmax_models/multi_node2vec
+docker build -t multi-node2vec --platform=linux/amd64 .
+cd ../..
 ```
 
 ## Data
