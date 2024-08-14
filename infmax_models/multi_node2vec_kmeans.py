@@ -10,7 +10,7 @@ import network_diffusion as nd
 import numpy as np
 import pandas as pd
 
-from ss_models.utils import k_means
+from infmax_models.utils import k_means
 
 
 class MultiNode2VecKMeans:  # TODO: even if it's not necessary, consider modifying this class to be a child of nn.module

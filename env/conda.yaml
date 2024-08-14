@@ -1,4 +1,4 @@
-name: infmax-ml-mln
+name: infmax-trainer-icm-mln
 channels:
   - defaults
 dependencies:

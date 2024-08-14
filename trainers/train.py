@@ -8,7 +8,7 @@ from dataclasses import dataclass
 import network_diffusion as nd
 
 from misc.net_loader import load_network
-from ss_models.loader import load_model
+from infmax_models.loader import load_model
 
 
 @dataclass(frozen=True)

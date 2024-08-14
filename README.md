@@ -34,8 +34,8 @@ from the DVC remote. In order to access it, please sent a request to get  an acc
 ├── _configs                -> def. of the training configs
 ├── _data_set               -> evaluated networks
 ├── env                     -> a definition of the runtime environment
+├── infmax_models           -> implemented ML models for Influence Maximisation
 ├── misc                    -> miscellaneous scripts helping in trainings
-├── ss_models               -> implemented ML models for Influence Maximisation
 ├── trainers                -> scripts to train models according to provided configs
 ├── README.md          
 └── run_experiments.py      -> main entrypoint to trigger the pipeline

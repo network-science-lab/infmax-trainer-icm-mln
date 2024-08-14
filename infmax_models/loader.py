@@ -1,6 +1,6 @@
 
 from typing import Any, Callable
-from ss_models.multi_node2vec_kmeans import MultiNode2VecKMeans
+from infmax_models.multi_node2vec_kmeans import MultiNode2VecKMeans
 
 
 def load_model(model_config: dict[str, Any], train_config: dict[str, Any]) -> Callable:
