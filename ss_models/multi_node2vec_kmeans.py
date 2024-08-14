@@ -7,6 +7,7 @@ from typing import Any
 
 import docker
 import network_diffusion as nd
+import numpy as np
 import pandas as pd
 
 from ss_models.utils import k_means
@@ -17,6 +18,7 @@ class MultiNode2VecKMeans:  # TODO: even if it's not necessary condicer modifyin
 
     docker_image = "multi-node2vec"
     docker_platform = "linux/amd64"
+    docker_io_dir = "/data"
     
     def __init__(self, multi_node2vec: dict[str, Any], k_means: dict[str, Any]) -> None:
         """Initialise the object."""
@@ -45,8 +47,8 @@ class MultiNode2VecKMeans:  # TODO: even if it's not necessary condicer modifyin
 
     def get_python_cmd(self):
         """Get command to execute in the docker."""
-        return f"python multi_node2vec.py --dir {self.mn2v_pms['dir']} \
-            --output {self.mn2v_pms['output']} --d {self.mn2v_pms['d']} \
+        return f"python multi_node2vec.py --dir {self.docker_io_dir} \
+            --output {self.docker_io_dir} --d {self.mn2v_pms['d']} \
             --window_size {self.mn2v_pms['window_size']} --n_samples {self.mn2v_pms['n_samples']} \
             --rvals {self.mn2v_pms['rvals']} --pvals {self.mn2v_pms['pvals']} \
             --thresh {self.mn2v_pms['thresh']} --qvals {self.mn2v_pms['qvals']}"
@@ -60,25 +62,26 @@ class MultiNode2VecKMeans:  # TODO: even if it's not necessary condicer modifyin
             image=self.docker_image,
             remove=True,
             detach=True,
-            volumes=[f"{multi_node2vec_src_path}:/app", f"{data_dir}:{self.mn2v_pms['dir']}"],
+            volumes=[f"{multi_node2vec_src_path}:/app", f"{data_dir}:{self.docker_io_dir}"],
             platform=self.docker_platform,
             command=cmd_python,
         )
         for line in container.attach(stdout=True, stream=True, logs=True):
             print(line.decode("utf-8"))
 
-    def __call__(self, network: nd.MultilayerNetworkTorch) -> Any:
+    def __call__(self, network: nd.MultilayerNetworkTorch) -> np.ndarray:
         """Select seeds using multi_node2vec and kmeans."""
         with tempfile.TemporaryDirectory() as temp_dir:
             print(temp_dir)
             self.export_network(data_dir=temp_dir, network=network)
             self.multi_node2vec(data_dir=temp_dir)
-            k_means.KMeansSeedSelector(
+            seeds = k_means.KMeansSeedSelector(
                 emb_path=f"{temp_dir}/mltn2v_results.csv",
                 num_segments=self.km_pms["num_segments"],
-                # random_state=42,  # we set it globally
+                random_state=self.km_pms["random_state"],
                 experiment_name=self.km_pms["experiment_name"],
             )(visualise=self.km_pms["visualise"])
+            return seeds
 
 # cmd_docker = "docker run --rm -v ./multi_node2vec:/app -v ./toy_network:/data --platform linux/amd64 multi-node2vec"
 # cmd_python = "python multi_node2vec.py --dir /data --output /data --d 2 --window_size 10 --n_samples 1 --rvals 0.25 --pvals 1 --thresh 0.5 --qvals 0.5"

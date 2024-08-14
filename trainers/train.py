@@ -19,9 +19,10 @@ class Network:
 
 def train(args):
     networks = [Network(n, load_network(net_name=n, as_tensor=True)) for n in args["networks"]]
-    model = load_model(args["model"])
+    model = load_model(model_config=args["model"], train_config=args["train"])
     for network in networks:
         print(network.name)
-        model(network=network.graph)
+        seeds = model(network=network.graph)
+        print(seeds)
 
     
