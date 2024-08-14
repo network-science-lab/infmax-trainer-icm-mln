@@ -13,7 +13,7 @@ import pandas as pd
 from ss_models.utils import k_means
 
 
-class MultiNode2VecKMeans:  # TODO: even if it's not necessary condicer modifying this class to be a child od nn.module
+class MultiNode2VecKMeans:  # TODO: even if it's not necessary, consider modifying this class to be a child of nn.module
     """Method to select seeds with multi_node2vec and k-means."""
 
     docker_image = "multi-node2vec"

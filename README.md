@@ -12,11 +12,18 @@ conda env create -f env/conda.yaml
 conda activate infmax-simulator-icm-mln
 ```
 
+`multi_node2vec` is an external codebase that can be executed with a deprecated Python version. Hence,
+it has been contenerised. Before using it, please build the docker image:
+
+```bash
+cd ss_models/multi_node2vec && docker build -t multi-node2vec --platform=linux/amd64 . && cd ../..
+```
+
 ## Data
 
 Dataset is stored in a separate reository bounded with this project as a git submodule. Thus, to
 obtain it, execute: `git submodule init` and `git submodule update`. Then, you have to pull the data
-from the DVC remote. In order to access it, please sent a request to get  an access via  e-mail
+from the DVC remote. In order to access it, please sent a request to get  an access via e-mail
 (michal.czuba@pwr.edu.pl). Then, simply execute in a shell:
 * `cd _data_set && dvc pull ns-data-sources/raw/multi_layer_networks/*.dvc && cd ..`
 * `cd _data_set && dvc pull ns-data-sources/spreading_potentials/multi_layer_networks/*.dvc && cd ..`
