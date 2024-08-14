@@ -42,22 +42,21 @@ def main(args):
     nbrhd_dict = mltn2v.timed_invoke(
         "extracting neighborhoods",
         lambda: mltn2v.extract_neighborhoods_walk(
-            layers, args.walk_length, args.rvals, args.pvals, args.qvals
+            layers, args.walk_length, [args.rvals], args.pvals, args.qvals
         )
     )
 
     # GENERATE FEATURES
     out = mltn2v.clean_output(args.output)
-    for w in args.rvals:
-        out_path = os.path.join(out, 'r' + str(w) + '/mltn2v_results') 
-        mltn2v.timed_invoke(
-            "generating features",
-            lambda: mltn2v.generate_features(
-                nbrhd_dict[w], args.d, out_path, nbrhd_size=args.window_size, w2v_iter=1, workers=args.w2v_workers
-            )
+    out_path = os.path.join(out, "mltn2v_results") 
+    mltn2v.timed_invoke(
+        "generating features",
+        lambda: mltn2v.generate_features(
+            nbrhd_dict[args.rvals], args.d, out_path, nbrhd_size=args.window_size, w2v_iter=1, workers=args.w2v_workers
         )
-        print("\nCompleted Multilayer Network Embedding for r=" + str(w) + " in {:.2f} secs.\nSee results:".format(time.time() - start))
-        print("\t" + out_path + ".csv")
+    )
+    print("\nCompleted Multilayer Network Embedding for r=" + str(args.rvals) + " in {:.2f} secs.\nSee results:".format(time.time() - start))
+    print("\t" + out_path + ".csv")
 
     print("Completed Multilayer Network Embedding for all r values.")
 
@@ -74,4 +73,5 @@ if __name__ == '__main__':
         #     "--rvals", "0.25"
         # ]
     )
+    print(args)
     main(args)

@@ -46,5 +46,4 @@ def parse_args(fixed_args = None):
                         help='Exploration walk parameter for neighborhood search. Default is 0.50')
 
     args = parser.parse_args(fixed_args)
-    args.rvals = [args.rvals]
     return args
