@@ -12,22 +12,25 @@ import pandas as pd
 from ss_models.utils import k_means
 
 
-class MultiNode2VecKMeans:
+class MultiNode2VecKMeans:  # TODO: even if it's not necessary condicer modifying this class to be a child od nn.module
+    """Method to select seeds with multi_node2vec and k-means."""
 
     docker_image = "multi-node2vec"
     docker_platform = "linux/amd64"
     
-    def __init__(self, net: nd.MultilayerNetworkTorch) -> None:
+    def __init__(self, multi_node2vec: dict[str, Any], k_means: dict[str, Any]) -> None:
         """Initialise the object."""
         self.docker_client = docker.from_env()
         self.docker_client.images.get(self.docker_image)
-        self.net = net
+        self.mn2v_pms = multi_node2vec
+        self.km_pms = k_means
 
-    def export_network(self, data_dir: str) -> None:
+    @staticmethod
+    def export_network(data_dir: str, network: nd.MultilayerNetworkTorch) -> None:
         """Export network into csv files for each layer."""
-        for l_idx, l_name in enumerate(self.net.layers_order):
+        for l_idx, l_name in enumerate(network.layers_order):
             pd.DataFrame(
-                self.net.adjacency_tensor[l_idx, ...].to_dense()).to_csv(f"{data_dir}/{l_name}.csv"
+                network.adjacency_tensor[l_idx, ...].to_dense()).to_csv(f"{data_dir}/{l_name}.csv"
             )
 
     @staticmethod
@@ -39,39 +42,43 @@ class MultiNode2VecKMeans:
                 f"Couldn't find multi_node2vec sources - {candidate_path} doesn't exits!"
             )
         return str(candidate_path)
-    
-    @staticmethod
-    def get_python_cmd():
+
+    def get_python_cmd(self):
         """Get command to execute in the docker."""
-        return "python multi_node2vec.py --dir /data --output /data --d 2 --window_size 10 --n_samples 1 --rvals 0.25 --pvals 1 --thresh 0.5 --qvals 0.5"
+        return f"python multi_node2vec.py --dir {self.mn2v_pms['dir']} \
+            --output {self.mn2v_pms['output']} --d {self.mn2v_pms['d']} \
+            --window_size {self.mn2v_pms['window_size']} --n_samples {self.mn2v_pms['n_samples']} \
+            --rvals {self.mn2v_pms['rvals']} --pvals {self.mn2v_pms['pvals']} \
+            --thresh {self.mn2v_pms['thresh']} --qvals {self.mn2v_pms['qvals']}"
 
     def multi_node2vec(self, data_dir: str) -> None:
         """Prepare embedding of the given input."""
         multi_node2vec_src_path = self.get_multi_node2vec_src_path()
         cmd_python = self.get_python_cmd()
+        print(cmd_python)
         container = self.docker_client.containers.run(
             image=self.docker_image,
             remove=True,
             detach=True,
-            volumes=[f"{multi_node2vec_src_path}:/app", f"{data_dir}:/data"],
+            volumes=[f"{multi_node2vec_src_path}:/app", f"{data_dir}:{self.mn2v_pms['dir']}"],
             platform=self.docker_platform,
             command=cmd_python,
         )
         for line in container.attach(stdout=True, stream=True, logs=True):
             print(line.decode("utf-8"))
 
-    def __call__(self) -> Any:
+    def __call__(self, network: nd.MultilayerNetworkTorch) -> Any:
         """Select seeds using multi_node2vec and kmeans."""
         with tempfile.TemporaryDirectory() as temp_dir:
             print(temp_dir)
-            self.export_network(data_dir=temp_dir)
+            self.export_network(data_dir=temp_dir, network=network)
             self.multi_node2vec(data_dir=temp_dir)
             k_means.KMeansSeedSelector(
                 emb_path=f"{temp_dir}/mltn2v_results.csv",
-                num_segments=3,
-                random_state=42,
-                experiment_name="aaa",
-            )(visualise=True)
+                num_segments=self.km_pms["num_segments"],
+                # random_state=42,  # we set it globally
+                experiment_name=self.km_pms["experiment_name"],
+            )(visualise=self.km_pms["visualise"])
 
 # cmd_docker = "docker run --rm -v ./multi_node2vec:/app -v ./toy_network:/data --platform linux/amd64 multi-node2vec"
 # cmd_python = "python multi_node2vec.py --dir /data --output /data --d 2 --window_size 10 --n_samples 1 --rvals 0.25 --pvals 1 --thresh 0.5 --qvals 0.5"
