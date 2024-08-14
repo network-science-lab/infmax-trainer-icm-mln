@@ -15,6 +15,7 @@ model:
 
 networks: [
   "toy_network",
+  "aucs",
 ]
 
 train:
