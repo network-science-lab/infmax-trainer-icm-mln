@@ -1,6 +1,6 @@
 
 from typing import Any, Callable
-from infmax_models.multi_node2vec_kmeans import MultiNode2VecKMeans
+from infmax_models.multi_node2vec_kmeans import MultiNode2VecKMeans, MultiNode2VecKMeansAuto
 
 
 def load_model(model_config: dict[str, Any], train_config: dict[str, Any]) -> Callable:
@@ -9,12 +9,12 @@ def load_model(model_config: dict[str, Any], train_config: dict[str, Any]) -> Ca
     model_params = model_config["parameters"]
 
     if model_name == "MultiNode2VecKMeans":
-        model_params["k_means"]["num_segments"] = train_config["seed_size"]
+        model_params["k_means"]["nb_seeds"] = train_config["seed_size"]
         model_params["k_means"]["random_state"] = train_config["random_seed"]
         return MultiNode2VecKMeans(**model_params)
-    # TODO: add here MultiNode2VecKMeansAuto
-    elif 1 == 1:
-        # TODO: here go other models
-        print("add mode models, please!")
+    elif model_name == "MultiNode2VecKMeansAuto":
+        model_params["k_means"]["nb_seeds"] = train_config["seed_size"]
+        model_params["k_means"]["random_state"] = train_config["random_seed"]
+        return MultiNode2VecKMeansAuto(**model_params)
 
     raise AttributeError(f"Unknown model: {model_name}")

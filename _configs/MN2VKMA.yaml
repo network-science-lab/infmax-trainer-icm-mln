@@ -1,8 +1,8 @@
 model:
-  name: "MultiNode2VecKMeans"
+  name: "MultiNode2VecKMeansAuto"
   parameters:
     multi_node2vec:
-      d: 2 # "auto"
+      d: "auto"
       window_size: 10
       n_samples: 1
       thresh: 0.5
@@ -10,12 +10,13 @@ model:
       qvals: 0.5
       rvals: 0.25
     k_means:
+      max_nb_segments: 10
       experiment_name: "test"
       visualise: True
 
 networks: [
   "toy_network",
-  # "aucs",
+  "aucs",
 ]
 
 train:

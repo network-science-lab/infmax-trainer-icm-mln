@@ -31,7 +31,7 @@ class KMeansSeedSelector:
     def __init__(
         self,
         emb_path: pathlib.Path,
-        num_segments: int,
+        nb_seeds: int,
         random_state: int = 42,
         experiment_name: str = "experiment"
     ) -> None:
@@ -39,12 +39,15 @@ class KMeansSeedSelector:
         Initialise the object.
 
         :param emb_path: path to the CSV file with embedding coords
-        :param num_segments: number of cluster to divide space in
+        :param nb_seeds: number of cluster to divide space in, i.e. number of
+            seeds to extract
         :param random_state: RNG for k-means algorithm, defaults to 42
         :param experiment_name: name of the experiment for the optional visualisation
         """
+        if nb_seeds < 2:
+            raise ValueError("This method cannot select less seeds than 2!")
         self.embeddings = pd.read_csv(emb_path, header=None)
-        self.num_segments = num_segments
+        self.nb_seeds = nb_seeds
         self.random_state = random_state
         self.experiment_name = experiment_name
         self._emb_ids = self.embeddings.to_numpy()[:, 0]  # TODO: check if labels are unique!
@@ -130,14 +133,14 @@ class KMeansSeedSelector:
         ax.legend()
         fig.set_size_inches(6, 6)
         fig.suptitle(
-            f"multi-node2vec & k-means\n {self.experiment_name}, num seeds: {self.num_segments}\n"
+            f"multi-node2vec & k-means\n {self.experiment_name}, num seeds: {self.nb_seeds}\n"
             f"found actors: {seeds_ids.tolist()}"
         )
         plt.show()
 
     def __call__(self, visualise: bool = False) -> list[int]:
         """Select seeds from given embedded nodes."""
-        kmeans = self.clusterise(x=self._emb_vectors, num_segments=self.num_segments, random_state=self.random_state)
+        kmeans = self.clusterise(x=self._emb_vectors, num_segments=self.nb_seeds, random_state=self.random_state)
         seeds = self.extract_seeds(kmeans=kmeans, emb_vectors=self._emb_vectors, emb_labels=self._emb_ids)
         if visualise:
             self._visualise(seeds_ids=seeds, kmeans=kmeans)
@@ -149,7 +152,8 @@ class KMeansAutoSeedSelector(KMeansSeedSelector):
     def __init__(
         self,
         emb_path: pathlib.Path,
-        max_segments: int,
+        nb_seeds: int,
+        max_nb_segments: int,
         random_state: int = 42,
         experiment_name: str = "experiment"
     ) -> None:
@@ -157,13 +161,14 @@ class KMeansAutoSeedSelector(KMeansSeedSelector):
         Initialise the object.
 
         :param emb_path: path to the CSV file with embedding coords
+        :param nb_seeds: number of seeds to extract
         :param max_segments: number of cluster to divide space in
         :param random_state: RNG for k-means algorithm, defaults to 42
         :param experiment_name: name of the experiment for the optional visualisation
         """
         self.embeddings = pd.read_csv(emb_path, header=None)
-        self.num_seeds = 5  # TODO: parametrise it
-        self.max_segments = max_segments
+        self.nb_seeds = nb_seeds
+        self.max_nb_segments = max_nb_segments
         self.random_state = random_state
         self.experiment_name = experiment_name
         self._emb_ids = self.embeddings.to_numpy()[:, 0]
@@ -190,7 +195,7 @@ class KMeansAutoSeedSelector(KMeansSeedSelector):
         avail_ids = np.copy(self._emb_ids)  # ids of vectors, i.e. nodes' names
         avail_labels = np.copy(kmeans.labels_)  # labels of vectors, i.e. clusters they are assigned to
 
-        while len(seeds_ids) < self.num_seeds:
+        while len(seeds_ids) < self.nb_seeds:  # TODO: sort clusters by size!!!
             for segment in np.unique(kmeans.labels_):
 
                 # get vectors tht were assigned to this segment and the centre
@@ -202,7 +207,7 @@ class KMeansAutoSeedSelector(KMeansSeedSelector):
                 seed_id, _ = get_closest_vec_to_X(segment_vectors, segment_labels, segment_centre)
                 seeds_ids.append(seed_id)
                 print(seeds_ids)
-                if len(seeds_ids) >= self.num_seeds:
+                if len(seeds_ids) >= self.nb_seeds:
                     break
 
                 # remove that vector from the list of available vectors
@@ -218,7 +223,7 @@ class KMeansAutoSeedSelector(KMeansSeedSelector):
         """Select seeds from given embedded nodes."""
         split_silhouettes = []
         split_models = []
-        for k in range(2, self.max_segments + 1):
+        for k in range(2, self.max_nb_segments + 1):
             kmeans = self.clusterise(self._emb_vectors, k, self.random_state)
             split_score = silhouette_score(self._emb_vectors, kmeans.labels_)
             split_silhouettes.append(split_score)

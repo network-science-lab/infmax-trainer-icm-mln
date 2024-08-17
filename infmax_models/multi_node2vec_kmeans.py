@@ -19,6 +19,7 @@ class MultiNode2VecKMeans:  # TODO: even if it's not necessary, consider modifyi
     docker_image = "multi-node2vec"
     docker_platform = "linux/amd64"
     docker_io_dir = "/data"
+    kmeans_method = k_means.KMeansSeedSelector
     
     def __init__(self, multi_node2vec: dict[str, Any], k_means: dict[str, Any]) -> None:
         """Initialise the object."""
@@ -81,15 +82,29 @@ class MultiNode2VecKMeans:  # TODO: even if it's not necessary, consider modifyi
         with tempfile.TemporaryDirectory() as temp_dir:
             print(f"Temporary directory: {temp_dir}")
             self.multi_node2vec(data_dir=temp_dir, network=network)
-            # seeds = k_means.KMeansSeedSelector(
-            #     emb_path=f"{temp_dir}/mltn2v_results.csv",
-            #     num_segments=self.km_pms["num_segments"],
-            #     random_state=self.km_pms["random_state"],
-            #     experiment_name=self.km_pms["experiment_name"],
-            # )(visualise=self.km_pms["visualise"])
-            seeds = k_means.KMeansAutoSeedSelector(
+            seeds = self.kmeans_method(
                 emb_path=f"{temp_dir}/mltn2v_results.csv",
-                max_segments=10,
+                nb_seeds=self.km_pms["nb_seeds"],
+                random_state=self.km_pms["random_state"],
+                experiment_name=self.km_pms["experiment_name"],
+            )(visualise=self.km_pms["visualise"])
+            return seeds
+
+
+class MultiNode2VecKMeansAuto(MultiNode2VecKMeans):
+    """Method to select seeds with multi_node2vec and k-means which is autotuned."""
+
+    kmeans_method = k_means.KMeansAutoSeedSelector
+
+    def __call__(self, network: nd.MultilayerNetworkTorch) -> np.ndarray:
+        """Select seeds using multi_node2vec and kmeans which is autotuned."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            print(f"Temporary directory: {temp_dir}")
+            self.multi_node2vec(data_dir=temp_dir, network=network)
+            seeds = self.kmeans_method(
+                emb_path=f"{temp_dir}/mltn2v_results.csv",
+                nb_seeds=self.km_pms["nb_seeds"],
+                max_nb_segments=self.km_pms["max_nb_segments"],
                 random_state=self.km_pms["random_state"],
                 experiment_name=self.km_pms["experiment_name"],
             )(visualise=self.km_pms["visualise"])
