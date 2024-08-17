@@ -2,7 +2,7 @@ model:
   name: "MultiNode2VecKMeans"
   parameters:
     multi_node2vec:
-      d: "auto"
+      d: 2 # "auto"
       window_size: 10
       n_samples: 1
       thresh: 0.5
@@ -15,7 +15,7 @@ model:
 
 networks: [
   "toy_network",
-  "aucs",
+  # "aucs",
 ]
 
 train:

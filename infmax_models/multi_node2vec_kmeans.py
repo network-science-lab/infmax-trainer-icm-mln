@@ -81,9 +81,15 @@ class MultiNode2VecKMeans:  # TODO: even if it's not necessary, consider modifyi
         with tempfile.TemporaryDirectory() as temp_dir:
             print(f"Temporary directory: {temp_dir}")
             self.multi_node2vec(data_dir=temp_dir, network=network)
-            seeds = k_means.KMeansSeedSelector(
+            # seeds = k_means.KMeansSeedSelector(
+            #     emb_path=f"{temp_dir}/mltn2v_results.csv",
+            #     num_segments=self.km_pms["num_segments"],
+            #     random_state=self.km_pms["random_state"],
+            #     experiment_name=self.km_pms["experiment_name"],
+            # )(visualise=self.km_pms["visualise"])
+            seeds = k_means.KMeansAutoSeedSelector(
                 emb_path=f"{temp_dir}/mltn2v_results.csv",
-                num_segments=self.km_pms["num_segments"],
+                max_segments=10,
                 random_state=self.km_pms["random_state"],
                 experiment_name=self.km_pms["experiment_name"],
             )(visualise=self.km_pms["visualise"])

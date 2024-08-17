@@ -12,6 +12,7 @@ def load_model(model_config: dict[str, Any], train_config: dict[str, Any]) -> Ca
         model_params["k_means"]["num_segments"] = train_config["seed_size"]
         model_params["k_means"]["random_state"] = train_config["random_seed"]
         return MultiNode2VecKMeans(**model_params)
+    # TODO: add here MultiNode2VecKMeansAuto
     elif 1 == 1:
         # TODO: here go other models
         print("add mode models, please!")
