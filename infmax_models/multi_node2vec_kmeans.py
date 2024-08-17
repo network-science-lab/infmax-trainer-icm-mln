@@ -44,20 +44,27 @@ class MultiNode2VecKMeans:  # TODO: even if it's not necessary, consider modifyi
                 f"Couldn't find multi_node2vec sources - {candidate_path} doesn't exits!"
             )
         return str(candidate_path)
+    
+    @staticmethod
+    def get_dim_size(network: nd.MultilayerNetworkTorch) -> float:
+        """A simple heuristic that sets embedding dimension as a sqrt of number of nodes."""
+        num_actors = network.nodes_mask.shape[1]
+        return np.floor(np.sqrt(num_actors)).astype(int).item()
 
-    def get_python_cmd(self):
+    def get_python_cmd(self, network: nd.MultilayerNetworkTorch):
         """Get command to execute in the docker."""
-        return f"python multi_node2vec.py --dir {self.docker_io_dir} \
-            --output {self.docker_io_dir} --d {self.mn2v_pms['d']} \
+        return f"python multi_node2vec.py --dir {self.docker_io_dir} --output {self.docker_io_dir} \
+            --d {self.get_dim_size(network) if self.mn2v_pms['d'] == 'auto' else self.mn2v_pms['d']} \
             --window_size {self.mn2v_pms['window_size']} --n_samples {self.mn2v_pms['n_samples']} \
             --rvals {self.mn2v_pms['rvals']} --pvals {self.mn2v_pms['pvals']} \
             --thresh {self.mn2v_pms['thresh']} --qvals {self.mn2v_pms['qvals']}"
 
-    def multi_node2vec(self, data_dir: str) -> None:
+    def multi_node2vec(self, data_dir: str, network: nd.MultilayerNetworkTorch) -> None:
         """Prepare embedding of the given input."""
         multi_node2vec_src_path = self.get_multi_node2vec_src_path()
-        cmd_python = self.get_python_cmd()
-        print(cmd_python)
+        cmd_python = self.get_python_cmd(network=network)
+        print(f"Running multi_node2vec with args: {cmd_python}")
+        self.export_network(data_dir=data_dir, network=network)
         container = self.docker_client.containers.run(
             image=self.docker_image,
             remove=True,
@@ -72,9 +79,8 @@ class MultiNode2VecKMeans:  # TODO: even if it's not necessary, consider modifyi
     def __call__(self, network: nd.MultilayerNetworkTorch) -> np.ndarray:
         """Select seeds using multi_node2vec and kmeans."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            print(temp_dir)
-            self.export_network(data_dir=temp_dir, network=network)
-            self.multi_node2vec(data_dir=temp_dir)
+            print(f"Temporary directory: {temp_dir}")
+            self.multi_node2vec(data_dir=temp_dir, network=network)
             seeds = k_means.KMeansSeedSelector(
                 emb_path=f"{temp_dir}/mltn2v_results.csv",
                 num_segments=self.km_pms["num_segments"],

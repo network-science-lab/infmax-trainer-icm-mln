@@ -2,7 +2,7 @@ model:
   name: "MultiNode2VecKMeans"
   parameters:
     multi_node2vec:
-      d: 2
+      d: "auto"
       window_size: 10
       n_samples: 1
       thresh: 0.5
@@ -19,5 +19,5 @@ networks: [
 ]
 
 train:
-  seed_size: 5
+  seed_size: 4
   random_seed: 43

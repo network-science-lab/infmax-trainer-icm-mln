@@ -87,7 +87,7 @@ class KMeansSeedSelector:
     def _visualise(self, seeds_ids: list[int], kmeans: KMeans) -> None:
         """Plot a visualisaiton of the division."""
         if self._emb_vectors.shape[-1] > 2:
-            warnings.warn("Visualisation is available only for 2D space!", stacklevel=0)
+            warnings.warn("Visualisation is available only for 2D space!", stacklevel=10)
             return
         fig, ax = plt.subplots(nrows=1, ncols=1)
         ax.scatter( # plot embedded actors
