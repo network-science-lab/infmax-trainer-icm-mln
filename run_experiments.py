@@ -17,7 +17,7 @@ def parse_args(*args):
 if __name__ == "__main__":
 
     # uncomment for debugging
-    args = parse_args(["_configs/MN2VKMA.yaml"])
+    args = parse_args(["_configs/MN2VKM.yaml"])
 
     # comment this line while debugging
     # args = parse_args()

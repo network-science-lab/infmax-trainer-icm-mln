@@ -3,6 +3,9 @@
 import pathlib
 import warnings
 
+from matplotlib.patches import Ellipse
+from matplotlib.axes import Axes
+from scipy.spatial import ConvexHull
 from sklearn.cluster import KMeans
 from sklearn.metrics import pairwise_distances_argmin_min, silhouette_score
 
@@ -24,6 +27,23 @@ def get_closest_vec_to_X(
     """
     seg_seed_id, _ = pairwise_distances_argmin_min(X, coords)
     return labels[seg_seed_id], coords[seg_seed_id]
+
+
+def highlight_cluster(ax: Axes, points: np.ndarray, padding: float=0.03) -> None:
+    """Draw ellipse around given cluster."""
+    if len(points) == 1:
+        centre = points[0]
+        width = padding
+        height = padding
+    else:
+        centre = points.mean(axis=0)
+        distances = np.sqrt(np.sum((points - centre)**2, axis=1))
+        max_distance = np.max(distances)
+        adaptive_padding = padding * max_distance
+        width = 2 * (np.max(points[:, 0] - np.min(points[:, 0])) + adaptive_padding)
+        height = 2 * (np.max(points[:, 1] - np.min(points[:, 1])) + adaptive_padding)
+    ell = Ellipse(xy=centre, width=width, height=height, edgecolor="red", facecolor="none")
+    ax.add_patch(ell)
 
 
 class KMeansSeedSelector:
@@ -132,17 +152,19 @@ class KMeansSeedSelector:
             x=kmeans.cluster_centers_[:, 0],
             y=kmeans.cluster_centers_[:, 1],
             color="red",
-            s=7,
+            s=8,
             label="centroids",
         )
-        # TODO: plot convex hull https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.ConvexHull.html
         ax.scatter( # mark seeds
             x=self._emb_vectors[seeds_ids, :][:, 0],
             y=self._emb_vectors[seeds_ids, :][:, 1],
             color="yellow",
-            s=7,
+            s=8,
             label="seeds"
         )
+        for cluster in kmeans.labels_:
+            points = self._emb_vectors[kmeans.labels_==cluster]
+            highlight_cluster(ax, points)
         ax.legend()
         fig.set_size_inches(6, 6)
         fig.suptitle(
