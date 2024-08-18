@@ -104,7 +104,7 @@ class MultiNode2VecKMeansAuto(MultiNode2VecKMeans):
             seeds = self.kmeans_method(
                 emb_path=f"{temp_dir}/mltn2v_results.csv",
                 nb_seeds=self.km_pms["nb_seeds"],
-                max_nb_segments=self.km_pms["max_nb_segments"],
+                max_nb_clusters=self.km_pms["max_nb_clusters"],
                 random_state=self.km_pms["random_state"],
                 experiment_name=self.km_pms["experiment_name"],
             )(visualise=self.km_pms["visualise"])

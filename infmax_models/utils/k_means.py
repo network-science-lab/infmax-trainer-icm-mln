@@ -66,18 +66,17 @@ class KMeansSeedSelector:
         emb_vectors = embeddings.to_numpy()[:, 1:]
         return emb_ids, emb_vectors
 
-
     @staticmethod
-    def clusterise(x: np.ndarray, num_segments: int, random_state: int) -> KMeans:
+    def clusterise(x: np.ndarray, nb_clusters: int, random_state: int) -> KMeans:
         """
         Divide a given vector space into `num_segments`.
 
         :param x: vectors to cluster, shape: num_vectors, dim_size
-        :param num_segments: number of clusters to obtain
+        :param nb_clusters: number of clusters to obtain
         :param random_state: RNG seed
         :return: clusterised space
         """
-        kmeans = KMeans(n_clusters=num_segments, random_state=random_state)
+        kmeans = KMeans(n_clusters=nb_clusters, random_state=random_state)
         kmeans.fit(X=x)
         return kmeans
 
@@ -97,17 +96,17 @@ class KMeansSeedSelector:
         seeds_ids = []
         seeds_coords = []
 
-        for segment in np.unique(kmeans.labels_):
+        for cluster in np.unique(kmeans.labels_):
 
-            segment_vectors = emb_vectors[kmeans.labels_==segment]
-            segment_labels = emb_labels[kmeans.labels_==segment]
-            segment_centre = kmeans.cluster_centers_[segment, :][np.newaxis, :]
+            cluster_vectors = emb_vectors[kmeans.labels_==cluster]
+            cluster_labels = emb_labels[kmeans.labels_==cluster]
+            cluster_centre = kmeans.cluster_centers_[cluster, :][np.newaxis, :]
 
-            seg_seed_id, seg_seed_coords = get_closest_vec_to_X(
-                segment_vectors, segment_labels, segment_centre
+            custer_seed_id, cluster_seed_coords = get_closest_vec_to_X(
+                cluster_vectors, cluster_labels, cluster_centre
             )
-            seeds_ids.append(seg_seed_id)
-            seeds_coords.append(seg_seed_coords)
+            seeds_ids.append(custer_seed_id)
+            seeds_coords.append(cluster_seed_coords)
 
         seeds_ids = np.array(seeds_ids)
         seeds_coords = np.array(seeds_coords).squeeze(axis=1)
@@ -154,7 +153,7 @@ class KMeansSeedSelector:
 
     def __call__(self, visualise: bool = False) -> list[int]:
         """Select seeds from given embedded nodes."""
-        kmeans = self.clusterise(x=self._emb_vectors, num_segments=self.nb_seeds, random_state=self.random_state)
+        kmeans = self.clusterise(x=self._emb_vectors, nb_clusters=self.nb_seeds, random_state=self.random_state)
         seeds = self.extract_seeds(kmeans=kmeans, emb_vectors=self._emb_vectors, emb_labels=self._emb_ids)
         if visualise:
             self._visualise(seeds_ids=seeds, kmeans=kmeans)
@@ -167,7 +166,7 @@ class KMeansAutoSeedSelector(KMeansSeedSelector):
         self,
         emb_path: pathlib.Path,
         nb_seeds: int,
-        max_nb_segments: int,
+        max_nb_clusters: int,
         random_state: int = 42,
         experiment_name: str = "experiment"
     ) -> None:
@@ -176,12 +175,12 @@ class KMeansAutoSeedSelector(KMeansSeedSelector):
 
         :param emb_path: path to the CSV file with embedding coords
         :param nb_seeds: number of seeds to extract
-        :param max_nb_segments: number of cluster to divide space in
+        :param max_nb_clusters: number of cluster to divide space in
         :param random_state: RNG for k-means algorithm, defaults to 42
         :param experiment_name: name of the experiment for the optional visualisation
         """
         self.nb_seeds = nb_seeds
-        self.max_nb_segments = max_nb_segments
+        self.max_nb_clusters = max_nb_clusters
         self.random_state = random_state
         self.experiment_name = experiment_name
         self._emb_ids, self._emb_vectors = self.parse_embeddings(emb_path)
@@ -201,14 +200,30 @@ class KMeansAutoSeedSelector(KMeansSeedSelector):
         fig.set_size_inches(6, 6)
         plt.show()
 
-    def extract_seeds(self, kmeans: KMeans) -> np.ndarray:
-        seeds_ids = []
-        avail_vectors = np.copy(self._emb_vectors)  # coords of vectors
-        avail_ids = np.copy(self._emb_ids)  # ids of vectors, i.e. nodes' names
-        avail_labels = np.copy(kmeans.labels_)  # labels of vectors, i.e. clusters they are assigned to
+    @staticmethod
+    def sort_clusters(kmeans: KMeans) -> np.ndarray:
+        """Get array of cluster IDs ordered descending by their sizes."""
+        cluster_ids, cluster_sizes = np.unique(kmeans.labels_, return_counts=True)
+        return cluster_ids[np.argsort(cluster_sizes)[::-1]]
 
-        while len(seeds_ids) < self.nb_seeds:  # TODO: sort clusters by size!!!
-            for segment in np.unique(kmeans.labels_):
+    def extract_seeds(self, kmeans: KMeans) -> np.ndarray:
+        """
+        Basing on k-means division extract the most central points.
+
+        Starting from the biggest cluster select the vector that is closest to its centre and
+        repeat that for `self.nb_seeds`.
+
+        :param kmeans: clusterised vector space
+        :return: list of the most central points (labels)
+        """
+        seeds_ids = []
+        cluster_oder = self.sort_clusters(kmeans)
+        avail_vectors = np.copy(self._emb_vectors)  # coords of vectors
+        avail_ids = np.copy(self._emb_ids)  # ids of vectors i.e. nodes' names
+        avail_labels = np.copy(kmeans.labels_)  # vectors' labels i.e. clusters they are assigned to
+
+        while len(seeds_ids) < self.nb_seeds:
+            for segment in cluster_oder:
 
                 # get vectors tht were assigned to this segment and the centre
                 segment_vectors = avail_vectors[avail_labels==segment]
@@ -235,7 +250,7 @@ class KMeansAutoSeedSelector(KMeansSeedSelector):
         """Select seeds from given embedded nodes."""
         split_silhouettes = []
         split_models = []
-        for k in range(2, self.max_nb_segments + 1):
+        for k in range(2, self.max_nb_clusters + 1):
             kmeans = self.clusterise(self._emb_vectors, k, self.random_state)
             split_score = silhouette_score(self._emb_vectors, kmeans.labels_)
             split_silhouettes.append(split_score)

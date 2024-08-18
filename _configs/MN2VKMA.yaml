@@ -10,7 +10,7 @@ model:
       qvals: 0.5
       rvals: 0.25
     k_means:
-      max_nb_segments: 10
+      max_nb_clusters: 10
       experiment_name: "test"
       visualise: True
 
@@ -20,5 +20,5 @@ networks: [
 ]
 
 train:
-  seed_size: 4
+  seed_size: 2
   random_seed: 43
