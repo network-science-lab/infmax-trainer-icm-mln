@@ -21,8 +21,8 @@ def train(args):
     networks = [Network(n, load_network(net_name=n, as_tensor=True)) for n in args["networks"]]
     model = load_model(model_config=args["model"], train_config=args["train"])
     for network in networks:
-        print(network.name)
+        print(f"Dataset: {network.name}")
         seeds = model(network=network.graph)
-        print(seeds)
+        print(f"Chosen following actors as seeds: {seeds}\n")
 
     

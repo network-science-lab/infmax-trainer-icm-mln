@@ -55,10 +55,8 @@ def main(args):
             nbrhd_dict[args.rvals], args.d, out_path, nbrhd_size=args.window_size, w2v_iter=1, workers=args.w2v_workers
         )
     )
-    print("\nCompleted Multilayer Network Embedding for r=" + str(args.rvals) + " in {:.2f} secs.\nSee results:".format(time.time() - start))
+    print("Completed Multilayer Network Embedding for r=" + str(args.rvals) + " in {:.2f} secs.\nSee results:".format(time.time() - start))
     print("\t" + out_path + ".csv")
-
-    print("Completed Multilayer Network Embedding for all r values.")
 
 
 if __name__ == '__main__':

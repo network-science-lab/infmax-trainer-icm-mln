@@ -5,6 +5,7 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
+import colorama
 import docker
 import network_diffusion as nd
 import numpy as np
@@ -64,7 +65,7 @@ class MultiNode2VecKMeans:  # TODO: even if it's not necessary, consider modifyi
         """Prepare embedding of the given input."""
         multi_node2vec_src_path = self.get_multi_node2vec_src_path()
         cmd_python = self.get_python_cmd(network=network)
-        print(f"Running multi_node2vec with args: {cmd_python}")
+        print(f"Running multi_node2vec with args: {' '.join(cmd_python.split())}")
         self.export_network(data_dir=data_dir, network=network)
         container = self.docker_client.containers.run(
             image=self.docker_image,
@@ -75,7 +76,8 @@ class MultiNode2VecKMeans:  # TODO: even if it's not necessary, consider modifyi
             command=cmd_python,
         )
         for line in container.attach(stdout=True, stream=True, logs=True):
-            print(line.decode("utf-8"))
+            print(colorama.Fore.CYAN + line.decode("utf-8"))
+        print(colorama.Style.RESET_ALL, end="")
 
     def __call__(self, network: nd.MultilayerNetworkTorch) -> np.ndarray:
         """Select seeds using multi_node2vec and kmeans."""
