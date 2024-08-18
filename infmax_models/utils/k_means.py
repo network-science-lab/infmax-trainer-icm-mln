@@ -46,12 +46,26 @@ class KMeansSeedSelector:
         """
         if nb_seeds < 2:
             raise ValueError("This method cannot select less seeds than 2!")
-        self.embeddings = pd.read_csv(emb_path, header=None)
         self.nb_seeds = nb_seeds
         self.random_state = random_state
         self.experiment_name = experiment_name
-        self._emb_ids = self.embeddings.to_numpy()[:, 0]  # TODO: check if labels are unique!
-        self._emb_vectors = self.embeddings.to_numpy()[:, 1:]
+        self._emb_ids, self._emb_vectors = self.parse_embeddings(emb_path)
+    
+    @staticmethod
+    def parse_embeddings(emb_path: pathlib.Path) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Read embeddings from a given path.
+
+        :param emb_path: path to the embeddings (a csv file)
+        :return: two arrays - one with ids of actors, another with embeddings
+        """
+        embeddings = pd.read_csv(emb_path, header=None)
+        emb_ids = embeddings.to_numpy()[:, 0]
+        if len(np.unique(emb_ids)) != len(emb_ids):
+            raise ValueError("IDs of actors should be unique - sth is wrong with embeddings!")
+        emb_vectors = embeddings.to_numpy()[:, 1:]
+        return emb_ids, emb_vectors
+
 
     @staticmethod
     def clusterise(x: np.ndarray, num_segments: int, random_state: int) -> KMeans:
@@ -162,17 +176,15 @@ class KMeansAutoSeedSelector(KMeansSeedSelector):
 
         :param emb_path: path to the CSV file with embedding coords
         :param nb_seeds: number of seeds to extract
-        :param max_segments: number of cluster to divide space in
+        :param max_nb_segments: number of cluster to divide space in
         :param random_state: RNG for k-means algorithm, defaults to 42
         :param experiment_name: name of the experiment for the optional visualisation
         """
-        self.embeddings = pd.read_csv(emb_path, header=None)
         self.nb_seeds = nb_seeds
         self.max_nb_segments = max_nb_segments
         self.random_state = random_state
         self.experiment_name = experiment_name
-        self._emb_ids = self.embeddings.to_numpy()[:, 0]
-        self._emb_vectors = self.embeddings.to_numpy()[:, 1:]
+        self._emb_ids, self._emb_vectors = self.parse_embeddings(emb_path)
 
     def _visualise(self, silhouette_coefficients: list[float]) -> None:
         """Plot a visualisaiton of the division."""
