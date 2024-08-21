@@ -71,6 +71,7 @@ class MultiNode2VecKMeans:  # TODO: even if it's not necessary, consider modifyi
             image=self.docker_image,
             remove=True,
             detach=True,
+            environment=[f"PYTHONHASHSEED={self.mn2v_pms['random_state']}"],
             volumes=[f"{multi_node2vec_src_path}:/app", f"{data_dir}:{self.docker_io_dir}"],
             platform=self.docker_platform,
             command=cmd_python,

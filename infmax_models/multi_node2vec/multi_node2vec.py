@@ -16,12 +16,11 @@ University of San Francisco, Department of Mathematics and Statistics
 
 Questions or Bugs? Contact James D. Wilson at jdwilson4@usfca.edu
 """
-
 import os
-import src as mltn2v
+import time
 
 from src.cli_args import parse_args
-import time
+import src as mltn2v
 
 
 def main(args):
@@ -59,7 +58,7 @@ def main(args):
     print("\t" + out_path + ".csv")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = parse_args(
         # [
         #     "--dir", "data/toy_network",

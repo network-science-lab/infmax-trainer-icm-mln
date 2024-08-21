@@ -16,11 +16,10 @@ University of San Francisco, Department of Mathematics and Statistics
 
 Questions or Bugs? Contact James D. Wilson at jdwilson4@usfca.edu
 """
-
 import os
-import pandas as pd
-from pandas.api.types import is_numeric_dtype
 import time
+
+import pandas as pd
 
 
 # -------------------------------------------------------------------------------
@@ -54,7 +53,7 @@ def parse_matrix_layers(network_dir, delim=',', binary=False, thresh=None):
             if binary:
                 layer[layer != 0] = 1
             # ensure that index (node name) is string, since word2vec will need it as str
-            if is_numeric_dtype(layer.index):
+            if pd.api.types.is_numeric_dtype(layer.index):
                 layer.index = layer.index.map(str)
             # replace all 0s with NaN
             layer.replace(to_replace=0, value=pd.np.nan, inplace=True)
