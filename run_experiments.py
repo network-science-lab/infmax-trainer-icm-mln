@@ -1,3 +1,7 @@
+"""Main entrypoint to the experiments."""
+
+# TODO: consider adding runners and defaulf configs for each method
+# TODO: change print statements to logs
 import argparse
 import yaml
 
@@ -17,7 +21,7 @@ def parse_args(*args):
 if __name__ == "__main__":
 
     # uncomment for debugging
-    args = parse_args(["_configs/MN2VKM.yaml"])
+    args = parse_args(["_configs/mn2vkma.yaml"])
 
     # comment this line while debugging
     # args = parse_args()

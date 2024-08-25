@@ -16,6 +16,7 @@ class Network:
     name: str
     graph: nd.MultilayerNetwork | nd.MultilayerNetworkTorch
 
+# TODO: for now it's just a mock. we have to implement a real training pipeline
 
 def train(args):
     networks = [Network(n, load_network(net_name=n, as_tensor=True)) for n in args["networks"]]

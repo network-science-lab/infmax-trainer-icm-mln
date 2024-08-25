@@ -53,7 +53,7 @@ class MultiNode2VecKMeans:  # TODO: even if it's not necessary, consider modifyi
         num_actors = network.nodes_mask.shape[1]
         return np.floor(np.sqrt(num_actors)).astype(int).item()
 
-    def get_python_cmd(self, network: nd.MultilayerNetworkTorch):
+    def get_python_cmd(self, network: nd.MultilayerNetworkTorch) -> str:
         """Get command to execute in the docker."""
         return f"python multi_node2vec.py --dir {self.docker_io_dir} --output {self.docker_io_dir} \
             --d {self.get_dim_size(network) if self.mn2v_pms['d'] == 'auto' else self.mn2v_pms['d']} \
@@ -112,6 +112,3 @@ class MultiNode2VecKMeansAuto(MultiNode2VecKMeans):
                 experiment_name=self.km_pms["experiment_name"],
             )(visualise=self.km_pms["visualise"])
             return seeds
-
-# cmd_docker = "docker run --rm -v ./multi_node2vec:/app -v ./toy_network:/data --platform linux/amd64 multi-node2vec"
-# cmd_python = "python multi_node2vec.py --dir /data --output /data --d 2 --window_size 10 --n_samples 1 --rvals 0.25 --pvals 1 --thresh 0.5 --qvals 0.5"
