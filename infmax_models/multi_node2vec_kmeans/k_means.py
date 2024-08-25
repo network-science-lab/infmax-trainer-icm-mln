@@ -5,7 +5,6 @@ import warnings
 
 from matplotlib.patches import Ellipse
 from matplotlib.axes import Axes
-from scipy.spatial import ConvexHull
 from sklearn.cluster import KMeans
 from sklearn.metrics import pairwise_distances_argmin_min, silhouette_score
 
