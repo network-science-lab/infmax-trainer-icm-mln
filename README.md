@@ -1,4 +1,4 @@
-# Inf. Max. with ML methods for Multilayer Networks 
+# Inf. Max. with ML methods for Multilayer Networks
 
 A repository to train and evaluate Influence Maximisation ML models for multilayer networks.
 
