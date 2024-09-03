@@ -21,7 +21,11 @@ class Network:
 # TODO: for now it's just a mock. we have to implement a real training pipeline
 
 def train(args):
-    load_sp(net_name="aucs", mean_data=True)
+    for n in args["networks"]:
+        print(n)
+        sp = load_sp(net_name=n, mean_data=True)
+        print(sp.head())
+
     # networks = [Network(n, load_network(net_name=n, as_tensor=True)) for n in args["networks"]]
     # model = load_model(model_config=args["model"], train_config=args["train"])
     # for network in networks:

@@ -15,8 +15,15 @@ model:
       visualise: True
 
 networks: [
+  # "arxiv_netscience_coauthorship",
+  # "arxiv_netscience_coauthorship_math.oc",
+  # "aucs",
+  # "ckm_physicians",
+  # "eu_transportation",
+  # "eu_transport_klm",
+  # "lazega",
+  # "timik1q2009",
   "toy_network",
-  "aucs",
 ]
 
 train:

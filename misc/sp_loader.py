@@ -10,20 +10,22 @@ from _data_set.eda_utils.globals import *
 from _data_set.eda_utils.csv_loader import read_csv
 
 
-def _sp_from_regex(csv_regex: str) -> pd.DataFrame:
+def _get_sp(csv_paths: list[str]) -> pd.DataFrame:
+    """Read spreading potentials stored in files indicated by given regex."""
     raw_csvs = []
-    for idx, file_path in enumerate(Path(".").glob(csv_regex)):
-        print(f"processing {idx}th file: {file_path.name}")
+    for _, file_path in enumerate(csv_paths):
+        # print(f"processing {_}th file: {file_path.name}")
         raw_csvs.append(read_csv(file_path))
-    raw_csv = pd.concat(raw_csvs, axis=0, ignore_index=True)
-    assert len(raw_csv["network"].unique()) == 1
-    return raw_csv
+    sp = pd.concat(raw_csvs, axis=0, ignore_index=True)
+    assert len(sp["network"].unique()) == 1
+    sp[[SIMULATION_LENGTH, EXPOSED, NOT_EXPOSED, PEAK_INFECTED, PEAK_ITERATION, P]] = sp[
+        [SIMULATION_LENGTH, EXPOSED, NOT_EXPOSED, PEAK_INFECTED, PEAK_ITERATION, P]
+    ].apply(pd.to_numeric)
+    return sp
 
-    result_grouped = raw_csv.groupby(by=[NETWORK, PROTOCOL, P, ACTOR])
-    result_mean = result_grouped.mean()
-    result_std = result_grouped.std()
 
-    result_mean.head()
+def _get_csv_paths(csv_regex: str) -> list[str]:
+    return list(Path(".").glob(csv_regex))
 
 
 def _sp_not_implemented():
@@ -36,8 +38,10 @@ def mean_sp_data(load_sp_func: Callable) -> Callable:
     def wrapper(*args, mean_data: bool, **kwargs) -> pd.DataFrame:
         sp_raw = load_sp_func(*args, **kwargs)
         if mean_data:
-            sp_grouped = sp_raw.groupby(by=[NETWORK, PROTOCOL, P, ACTOR])
-            sp_mean = sp_grouped.mean()
+            sp_grouped  = sp_raw.groupby(by=[NETWORK, PROTOCOL, ACTOR])
+            sp_mean = sp_grouped.mean()[
+                [SIMULATION_LENGTH, EXPOSED, NOT_EXPOSED, PEAK_INFECTED, PEAK_ITERATION]
+            ]
             return sp_mean
         return sp_raw
     return wrapper
@@ -45,24 +49,29 @@ def mean_sp_data(load_sp_func: Callable) -> Callable:
 
 @mean_sp_data
 def load_sp(net_name: str) -> pd.DataFrame:
+    """Load spreading potentials dataset for given network."""
     if net_name == FMRI74:
         _sp_not_implemented()
     elif net_name == ARXIV_NETSCIENCE_COAUTHORSHIP:
-        return _sp_from_regex(csv_regex=f"{SP_PREFIX}/arxiv_netscience_coauthorship/**/*.csv")
+        csv_paths = [
+            f for f in Path(f"{SP_PREFIX}/arxiv_netscience_coauthorship").rglob('**/*.csv') 
+            if 'math.oc' not in f.parts
+        ]
+        return _get_sp(csv_paths)
     elif net_name == ARXIV_NETSCIENCE_COAUTHORSHIP_MATH:
-        return _sp_from_regex(csv_regex=f"{SP_PREFIX}/arxiv_netscience_coauthorship/math.oc/*.csv")
+        return _get_sp(_get_csv_paths(f"{SP_PREFIX}/arxiv_netscience_coauthorship/math.oc/*.csv"))
     elif net_name == AUCS:
-        return _sp_from_regex(csv_regex=f"{SP_PREFIX}/small_real/*--net-aucs.csv")
+        return _get_sp(_get_csv_paths(f"{SP_PREFIX}/small_real/*--net-aucs.csv"))
     elif net_name == CANNES:
         _sp_not_implemented()
     elif net_name == CKM_PHYSICIANS:
-        return _sp_from_regex(csv_regex=f"{SP_PREFIX}/small_real/*--net-ckm_physicians.csv")
+        return _get_sp(_get_csv_paths(f"{SP_PREFIX}/small_real/*--net-ckm_physicians.csv"))
     elif net_name == EU_TRANSPORTATION:
-        return _sp_from_regex(csv_regex=f"{SP_PREFIX}/small_real/*--net-eu_transportation.csv")
+        return _get_sp(_get_csv_paths(f"{SP_PREFIX}/small_real/*--net-eu_transportation.csv"))
     elif net_name == EU_TRANSPORT_KLM:
-        return _sp_from_regex(csv_regex=f"{SP_PREFIX}/small_real/*--net-eu_transport_klm.csv")
+        return _get_sp(_get_csv_paths(f"{SP_PREFIX}/small_real/*--net-eu_transport_klm.csv"))
     elif net_name == LAZEGA:
-        return _sp_from_regex(csv_regex=f"{SP_PREFIX}/small_real/*--net-lazega.csv")
+        return _get_sp(_get_csv_paths(f"{SP_PREFIX}/small_real/*--net-lazega.csv"))
     elif net_name == ER1:
         _sp_not_implemented()
     elif net_name == ER2:
@@ -80,7 +89,7 @@ def load_sp(net_name: str) -> pd.DataFrame:
     elif net_name == SF5:
         _sp_not_implemented()
     elif net_name == TIMIK1Q2009:
-        return _sp_from_regex(csv_regex=f"{SP_PREFIX}/timik1q2009/**/*.csv")
+        return _get_sp(_get_csv_paths(f"{SP_PREFIX}/timik1q2009/**/*.csv"))
     elif net_name == TOY_NETWORK:
-        return _sp_from_regex(csv_regex=f"{SP_PREFIX}/small_real/*--toy_network.csv")
+        return _get_sp(_get_csv_paths(f"{SP_PREFIX}/small_real/*--net-toy_network.csv"))
     raise AttributeError(f"Unknown network: {net_name}")
