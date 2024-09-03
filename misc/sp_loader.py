@@ -1,8 +1,7 @@
 """Loader for ground truth dataset on spreading potentials."""
 
-from functools import wraps
 from pathlib import Path
-from typing import Callable
+from typing import Any
 
 import pandas as pd
 from misc.constants import *
@@ -14,7 +13,6 @@ def _get_sp(csv_paths: list[str]) -> pd.DataFrame:
     """Read spreading potentials stored in files indicated by given regex."""
     raw_csvs = []
     for _, file_path in enumerate(csv_paths):
-        # print(f"processing {_}th file: {file_path.name}")
         raw_csvs.append(read_csv(file_path))
     sp = pd.concat(raw_csvs, axis=0, ignore_index=True)
     assert len(sp["network"].unique()) == 1
@@ -32,22 +30,6 @@ def _sp_not_implemented():
     raise NotImplementedError(f"Spreading potentials have been not prepared yet!")
 
 
-def mean_sp_data(load_sp_func: Callable) -> Callable:
-    """Decorate loader of spreading potentials to mean them on the fly."""
-    @wraps(load_sp_func)
-    def wrapper(*args, mean_data: bool, **kwargs) -> pd.DataFrame:
-        sp_raw = load_sp_func(*args, **kwargs)
-        if mean_data:
-            sp_grouped  = sp_raw.groupby(by=[NETWORK, PROTOCOL, ACTOR])
-            sp_mean = sp_grouped.mean()[
-                [SIMULATION_LENGTH, EXPOSED, NOT_EXPOSED, PEAK_INFECTED, PEAK_ITERATION]
-            ]
-            return sp_mean
-        return sp_raw
-    return wrapper
-
-
-@mean_sp_data
 def load_sp(net_name: str) -> pd.DataFrame:
     """Load spreading potentials dataset for given network."""
     if net_name == FMRI74:
@@ -93,3 +75,28 @@ def load_sp(net_name: str) -> pd.DataFrame:
     elif net_name == TOY_NETWORK:
         return _get_sp(_get_csv_paths(f"{SP_PREFIX}/small_real/*--net-toy_network.csv"))
     raise AttributeError(f"Unknown network: {net_name}")
+
+
+def get_gt_data(net_name: str, protocol: str, p: float | None, budget: int) -> list[Any]:
+    """
+    Get actors that performed the best in given spreading contitions.
+
+    :param net_name: network name to obtain GT data for
+    :param protocol: protocol of the multilayer ICM
+    :param p: probability of the multilayer ICM, if not provided probability will be discarded in
+        the process of selecting top-k actors
+    :param budget: top-k actors to return
+    :return: IDs of actors that performed the best in given contidions
+    """
+    sp_raw = load_sp(net_name=net_name)
+    if p:
+        sp_mean  = sp_raw.groupby(by=[NETWORK, PROTOCOL, ACTOR, P]).mean().reset_index()
+        sp_mean = sp_mean[(sp_mean[PROTOCOL] == protocol) & (sp_mean[P] == p)]
+    else:
+        sp_mean  = sp_raw.groupby(by=[NETWORK, PROTOCOL, ACTOR]).mean().reset_index()
+        sp_mean = sp_mean[sp_mean[PROTOCOL] == protocol]
+    sp_mean = sp_mean.sort_values(
+        [EXPOSED, SIMULATION_LENGTH, PEAK_INFECTED, PEAK_ITERATION],
+        ascending=[False, True, True, False]
+    )
+    return sp_mean.iloc[:budget][ACTOR].tolist()
