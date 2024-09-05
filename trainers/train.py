@@ -8,7 +8,7 @@ import network_diffusion as nd
 
 from dataclasses import dataclass
 
-from misc.net_loader import load_network
+from _data_set.infmax_data_utils.loaders.net_loader import load_network
 from infmax_models.loader import load_model
 
 
