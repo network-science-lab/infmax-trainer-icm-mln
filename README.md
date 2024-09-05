@@ -18,7 +18,7 @@ Then, pull the submodule and install its code:
 
 ```bash
 git submodule init && git submodule update
-pip install -e _dataset/infmax_data_utils
+pip install -e _dataset
 ```
 
 `multi_node2vec` is an external codebase that can be executed with a deprecated Python version. Hence,

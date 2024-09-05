@@ -8,8 +8,8 @@ import network_diffusion as nd
 
 from dataclasses import dataclass
 
-from _data_set.infmax_data_utils.loaders.net_loader import load_network
-from _data_set.infmax_data_utils.loaders.sp_loader import get_gt_data
+from _data_set.nsl_data_utils.loaders.net_loader import load_network
+from _data_set.nsl_data_utils.loaders.sp_loader import get_gt_data
 from infmax_models.loader import load_model
 from trainers.eval import evaluate_seed_set
 

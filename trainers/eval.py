@@ -3,9 +3,9 @@
 from typing import Any, Literal
 import network_diffusion as nd
 
-from _data_set.infmax_data_utils.loaders.net_loader import load_network
-from _data_set.infmax_data_utils.loaders.sp_loader import get_gt_data
-from _data_set.infmax_data_utils.models.torch_model import TorchMICModel, TorchMICSimulator
+from _data_set.nsl_data_utils.loaders.net_loader import load_network
+from _data_set.nsl_data_utils.loaders.sp_loader import get_gt_data
+from _data_set.nsl_data_utils.models.torch_model import TorchMICModel, TorchMICSimulator
 import pandas as pd
 
 
