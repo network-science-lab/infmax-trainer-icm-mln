@@ -16,7 +16,7 @@ def evaluate_seed_set(
     probability: float,
     n_steps: int,
     n_repetitions: int,
-) -> list[dict]:
+) -> pd.DataFrame:
     """Run multilayer ICM on given seed set and model's parameters."""
     results = []
     for _ in range(n_repetitions):

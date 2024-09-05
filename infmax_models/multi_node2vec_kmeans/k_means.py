@@ -135,7 +135,7 @@ class KMeansSeedSelector:
     def _visualise(self, seeds_ids: list[int], kmeans: KMeans) -> None:
         """Plot a visualisaiton of the division."""
         if self._emb_vectors.shape[-1] > 2:
-            warnings.warn("Visualisation is available only for 2D space!", stacklevel=10)
+            warnings.warn("Visualisation is available only for 2D space!\n", stacklevel=10)
             return
         fig, ax = plt.subplots(nrows=1, ncols=1)
         ax.scatter( # plot embedded actors
@@ -254,7 +254,6 @@ class KMeansAutoSeedSelector(KMeansSeedSelector):
                 # find a vector that is closest to the centre of the segment
                 seed_id, _ = get_closest_vec_to_X(segment_vectors, segment_labels, segment_centre)
                 seeds_ids.append(seed_id)
-                print(seeds_ids)
                 if len(seeds_ids) >= self.nb_seeds:
                     break
 

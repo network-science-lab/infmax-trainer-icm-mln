@@ -91,7 +91,7 @@ class MultiNode2VecKMeans:  # TODO: even if it's not necessary, consider modifyi
                 random_state=self.km_pms["random_state"],
                 experiment_name=self.km_pms["experiment_name"],
             )(visualise=self.km_pms["visualise"])
-            return seeds
+            return [network.actors_map.inverse[s] for s in seeds]
 
 
 class MultiNode2VecKMeansAuto(MultiNode2VecKMeans):
@@ -111,4 +111,4 @@ class MultiNode2VecKMeansAuto(MultiNode2VecKMeans):
                 random_state=self.km_pms["random_state"],
                 experiment_name=self.km_pms["experiment_name"],
             )(visualise=self.km_pms["visualise"])
-            return seeds
+            return [network.actors_map.inverse[s] for s in seeds]
