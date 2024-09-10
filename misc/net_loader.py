@@ -9,6 +9,8 @@ import network_diffusion as nd
 import networkx as nx
 import torch
 
+from misc.fmri74 import read_fmri74
+
 
 DATASET_PREFIX = "_data_set/ns-data-sources/raw/multi_layer_networks"
 
@@ -169,7 +171,9 @@ def convert_to_torch(load_networks_func: Callable) -> Callable:
 
 @convert_to_torch
 def load_network(net_name: str) -> nd.MultilayerNetwork:
-    if net_name == "arxiv_netscience_coauthorship":
+    if net_name == "fmri74":
+        return read_fmri74(network_dir=f"{DATASET_PREFIX}/CONTROL_fmt", binary=True, thresh=0.5)
+    elif net_name == "arxiv_netscience_coauthorship":
         return get_arxiv_network()
     elif net_name == "arxiv_netscience_coauthorship_math.oc":
         return get_arxiv_network(["math.OC"])
