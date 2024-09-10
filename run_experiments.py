@@ -5,7 +5,7 @@
 import argparse
 import yaml
 
-from misc.utils import set_seed
+from trainers.utils import set_seed
 
 
 def parse_args(*args):

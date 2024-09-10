@@ -12,13 +12,26 @@ model:
     k_means:
       max_nb_clusters: 10
       experiment_name: "test"
-      visualise: True
+      visualise: False
 
 networks: [
+  # "arxiv_netscience_coauthorship",
+  # "arxiv_netscience_coauthorship_math.oc",
+  # "aucs",
+  # "ckm_physicians",
+  # "eu_transportation",
+  # "eu_transport_klm",
+  "lazega",
+  # "timik1q2009",
   "toy_network",
-  "aucs",
 ]
 
 train:
   seed_size: 2
   random_seed: 43
+
+spreading_regime:
+  protocol: "OR"
+  p: 0.5
+  n_repetitions: 30
+  n_steps: 10000
