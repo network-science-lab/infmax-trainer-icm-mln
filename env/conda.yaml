@@ -1,0 +1,8 @@
+name: infmax-trainer-icm-mln
+channels:
+  - defaults
+dependencies:
+  - pip=24.0
+  - python=3.12.4
+  - pip:
+      - -r requirements.txt

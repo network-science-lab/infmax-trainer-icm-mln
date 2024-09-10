@@ -1,0 +1,15 @@
+[project]
+name = "infmax-trainer-icm-mln"
+
+authors = [
+    {name = "Michał Czuba"},
+    {name = "Adam Piróg"},
+    {name = "Mateusz Stolarski"},
+    {name = "Piotr Bródka"}
+]
+
+description = "Inf. Max. with ML methods for Multilayer Networks"
+readme = "README.md"
+license = { text="MIT" }
+requires-python = ">=3.12"
+dependencies = ["env/requirements.txt"]

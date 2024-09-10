@@ -1,0 +1,24 @@
+model:
+  name: "MultiNode2VecKMeansAuto"
+  parameters:
+    multi_node2vec:
+      d: "auto"
+      window_size: 10
+      n_samples: 1
+      thresh: 0.5
+      pvals: 1
+      qvals: 0.5
+      rvals: 0.25
+    k_means:
+      max_nb_clusters: 10
+      experiment_name: "test"
+      visualise: True
+
+networks: [
+  "toy_network",
+  "aucs",
+]
+
+train:
+  seed_size: 2
+  random_seed: 43
