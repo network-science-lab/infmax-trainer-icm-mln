@@ -18,7 +18,7 @@ Then, pull the submodule and install its code:
 
 ```bash
 git submodule init && git submodule update
-pip install -e _dataset
+pip install -e _data_set
 ```
 
 `multi_node2vec` is an external codebase that can be executed with a deprecated Python version. Hence,
@@ -44,7 +44,17 @@ request to get  an access via  e-mail (michal.czuba@pwr.edu.pl). Then, simply ex
 ├── _configs                -> def. of the training configs
 ├── _data_set               -> evaluated networks
 ├── env                     -> a definition of the runtime environment
-├── infmax_models           -> implemented ML models for Influence Maximisation
+├── src                     -> module with main implementation
+│   |── datamodule          -> code for converting datasets into datamodule
+│   |── dataset             -> implemented datasets for preparing HeteroData
+│   |── hetero_data         -> extension of HeteroData from torch_geometric
+│   |── infmax_models       -> implemented ML models for Influence Maximisation
+│   |── training            -> code related to training execution
+│   │   ├── trainers        -> scripts to train models according to provided configs
+│   │   ├── callbacks.py    -> allowed training callbacks defined in executed config
+│   │   └── loggers.py      -> allowed training loggers defined in executed config 
+│   |── utils               -> logic for helpers across whole repository
+│   └── wrapper             -> wrappers for trainable models implemented in torch
 ├── trainers                -> scripts to train models according to provided configs
 ├── README.md          
 └── run_experiments.py      -> main entrypoint to trigger the pipeline
@@ -52,5 +62,4 @@ request to get  an access via  e-mail (michal.czuba@pwr.edu.pl). Then, simply ex
 
 ## Running the pipeline
 
-To run experiments execute: `run_experiments.py` and provide proper CLI arguments, i.e. a path to 
-the configuration file. See examples in `_config/examples` for inspirations.
+To run experiments execute: `run_experiments.py` and provide proper CLI arguments defined in `_config/hydra.yaml`, i.e. a name of the configuration file.
