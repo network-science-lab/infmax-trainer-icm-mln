@@ -63,8 +63,8 @@ class KMeansSeedSelector:
         :param random_state: RNG for k-means algorithm, defaults to 42
         :param experiment_name: name of the experiment for the optional visualisation
         """
-        if nb_seeds < 2:
-            raise ValueError("This method cannot select less seeds than 2!")
+        # if nb_seeds < 2:
+        #     raise ValueError("This method cannot select less seeds than 2!")
         self.nb_seeds = nb_seeds
         self.random_state = random_state
         self.experiment_name = experiment_name
@@ -100,7 +100,7 @@ class KMeansSeedSelector:
         return kmeans
 
     @staticmethod
-    def extract_seeds(kmeans: KMeans, emb_vectors: np.ndarray, emb_labels: np.ndarray) -> np.ndarray:
+    def extract_seeds(kmeans: KMeans, emb_vectors: np.ndarray, emb_labels: np.ndarray) -> list[int]:
         """
         Basing on k-means division extract the most central points.
 
@@ -130,7 +130,8 @@ class KMeansSeedSelector:
         seeds_ids = np.array(seeds_ids)
         seeds_coords = np.array(seeds_coords).squeeze(axis=1)
 
-        return seeds_ids.squeeze().squeeze().astype(int)
+        seeds_ids = np.array(seeds_ids).astype(int)
+        return seeds_ids.flatten().tolist()
 
     def _visualise(self, seeds_ids: list[int], kmeans: KMeans) -> None:
         """Plot a visualisaiton of the division."""
@@ -168,7 +169,7 @@ class KMeansSeedSelector:
         fig.set_size_inches(6, 6)
         fig.suptitle(
             f"multi-node2vec & k-means\n {self.experiment_name}, num seeds: {self.nb_seeds}\n"
-            f"found actors: {seeds_ids.tolist()}"
+            f"found actors: {seeds_ids}"
         )
         plt.show()
 
@@ -178,7 +179,7 @@ class KMeansSeedSelector:
         seeds = self.extract_seeds(kmeans=kmeans, emb_vectors=self._emb_vectors, emb_labels=self._emb_ids)
         if visualise:
             self._visualise(seeds_ids=seeds, kmeans=kmeans)
-        return seeds.tolist()
+        return seeds
 
 
 class KMeansAutoSeedSelector(KMeansSeedSelector):
@@ -227,7 +228,7 @@ class KMeansAutoSeedSelector(KMeansSeedSelector):
         cluster_ids, cluster_sizes = np.unique(kmeans.labels_, return_counts=True)
         return cluster_ids[np.argsort(cluster_sizes)[::-1]]
 
-    def extract_seeds(self, kmeans: KMeans) -> np.ndarray:
+    def extract_seeds(self, kmeans: KMeans) -> list[int]:
         """
         Basing on k-means division extract the most central points.
 
@@ -263,8 +264,8 @@ class KMeansAutoSeedSelector(KMeansSeedSelector):
                 avail_ids = np.delete(avail_ids, seed_idx, axis=0)
                 avail_labels = np.delete(avail_labels, seed_idx, axis=0)
 
-        seeds_ids = np.array(seeds_ids)
-        return seeds_ids.squeeze().squeeze().astype(int)
+        seeds_ids = np.array(seeds_ids).astype(int)
+        return seeds_ids.flatten().tolist()
 
     def __call__(self, visualise: bool = False) -> list[int]:
         """Select seeds from given embedded nodes."""
@@ -282,4 +283,4 @@ class KMeansAutoSeedSelector(KMeansSeedSelector):
         seeds = self.extract_seeds(kmeans=optimal_model)
         if visualise:
             super()._visualise(seeds_ids=seeds, kmeans=optimal_model)
-        return seeds.tolist()
+        return seeds
