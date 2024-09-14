@@ -1,1 +1,1 @@
-TRAINABLE=["GATHeteroGNN",] 
+TRAINABLE=["GATHeteroGNN",]
