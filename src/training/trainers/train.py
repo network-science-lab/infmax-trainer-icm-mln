@@ -4,39 +4,39 @@ load model
 train model
 evaluate model
 """
-import network_diffusion as nd
-
 from dataclasses import dataclass
-
-from _data_set.nsl_data_utils.loaders.net_loader import load_network
-from _data_set.nsl_data_utils.loaders.sp_loader import get_gt_data
-from src.infmax_models.loader import load_model
-from src.training.trainers.eval import evaluate_seed_set
-from typing import Any
-from src.training.trainers import TRAINABLE
 from pathlib import Path
+from typing import Any
 
+import network_diffusion as nd
 import pytorch_lightning as pl
 import torch
 
+from _data_set.nsl_data_utils.loaders.net_loader import load_network
+from _data_set.nsl_data_utils.loaders.sp_loader import get_gt_data
 from src.datamodule.loader import get_datamodule, get_datasets, get_metadata
 from src.infmax_models.loader import load_model
 from src.training.callbacks import get_callbacks
 from src.training.loggers import get_loggers
-from src.wrapper.hetero import HetergoGNN_WrapperConfig, HeteroGNN_Wrapper
+from src.training.trainers import TRAINABLE
+from src.training.trainers.eval import evaluate_seed_set
 from src.utils.multilayer_network import MultilayerNetworkInfo
-
+from src.wrapper.hetero import HetergoGNN_WrapperConfig, HeteroGNN_Wrapper
 
 # TODO: prepare unified pipeline for directly/indirectly trainable method with common interface for invocation and inference
 
+
 def indirectly_trainable(args: dict[str, Any]) -> None:
     # load dataset
-    networks = [MultilayerNetworkInfo(
-            network_name=n, 
+    networks = [
+        MultilayerNetworkInfo(
+            network_name=n,
             network=load_network(net_name=n, as_tensor=True),
             output_label_name=None,
             spreading_potential=None,
-        ) for n in args["networks"]]
+        )
+        for n in args["networks"]
+    ]
 
     # load model
     model = load_model(config=args)
@@ -70,10 +70,11 @@ def indirectly_trainable(args: dict[str, Any]) -> None:
             protocol=proto,
             probability=p,
             n_steps=n_steps,
-            n_repetitions=n_repetitions
+            n_repetitions=n_repetitions,
         )
         print(f"Reference seed set: {ref_seeds}")
         print(f"{ref_performance.mean()}\n")
+
 
 def directly_trainable(args: dict[str, Any]) -> None:
     datasets = get_datasets(args)
@@ -112,7 +113,8 @@ def directly_trainable(args: dict[str, Any]) -> None:
         save_path=Path(args["hydra"]["run"]["dir"]),
         test_output=test_output,
     )
-    
+
+
 def train(args: dict[str, Any]) -> None:
     if args["model"]["name"] in TRAINABLE:
         directly_trainable(args)

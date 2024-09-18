@@ -16,11 +16,13 @@ University of San Francisco, Department of Mathematics and Statistics
 
 Questions or Bugs? Contact James D. Wilson at jdwilson4@usfca.edu
 """
+import time
+
+import networkx as nx
 from gensim.models import word2vec as w2v
+
 from .mltn2v_utils import *
 from .nbrhd_gen_walk_nx import *
-import time
-import networkx as nx
 
 
 # -------------------------------------------------------------------------------
@@ -42,16 +44,24 @@ def generate_features(nbrhds, d, out, nbrhd_size=-1, w2v_iter=1, workers=8, sg=1
     :return: n x d network embedding
     """
     print("Total Neighborhoods: {}".format(len(nbrhds)))
-    w2v_model = w2v.Word2Vec(nbrhds, size=d, window=nbrhd_size, min_count=0,
-                             workers=workers, iter=w2v_iter, sg=sg)
+    w2v_model = w2v.Word2Vec(
+        nbrhds,
+        size=d,
+        window=nbrhd_size,
+        min_count=0,
+        workers=workers,
+        iter=w2v_iter,
+        sg=sg,
+    )
     embfile = out + ".emb"
-    splitpath = embfile.split('/')
+    splitpath = embfile.split("/")
     if len(splitpath) > 1:
-        dirs = embfile[:-len(splitpath[-1])]
+        dirs = embfile[: -len(splitpath[-1])]
         if not os.path.exists(dirs):
             os.makedirs(dirs)
     if not os.path.exists(embfile):
-        with open(embfile, 'w'): pass
+        with open(embfile, "w"):
+            pass
     w2v_model.wv.save_word2vec_format(embfile)
     ftrs = emb_to_pandas(embfile)
     feature_matrix_to_csv(ftrs, out)
@@ -61,14 +71,20 @@ def generate_features(nbrhds, d, out, nbrhd_size=-1, w2v_iter=1, workers=8, sg=1
 # -------------------------------------------------------------------------------
 # NEIGHBORHOODS
 # -------------------------------------------------------------------------------
-def extract_neighborhoods_walk(layers, nbrhd_size, wvals, p, q, is_directed=False, weighted=False):
+def extract_neighborhoods_walk(
+    layers, nbrhd_size, wvals, p, q, is_directed=False, weighted=False
+):
     nxg = []
     for layer in layers:
-        nxg.append(nx.convert_matrix.from_pandas_edgelist(layer,edge_attr='weight'))
+        nxg.append(nx.convert_matrix.from_pandas_edgelist(layer, edge_attr="weight"))
 
     start = time.time()
     nbrhd_gen = NeighborhoodGen(nxg, p, q, is_directed=is_directed, weighted=weighted)
-    print("Finished initialization of neighborhood generator in " + str(time.time() - start) + " seconds.")
+    print(
+        "Finished initialization of neighborhood generator in "
+        + str(time.time() - start)
+        + " seconds."
+    )
 
     neighborhood_dict = {}
     for w in wvals:
@@ -77,11 +93,14 @@ def extract_neighborhoods_walk(layers, nbrhd_size, wvals, p, q, is_directed=Fals
             layer = nxg[i]
             for node in layer.nodes():
                 for j in range(52):
-                    neighborhoods.append(nbrhd_gen.multinode2vec_walk(w, nbrhd_size, node, i))
+                    neighborhoods.append(
+                        nbrhd_gen.multinode2vec_walk(w, nbrhd_size, node, i)
+                    )
         print("Finished nbrhd generation for r=" + str(w))
         neighborhood_dict[w] = neighborhoods
 
     return neighborhood_dict
+
 
 def extract_neighborhoods(layers, nbrhd_size, n_samples, weighted=False):
     """
@@ -113,15 +132,18 @@ def extract_neighborhoods(layers, nbrhd_size, n_samples, weighted=False):
 
 def extract_node_neighborhoods(node, neighbors, nbrhd_size, n_samples):
     if len(neighbors) < nbrhd_size:
-        print("[WARNING] Selected neighborhood size {} > node-{}'s degree {}. "
-              "Setting neighborhood size to {} for node-{}."
-              .format(nbrhd_size, node, len(neighbors), len(neighbors), node))
+        print(
+            "[WARNING] Selected neighborhood size {} > node-{}'s degree {}. "
+            "Setting neighborhood size to {} for node-{}.".format(
+                nbrhd_size, node, len(neighbors), len(neighbors), node
+            )
+        )
         nbrhd_size = len(neighbors)
     node_neighborhoods = []
     n = 0
     while n < n_samples:
         nbrhd = [node]
-        nbrhd.extend(neighbors.sample(n=nbrhd_size-1).values)
+        nbrhd.extend(neighbors.sample(n=nbrhd_size - 1).values)
         node_neighborhoods.append(nbrhd)
         n += 1
     return node_neighborhoods
@@ -137,6 +159,8 @@ def emb_to_pandas(emb_file):
     :param emb_file: absolute path to word2vec embedding file
     :return: numpy ndarray, (N x d)
     """
-    ftrs = pd.read_csv(emb_file, delim_whitespace=True, skiprows=1, header=None, index_col=0)
+    ftrs = pd.read_csv(
+        emb_file, delim_whitespace=True, skiprows=1, header=None, index_col=0
+    )
     ftrs.sort_index(inplace=True)
     return ftrs

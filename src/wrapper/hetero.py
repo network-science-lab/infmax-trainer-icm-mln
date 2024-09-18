@@ -6,8 +6,10 @@ import pytorch_lightning as pl
 import torch
 from torch_geometric.data.batch import Batch
 from torch_geometric.nn import to_hetero
+
 from src.infmax_models.base.base import BaseHeteroModule
 from src.utils.wrapper import get_loss
+
 
 @dataclass
 class HetergoGNN_WrapperConfig:
@@ -17,7 +19,8 @@ class HetergoGNN_WrapperConfig:
     metadata: tuple
     device: str
 
-#TODO: CONSIDER WIGHTED SUM, WEIGHTS ASSIGNED TO THE LAYERS
+
+# TODO: CONSIDER WIGHTED SUM, WEIGHTS ASSIGNED TO THE LAYERS
 class HeteroGNN_Wrapper(pl.LightningModule):
     def __init__(
         self,
@@ -38,7 +41,7 @@ class HeteroGNN_Wrapper(pl.LightningModule):
             "trues": [],
             "preds": [],
         }
-        self.save_hyperparameters(ignore=['model'])
+        self.save_hyperparameters(ignore=["model"])
 
     def _mask_batch(
         self,
@@ -48,9 +51,7 @@ class HeteroGNN_Wrapper(pl.LightningModule):
         expected_node_types, expected_edge_types = self._config.metadata
 
         missing_node_types = [
-            node_type
-            for node_type in expected_node_types
-            if node_type not in x_dict
+            node_type for node_type in expected_node_types if node_type not in x_dict
         ]
 
         for node_type in missing_node_types:
@@ -157,11 +158,11 @@ class HeteroGNN_Wrapper(pl.LightningModule):
 
         layers = batch.x_dict.keys()
         for layer in layers:
-            self.test_preds["trues"]+= batch[layer].y.tolist()
-            self.test_preds["preds"]+= torch.argmax(
-                    input=predictions[layer],
-                    dim=1,
-                ).tolist()
+            self.test_preds["trues"] += batch[layer].y.tolist()
+            self.test_preds["preds"] += torch.argmax(
+                input=predictions[layer],
+                dim=1,
+            ).tolist()
 
         return loss
 
@@ -190,14 +191,20 @@ class HeteroGNN_Wrapper(pl.LightningModule):
             parents=True,
         )
 
-        with (save_path / f"predictions.json").open(mode="w", encoding="utf-8",) as file:
+        with (save_path / f"predictions.json").open(
+            mode="w",
+            encoding="utf-8",
+        ) as file:
             json.dump(
                 obj=self.test_preds,
                 fp=file,
                 indent=2,
             )
 
-        with (save_path / f"metrics.json").open(mode="w", encoding="utf-8",) as file:
+        with (save_path / f"metrics.json").open(
+            mode="w",
+            encoding="utf-8",
+        ) as file:
             json.dump(
                 obj=test_output,
                 fp=file,

@@ -3,19 +3,20 @@ from typing import Callable
 from torch_geometric.data import Dataset, HeteroData
 from torch_geometric.typing import EdgeType, NodeType
 
-from src.utils.multilayer_network import MultilayerNetworkInfo
-from src.hetero_data.hetero_data import LightningHeteroData
 from src.dataset.base_hetero_dataset import BaseHeteroDataset
+from src.hetero_data.hetero_data import LightningHeteroData
+from src.utils.multilayer_network import MultilayerNetworkInfo
+
 
 # TODO: Discuss what experiments we want to conduct and specify code for that
 class DataFrameHeteroDataset(BaseHeteroDataset):
     r"""Dataset class for creating graph datasets based on hetero data.
 
     Args:
-        networks (list[MultilayerNetworkInfo]): List of objects containing 
+        networks (list[MultilayerNetworkInfo]): List of objects containing
             information for creating hetero data.
         input_dim (int): Size of features for h0 vector.
-        output_dim (int): Number of output classes created during 
+        output_dim (int): Number of output classes created during
             discretization.
         root (str, optional): Root directory where the dataset should be saved.
             (optional: :obj:`None`)
@@ -37,6 +38,7 @@ class DataFrameHeteroDataset(BaseHeteroDataset):
             boolean value, indicating whether the data object should be
             included in the final dataset. (default: :obj:`None`)
     """
+
     def __init__(
         self,
         networks: list[MultilayerNetworkInfo],
@@ -59,8 +61,8 @@ class DataFrameHeteroDataset(BaseHeteroDataset):
 
         self.data_list = [
             LightningHeteroData.from_network_info(
-                network_info=network_info, 
-                output_dim=output_dim, 
+                network_info=network_info,
+                output_dim=output_dim,
                 input_dim=input_dim,
             )
             for network_info in networks

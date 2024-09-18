@@ -25,7 +25,7 @@ import pandas as pd
 # -------------------------------------------------------------------------------
 # PARSING AND CONVERSION FOR MULTILAYER GRAPHS
 # -------------------------------------------------------------------------------
-def parse_matrix_layers(network_dir, delim=',', binary=False, thresh=None):
+def parse_matrix_layers(network_dir, delim=",", binary=False, thresh=None):
     """
     Converts directory of adjacency matrix files into pandas dataframes.
     :param network_dir: Directory of adjacency matrix files
@@ -46,7 +46,9 @@ def parse_matrix_layers(network_dir, delim=',', binary=False, thresh=None):
             # read as pandas DataFrame, index=source, col=target
             layer = pd.read_csv(file_path, index_col=0)
             if layer.shape[0] != layer.shape[1]:
-                print('[ERROR] Invalid adjacency matrix. Expecting matrix with index as source and column as target.')
+                print(
+                    "[ERROR] Invalid adjacency matrix. Expecting matrix with index as source and column as target."
+                )
                 return
             if thresh is not None:
                 layer[layer <= thresh] = 0
@@ -89,7 +91,7 @@ def feature_matrix_to_csv(ftrs, filename):
     :return:
     """
     out = filename + ".csv"
-    ftrs.to_csv(out, sep=',', header=False)
+    ftrs.to_csv(out, sep=",", header=False)
     return
 
 
@@ -100,14 +102,18 @@ def timed_invoke(action_desc, method):
     :param method: The method to invoke
     :return: The return object of the method
     """
-    print('Started {}...'.format(action_desc))
+    print("Started {}...".format(action_desc))
     start = time.time()
     try:
         output = method()
-        print('Finished {} in {} seconds'.format(action_desc, int(time.time() - start)))
+        print("Finished {} in {} seconds".format(action_desc, int(time.time() - start)))
         return output
     except Exception:
-        print('Exception while {} after {} seconds'.format(action_desc, int(time.time() - start)))
+        print(
+            "Exception while {} after {} seconds".format(
+                action_desc, int(time.time() - start)
+            )
+        )
         raise
 
 

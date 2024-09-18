@@ -1,7 +1,6 @@
 """Method to select seeds with multi_node2vec and k-means."""
 
 import tempfile
-
 from pathlib import Path
 from typing import Any
 
@@ -21,7 +20,7 @@ class MultiNode2VecKMeans:  # TODO: even if it's not necessary, consider modifyi
     docker_platform = "linux/amd64"
     docker_io_dir = "/data"
     kmeans_method = k_means.KMeansSeedSelector
-    
+
     def __init__(self, multi_node2vec: dict[str, Any], k_means: dict[str, Any]) -> None:
         """Initialise the object."""
         self.docker_client = docker.from_env()
@@ -33,8 +32,8 @@ class MultiNode2VecKMeans:  # TODO: even if it's not necessary, consider modifyi
     def export_network(data_dir: str, network: nd.MultilayerNetworkTorch) -> None:
         """Export network into csv files for each layer."""
         for l_idx, l_name in enumerate(network.layers_order):
-            pd.DataFrame(
-                network.adjacency_tensor[l_idx, ...].to_dense().cpu()).to_csv(f"{data_dir}/{l_name}.csv"
+            pd.DataFrame(network.adjacency_tensor[l_idx, ...].to_dense().cpu()).to_csv(
+                f"{data_dir}/{l_name}.csv"
             )
 
     @staticmethod
@@ -46,7 +45,7 @@ class MultiNode2VecKMeans:  # TODO: even if it's not necessary, consider modifyi
                 f"Couldn't find multi_node2vec sources - {candidate_path} doesn't exits!"
             )
         return str(candidate_path)
-    
+
     @staticmethod
     def get_dim_size(network: nd.MultilayerNetworkTorch) -> float:
         """A simple heuristic that sets embedding dimension as a sqrt of number of nodes."""
@@ -72,7 +71,10 @@ class MultiNode2VecKMeans:  # TODO: even if it's not necessary, consider modifyi
             remove=True,
             detach=True,
             environment=[f"PYTHONHASHSEED={self.mn2v_pms['random_state']}"],
-            volumes=[f"{multi_node2vec_src_path}:/app", f"{data_dir}:{self.docker_io_dir}"],
+            volumes=[
+                f"{multi_node2vec_src_path}:/app",
+                f"{data_dir}:{self.docker_io_dir}",
+            ],
             platform=self.docker_platform,
             command=cmd_python,
         )

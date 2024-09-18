@@ -5,7 +5,9 @@ from torch import Tensor
 from torch.fx import Proxy
 from torch.nn import ModuleList
 from torch_geometric.nn.conv import GATConv
+
 from src.infmax_models.base.base import BaseHeteroModule
+
 
 class GATHeteroGNN(BaseHeteroModule):
     def __init__(
@@ -50,6 +52,9 @@ class GATHeteroGNN(BaseHeteroModule):
         for layer in self.layers[:-1]:
             x_dict = F.relu(layer(x=x_dict, edge_index=edge_index_dict))
 
-        x = self.layers[-1](x=x_dict, edge_index=edge_index_dict,)
+        x = self.layers[-1](
+            x=x_dict,
+            edge_index=edge_index_dict,
+        )
 
         return x

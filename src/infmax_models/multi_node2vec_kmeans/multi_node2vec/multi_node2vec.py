@@ -19,8 +19,8 @@ Questions or Bugs? Contact James D. Wilson at jdwilson4@usfca.edu
 import os
 import time
 
-from src.cli_args import parse_args
 import src as mltn2v
+from src.cli_args import parse_args
 
 
 def main(args):
@@ -29,32 +29,41 @@ def main(args):
     # PARSE LAYERS -- THRESHOLD & CONVERT TO BINARY
     layers = mltn2v.timed_invoke(
         "parsing network layers",
-        lambda: mltn2v.parse_matrix_layers(args.dir, binary=True, thresh=args.thresh)
+        lambda: mltn2v.parse_matrix_layers(args.dir, binary=True, thresh=args.thresh),
     )
 
     # check if layers were parsed
     if not layers:
         print("Whoops!")
         return
-    
+
     # EXTRACT NEIGHBORHOODS
     nbrhd_dict = mltn2v.timed_invoke(
         "extracting neighborhoods",
         lambda: mltn2v.extract_neighborhoods_walk(
             layers, args.walk_length, [args.rvals], args.pvals, args.qvals
-        )
+        ),
     )
 
     # GENERATE FEATURES
     out = mltn2v.clean_output(args.output)
-    out_path = os.path.join(out, "mltn2v_results") 
+    out_path = os.path.join(out, "mltn2v_results")
     mltn2v.timed_invoke(
         "generating features",
         lambda: mltn2v.generate_features(
-            nbrhd_dict[args.rvals], args.d, out_path, nbrhd_size=args.window_size, w2v_iter=1, workers=args.w2v_workers
-        )
+            nbrhd_dict[args.rvals],
+            args.d,
+            out_path,
+            nbrhd_size=args.window_size,
+            w2v_iter=1,
+            workers=args.w2v_workers,
+        ),
     )
-    print("Completed Multilayer Network Embedding for r=" + str(args.rvals) + " in {:.2f} secs.\nSee results:".format(time.time() - start))
+    print(
+        "Completed Multilayer Network Embedding for r="
+        + str(args.rvals)
+        + " in {:.2f} secs.\nSee results:".format(time.time() - start)
+    )
     print("\t" + out_path + ".csv")
 
 

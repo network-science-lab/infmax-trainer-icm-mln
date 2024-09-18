@@ -18,7 +18,13 @@ def load_config(
 
     return config
 
+
 from src import CONFIGS_PATH
 
+
 def get_available_configs() -> list[str]:
-    return [config_path.stem for config_path in CONFIGS_PATH.iterdir() if config_path.stem != "hydra"]
+    return [
+        config_path.stem
+        for config_path in CONFIGS_PATH.iterdir()
+        if config_path.stem != "hydra"
+    ]

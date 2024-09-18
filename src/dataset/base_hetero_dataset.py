@@ -3,8 +3,9 @@ from typing import Callable
 from torch_geometric.data import Dataset, HeteroData
 from torch_geometric.typing import EdgeType, NodeType
 
-from src.utils.multilayer_network import MultilayerNetworkInfo
 from src.hetero_data.hetero_data import LightningHeteroData
+from src.utils.multilayer_network import MultilayerNetworkInfo
+
 
 class BaseHeteroDataset(Dataset):
     r"""Base Dataset class for creating graph datasets based on hetero data.
@@ -30,6 +31,7 @@ class BaseHeteroDataset(Dataset):
             boolean value, indicating whether the data object should be
             included in the final dataset. (default: :obj:`None`)
     """
+
     def __init__(
         self,
         root: str,

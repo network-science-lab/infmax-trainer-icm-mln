@@ -6,8 +6,8 @@ from torch_geometric.typing import EdgeType, NodeType
 from _data_set.nsl_data_utils.loaders.net_loader import load_network
 from _data_set.nsl_data_utils.loaders.sp_loader import load_sp
 from src import MODULE_PATH
-from src.dataset.data_frame_hetero_dataset import DataFrameHeteroDataset
 from src.dataset.base_hetero_dataset import BaseHeteroDataset
+from src.dataset.data_frame_hetero_dataset import DataFrameHeteroDataset
 from src.utils.multilayer_network import MultilayerNetworkInfo
 from src.utils.worker import get_num_workers
 
@@ -38,7 +38,7 @@ def _get_dataset(
                 input_dim=input_dim,
                 output_dim=output_dim,
             )
-            
+
         case _:
             raise AttributeError(f"Unknown dataset: {data_name}")
 

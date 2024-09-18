@@ -4,6 +4,7 @@ from network_diffusion.mln import MultilayerNetworkTorch
 from network_diffusion.mln.mlnetwork import MultilayerNetwork
 from pandas import DataFrame
 
+
 # TODO: ENABLE output_label_name AS LIST
 @dataclass
 class MultilayerNetworkInfo:

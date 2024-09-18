@@ -3,18 +3,17 @@
 import pathlib
 import warnings
 
-from matplotlib.patches import Ellipse
-from matplotlib.axes import Axes
-from sklearn.cluster import KMeans
-from sklearn.metrics import pairwise_distances_argmin_min, silhouette_score
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from matplotlib.axes import Axes
+from matplotlib.patches import Ellipse
+from sklearn.cluster import KMeans
+from sklearn.metrics import pairwise_distances_argmin_min, silhouette_score
 
 
 def get_closest_vec_to_X(
-        coords: np.ndarray, labels: np.ndarray, X: np.ndarray
+    coords: np.ndarray, labels: np.ndarray, X: np.ndarray
 ) -> tuple[np.ndarray, np.ndarray]:
     """
     Return ID of the closest point to gixen X in the euclidean space.
@@ -28,7 +27,7 @@ def get_closest_vec_to_X(
     return labels[seg_seed_id], coords[seg_seed_id]
 
 
-def highlight_cluster(ax: Axes, points: np.ndarray, padding: float=0.03) -> None:
+def highlight_cluster(ax: Axes, points: np.ndarray, padding: float = 0.03) -> None:
     """Draw ellipse around given cluster."""
     if len(points) == 1:
         centre = points[0]
@@ -36,23 +35,24 @@ def highlight_cluster(ax: Axes, points: np.ndarray, padding: float=0.03) -> None
         height = padding
     else:
         centre = points.mean(axis=0)
-        distances = np.sqrt(np.sum((points - centre)**2, axis=1))
+        distances = np.sqrt(np.sum((points - centre) ** 2, axis=1))
         max_distance = np.max(distances)
         adaptive_padding = padding * max_distance
         width = 2 * (np.max(points[:, 0] - np.min(points[:, 0])) + adaptive_padding)
         height = 2 * (np.max(points[:, 1] - np.min(points[:, 1])) + adaptive_padding)
-    ell = Ellipse(xy=centre, width=width, height=height, edgecolor="red", facecolor="none")
+    ell = Ellipse(
+        xy=centre, width=width, height=height, edgecolor="red", facecolor="none"
+    )
     ax.add_patch(ell)
 
 
 class KMeansSeedSelector:
-
     def __init__(
         self,
         emb_path: pathlib.Path,
         nb_seeds: int,
         random_state: int = 42,
-        experiment_name: str = "experiment"
+        experiment_name: str = "experiment",
     ) -> None:
         """
         Initialise the object.
@@ -69,7 +69,7 @@ class KMeansSeedSelector:
         self.random_state = random_state
         self.experiment_name = experiment_name
         self._emb_ids, self._emb_vectors = self.parse_embeddings(emb_path)
-    
+
     @staticmethod
     def parse_embeddings(emb_path: pathlib.Path) -> tuple[np.ndarray, np.ndarray]:
         """
@@ -81,7 +81,9 @@ class KMeansSeedSelector:
         embeddings = pd.read_csv(emb_path, header=None)
         emb_ids = embeddings.to_numpy()[:, 0]
         if len(np.unique(emb_ids)) != len(emb_ids):
-            raise ValueError("IDs of actors should be unique - sth is wrong with embeddings!")
+            raise ValueError(
+                "IDs of actors should be unique - sth is wrong with embeddings!"
+            )
         emb_vectors = embeddings.to_numpy()[:, 1:]
         return emb_ids, emb_vectors
 
@@ -100,7 +102,9 @@ class KMeansSeedSelector:
         return kmeans
 
     @staticmethod
-    def extract_seeds(kmeans: KMeans, emb_vectors: np.ndarray, emb_labels: np.ndarray) -> list[int]:
+    def extract_seeds(
+        kmeans: KMeans, emb_vectors: np.ndarray, emb_labels: np.ndarray
+    ) -> list[int]:
         """
         Basing on k-means division extract the most central points.
 
@@ -116,9 +120,8 @@ class KMeansSeedSelector:
         seeds_coords = []
 
         for cluster in np.unique(kmeans.labels_):
-
-            cluster_vectors = emb_vectors[kmeans.labels_==cluster]
-            cluster_labels = emb_labels[kmeans.labels_==cluster]
+            cluster_vectors = emb_vectors[kmeans.labels_ == cluster]
+            cluster_labels = emb_labels[kmeans.labels_ == cluster]
             cluster_centre = kmeans.cluster_centers_[cluster, :][np.newaxis, :]
 
             custer_seed_id, cluster_seed_coords = get_closest_vec_to_X(
@@ -136,34 +139,40 @@ class KMeansSeedSelector:
     def _visualise(self, seeds_ids: list[int], kmeans: KMeans) -> None:
         """Plot a visualisaiton of the division."""
         if self._emb_vectors.shape[-1] > 2:
-            warnings.warn("Visualisation is available only for 2D space!\n", stacklevel=10)
+            warnings.warn(
+                "Visualisation is available only for 2D space!\n", stacklevel=10
+            )
             return
         fig, ax = plt.subplots(nrows=1, ncols=1)
-        ax.scatter( # plot embedded actors
+        ax.scatter(  # plot embedded actors
             x=self._emb_vectors[:, 0],
             y=self._emb_vectors[:, 1],
             color="green",
             s=20,
             label="actors",
         )
-        for x, y, s in zip(self._emb_vectors[:, 0]+0.01, self._emb_vectors[:, 1]+0.01, self._emb_ids):
+        for x, y, s in zip(
+            self._emb_vectors[:, 0] + 0.01,
+            self._emb_vectors[:, 1] + 0.01,
+            self._emb_ids,
+        ):
             ax.text(x=x, y=y, s=s)
-        ax.scatter( # plot centroids
+        ax.scatter(  # plot centroids
             x=kmeans.cluster_centers_[:, 0],
             y=kmeans.cluster_centers_[:, 1],
             color="red",
             s=8,
             label="centroids",
         )
-        ax.scatter( # mark seeds
+        ax.scatter(  # mark seeds
             x=self._emb_vectors[seeds_ids, :][:, 0],
             y=self._emb_vectors[seeds_ids, :][:, 1],
             color="yellow",
             s=8,
-            label="seeds"
+            label="seeds",
         )
         for cluster in kmeans.labels_:
-            points = self._emb_vectors[kmeans.labels_==cluster]
+            points = self._emb_vectors[kmeans.labels_ == cluster]
             highlight_cluster(ax, points)
         ax.legend()
         fig.set_size_inches(6, 6)
@@ -175,22 +184,27 @@ class KMeansSeedSelector:
 
     def __call__(self, visualise: bool = False) -> list[int]:
         """Select seeds from given embedded nodes."""
-        kmeans = self.clusterise(x=self._emb_vectors, nb_clusters=self.nb_seeds, random_state=self.random_state)
-        seeds = self.extract_seeds(kmeans=kmeans, emb_vectors=self._emb_vectors, emb_labels=self._emb_ids)
+        kmeans = self.clusterise(
+            x=self._emb_vectors,
+            nb_clusters=self.nb_seeds,
+            random_state=self.random_state,
+        )
+        seeds = self.extract_seeds(
+            kmeans=kmeans, emb_vectors=self._emb_vectors, emb_labels=self._emb_ids
+        )
         if visualise:
             self._visualise(seeds_ids=seeds, kmeans=kmeans)
         return seeds
 
 
 class KMeansAutoSeedSelector(KMeansSeedSelector):
-
     def __init__(
         self,
         emb_path: pathlib.Path,
         nb_seeds: int,
         max_nb_clusters: int,
         random_state: int = 42,
-        experiment_name: str = "experiment"
+        experiment_name: str = "experiment",
     ) -> None:
         """
         Initialise the object.
@@ -215,7 +229,7 @@ class KMeansAutoSeedSelector(KMeansSeedSelector):
             silhouette_coefficients,
             color="green",
             marker=".",
-            linestyle='-',
+            linestyle="-",
         )
         ax.set_xlabel("Number of clusters")
         ax.set_ylabel("Silhouette Coefficient")
@@ -242,18 +256,21 @@ class KMeansAutoSeedSelector(KMeansSeedSelector):
         cluster_oder = self.sort_clusters(kmeans)
         avail_vectors = np.copy(self._emb_vectors)  # coords of vectors
         avail_ids = np.copy(self._emb_ids)  # ids of vectors i.e. nodes' names
-        avail_labels = np.copy(kmeans.labels_)  # vectors' labels i.e. clusters they are assigned to
+        avail_labels = np.copy(
+            kmeans.labels_
+        )  # vectors' labels i.e. clusters they are assigned to
 
         while len(seeds_ids) < self.nb_seeds:
             for segment in cluster_oder:
-
                 # get vectors tht were assigned to this segment and the centre
-                segment_vectors = avail_vectors[avail_labels==segment]
-                segment_labels = avail_ids[avail_labels==segment]
+                segment_vectors = avail_vectors[avail_labels == segment]
+                segment_labels = avail_ids[avail_labels == segment]
                 segment_centre = kmeans.cluster_centers_[segment, :][np.newaxis, :]
 
                 # find a vector that is closest to the centre of the segment
-                seed_id, _ = get_closest_vec_to_X(segment_vectors, segment_labels, segment_centre)
+                seed_id, _ = get_closest_vec_to_X(
+                    segment_vectors, segment_labels, segment_centre
+                )
                 seeds_ids.append(seed_id)
                 if len(seeds_ids) >= self.nb_seeds:
                     break

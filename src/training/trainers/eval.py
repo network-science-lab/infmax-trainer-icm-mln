@@ -1,12 +1,14 @@
 """Functions to help in evaluating performance of a given seed set."""
 
 from typing import Any, Literal
+
 import network_diffusion as nd
+import pandas as pd
 
 from _data_set.nsl_data_utils.loaders.net_loader import load_network
 from _data_set.nsl_data_utils.loaders.sp_loader import get_gt_data
-from _data_set.nsl_data_utils.models.torch_model import TorchMICModel, TorchMICSimulator
-import pandas as pd
+from _data_set.nsl_data_utils.models.torch_model import (TorchMICModel,
+                                                         TorchMICSimulator)
 
 
 def evaluate_seed_set(
@@ -21,14 +23,15 @@ def evaluate_seed_set(
     results = []
     for _ in range(n_repetitions):
         micm = TorchMICModel(protocol=protocol, probability=probability)
-        simulator = TorchMICSimulator(model=micm, net=net, n_steps=n_steps, seed_set=seed_set)
+        simulator = TorchMICSimulator(
+            model=micm, net=net, n_steps=n_steps, seed_set=seed_set
+        )
         result = simulator.perform_propagation()
         results.append(result)
     return pd.DataFrame(results)
 
 
 if __name__ == "__main__":
-
     from _data_set.infmax_data_utils.loaders.constants import *
 
     net_name = TOY_NETWORK
