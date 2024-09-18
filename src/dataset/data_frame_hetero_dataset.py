@@ -1,16 +1,41 @@
 from typing import Callable
 
-import numpy as np
-from sklearn.preprocessing import KBinsDiscretizer
-from torch import tensor, zeros
 from torch_geometric.data import Dataset, HeteroData
 from torch_geometric.typing import EdgeType, NodeType
 
-from src.hetero_data.hetero_data import LightningHeteroData
 from src.utils.multilayer_network import MultilayerNetworkInfo
+from src.hetero_data.hetero_data import LightningHeteroData
 
-
+# TODO: Discuss what experiments we want to conduct and specify code for that
 class DataFrameHeteroDataset(Dataset):
+    r"""Dataset class for creating graph datasets based on hetero data.
+
+    Args:
+        networks (list[MultilayerNetworkInfo]): List of objects containing 
+            information for creating hetero data.
+        input_dim (int): Size of features for h0 vector.
+        output_dim (int): Number of output classes created during 
+            discretization.
+        root (str, optional): Root directory where the dataset should be saved.
+            (optional: :obj:`None`)
+        transform (callable, optional): A function/transform that takes in a
+            :class:`~torch_geometric.data.Data` or
+            :class:`~torch_geometric.data.HeteroData` object and returns a
+            transformed version.
+            The data object will be transformed before every access.
+            (default: :obj:`None`)
+        pre_transform (callable, optional): A function/transform that takes in
+            a :class:`~torch_geometric.data.Data` or
+            :class:`~torch_geometric.data.HeteroData` object and returns a
+            transformed version.
+            The data object will be transformed before being saved to disk.
+            (default: :obj:`None`)
+        pre_filter (callable, optional): A function that takes in a
+            :class:`~torch_geometric.data.Data` or
+            :class:`~torch_geometric.data.HeteroData` object and returns a
+            boolean value, indicating whether the data object should be
+            included in the final dataset. (default: :obj:`None`)
+    """
     def __init__(
         self,
         networks: list[MultilayerNetworkInfo],
@@ -18,61 +43,27 @@ class DataFrameHeteroDataset(Dataset):
         output_dim: int,
         root: str,
         transform: Callable | None = None,
+        pre_filter: Callable | None = None,
         pre_transform: Callable | None = None,
     ) -> None:
         super().__init__(
             root=root,
             transform=transform,
             pre_transform=pre_transform,
+            pre_filter=pre_filter,
         )
 
         self._input_dim = input_dim
         self._output_dim = output_dim
 
         self.data_list = [
-            self._network_to_hetero_data(
-                network_info=network_info,
+            LightningHeteroData.from_network_info(
+                network_info=network_info, 
+                output_dim=output_dim, 
+                input_dim=input_dim,
             )
             for network_info in networks
         ]
-
-    def _network_to_hetero_data(
-        self, network_info: MultilayerNetworkInfo
-    ) -> LightningHeteroData:
-        network = network_info.network
-        df = (
-            network_info.output_df[["actor", network_info.label_name]]
-            .groupby(["actor"])
-            .mean()
-            .reset_index()
-        )
-
-        est = KBinsDiscretizer(
-            n_bins=self._output_dim,
-            encode="ordinal",
-            strategy="kmeans",
-        )
-        labels = est.fit_transform(np.array(df[network_info.label_name]).reshape(-1, 1))
-        labels = tensor(labels.reshape(1, -1))[0].long()
-
-        data = LightningHeteroData()
-        data[network_info.network_name].x = zeros(
-            (len(network.actors_map), self._input_dim)
-        )
-        data[network_info.network_name].y = labels
-
-        for idx, layer in enumerate(network.layers_order):
-            layer_edge_indexes = network.adjacency_tensor.indices()[
-                :, network.adjacency_tensor.indices()[0] == idx
-            ][1:]
-            # Recommended for hetero data to use onlu letters, numbers and '_'
-            layer = layer.replace("-", "_")
-
-            data[
-                network_info.network_name, layer, network_info.network_name
-            ].edge_index = layer_edge_indexes
-
-        return data
 
     def len(self) -> int:
         return len(self.data_list)

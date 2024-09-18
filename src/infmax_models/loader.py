@@ -3,20 +3,20 @@ from typing import Any, Callable
 from src.infmax_models.multi_node2vec_kmeans import MultiNode2VecKMeans, MultiNode2VecKMeansAuto
 from src.infmax_models.hetero_gat_conv import GATHeteroGNN
 
-def load_model(config: dict[str, Any], train_config: dict[str, Any] | None = None,) -> Callable:
+def load_model(config: dict[str, Any]) -> Callable:
     """Load and initialize infmax model."""
     model_name = config["model"]["name"]
     model_params = config["model"]["parameters"]
 
     match model_name:
-        case "MultiNode2VecKMeans":
-            model_params["k_means"]["nb_seeds"] = train_config["seed_size"]
+        case MultiNode2VecKMeans.__name__:
+            model_params["k_means"]["nb_seeds"] = config["train"]["seed_size"]
             model_params["k_means"]["random_state"] = config["base"]["random_seed"]
             model_params["multi_node2vec"]["random_state"] = config["base"]["random_seed"]
             return MultiNode2VecKMeans(**model_params)
 
-        case "MultiNode2VecKMeansAuto":
-            model_params["k_means"]["nb_seeds"] = train_config["seed_size"]
+        case MultiNode2VecKMeansAuto.__name__:
+            model_params["k_means"]["nb_seeds"] = config["train"]["seed_size"]
             model_params["k_means"]["random_state"] = config["base"]["random_seed"]
             model_params["multi_node2vec"]["random_state"] = config["base"]["random_seed"]
             return MultiNode2VecKMeansAuto(**model_params)

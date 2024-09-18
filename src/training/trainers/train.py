@@ -24,20 +24,22 @@ from src.infmax_models.loader import load_model
 from src.training.callbacks import get_callbacks
 from src.training.loggers import get_loggers
 from src.wrapper.hetero import HetergoGNN_WrapperConfig, HeteroGNN_Wrapper
+from src.utils.multilayer_network import MultilayerNetworkInfo
 
-@dataclass(frozen=True)
-class Network:
-    name: str
-    graph: nd.MultilayerNetwork | nd.MultilayerNetworkTorch
 
-# TODO: for now it's just a mock. we have to implement a real training pipeline
+# TODO: prepare unified pipeline for directly/indirectly trainable method with common interface for invocation and inference
 
 def indirectly_trainable(args: dict[str, Any]) -> None:
     # load dataset
-    networks = [Network(n, load_network(net_name=n, as_tensor=True)) for n in args["networks"]]
+    networks = [MultilayerNetworkInfo(
+            network_name=n, 
+            network=load_network(net_name=n, as_tensor=True),
+            output_label_name=None,
+            spreading_potential=None,
+        ) for n in args["networks"]]
 
     # load model
-    model = load_model(config=args, train_config=args["train"],)
+    model = load_model(config=args)
 
     # capture parameters of spreading regime
     proto = args["spreading_regime"]["protocol"]
@@ -47,11 +49,11 @@ def indirectly_trainable(args: dict[str, Any]) -> None:
     seed_size = args["train"]["seed_size"]
 
     for net in networks:
-        print(f"Dataset: {net.name}")
+        print(f"Dataset: {net.network_name}")
 
-        pred_seeds = model(network=net.graph)
+        pred_seeds = model(network=net.network)
         pred_performance = evaluate_seed_set(
-            net=net.graph,
+            net=net.network,
             seed_set=pred_seeds,
             protocol=proto,
             probability=p,
@@ -61,9 +63,9 @@ def indirectly_trainable(args: dict[str, Any]) -> None:
         print(f"Predicted seed set: {pred_seeds}")
         print(f"{pred_performance.mean()}\n")
 
-        ref_seeds = get_gt_data(net.name, proto, p, seed_size)
+        ref_seeds = get_gt_data(net.network_name, proto, p, seed_size)
         ref_performance = evaluate_seed_set(
-            net=net.graph,
+            net=net.network,
             seed_set=ref_seeds,
             protocol=proto,
             probability=p,
@@ -86,7 +88,6 @@ def directly_trainable(args: dict[str, Any]) -> None:
             learning_rate=args["training"]["learning_rate"],
             aggr=args["model"]["aggr"],
             metadata=get_metadata(datasets.values()),
-            is_hetero=args["model"]["is_hetero"],
             device="cuda" if torch.cuda.is_available() else "cpu",
         ),
     )

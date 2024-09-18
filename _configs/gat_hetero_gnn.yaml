@@ -16,7 +16,6 @@ data:
 model:
   name: GATHeteroGNN
   aggr: sum
-  is_hetero: False
   parameters:
     input_dim: 2   # Input dimensionf of the first layer
     output_dim: 2     # Output dimension of the last layer

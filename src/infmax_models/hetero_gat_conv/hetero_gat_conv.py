@@ -3,11 +3,11 @@ from typing import Any
 import torch.nn.functional as F
 from torch import Tensor
 from torch.fx import Proxy
-from torch.nn import Module, ModuleList
+from torch.nn import ModuleList
 from torch_geometric.nn.conv import GATConv
+from src.infmax_models.base.base import BaseHeteroModule
 
-
-class GATHeteroGNN(Module):
+class GATHeteroGNN(BaseHeteroModule):
     def __init__(
         self,
         num_layers: int,
@@ -15,7 +15,7 @@ class GATHeteroGNN(Module):
         output_dim: int,
         params: list[dict[str, Any]],
     ) -> None:
-        super().__init__()
+        super().__init__(is_hetero=False)
         self.layers = ModuleList()
         self.layers.append(
             GATConv(
@@ -50,6 +50,6 @@ class GATHeteroGNN(Module):
         for layer in self.layers[:-1]:
             x_dict = F.relu(layer(x=x_dict, edge_index=edge_index_dict))
 
-        x = self.layers[-1](x=x_dict, edge_index=edge_index_dict)
+        x = self.layers[-1](x=x_dict, edge_index=edge_index_dict,)
 
-        return F.log_softmax(x, dim=1)
+        return x

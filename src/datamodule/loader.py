@@ -25,8 +25,8 @@ def _get_dataset(
                     net_name=network_config["name"],
                     as_tensor=False,
                 ),
-                label_name=label,
-                output_df=load_sp(network_config["name"]),
+                output_label_name=label,
+                spreading_potential=load_sp(network_config["name"]),
                 network_name=network_config["name"],
             )
             for network_config in networks_config
@@ -79,16 +79,13 @@ def get_datamodule(
 def get_metadata(
     datasets: list[DataFrameHeteroDataset],
 ) -> tuple[list[NodeType], list[EdgeType]]:
-    nodes_data = []
-    edges_data = []
+    nodes_data = set()
+    edges_data = set()
 
     for dataset in datasets:
         node_data, edge_data = dataset.get_metadata()
 
-        nodes_data.extend(node_data)
-        edges_data.extend(edge_data)
+        nodes_data = nodes_data.union(node_data)
+        edges_data = edges_data.union(edge_data)
 
-    nodes_data = list(set(nodes_data))
-    edges_data = list(set(edges_data))
-
-    return nodes_data, edges_data
+    return list(nodes_data), list(edges_data)
