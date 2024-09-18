@@ -5,9 +5,10 @@ from torch_geometric.typing import EdgeType, NodeType
 
 from src.utils.multilayer_network import MultilayerNetworkInfo
 from src.hetero_data.hetero_data import LightningHeteroData
+from src.dataset.base_hetero_dataset import BaseHeteroDataset
 
 # TODO: Discuss what experiments we want to conduct and specify code for that
-class DataFrameHeteroDataset(Dataset):
+class DataFrameHeteroDataset(BaseHeteroDataset):
     r"""Dataset class for creating graph datasets based on hetero data.
 
     Args:
@@ -70,13 +71,3 @@ class DataFrameHeteroDataset(Dataset):
 
     def get(self, idx) -> HeteroData:
         return self.data_list[idx]
-
-    def get_metadata(self) -> tuple[list[NodeType], list[EdgeType]]:
-        nodes_data = []
-        edges_data = []
-        for data in self.data_list:
-            node_data, edge_data = data.metadata()
-            nodes_data.extend(node_data)
-            edges_data.extend(edge_data)
-
-        return nodes_data, edges_data

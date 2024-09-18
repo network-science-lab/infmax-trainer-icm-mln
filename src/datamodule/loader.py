@@ -7,49 +7,59 @@ from _data_set.nsl_data_utils.loaders.net_loader import load_network
 from _data_set.nsl_data_utils.loaders.sp_loader import load_sp
 from src import MODULE_PATH
 from src.dataset.data_frame_hetero_dataset import DataFrameHeteroDataset
+from src.dataset.base_hetero_dataset import BaseHeteroDataset
 from src.utils.multilayer_network import MultilayerNetworkInfo
 from src.utils.worker import get_num_workers
 
 
 def _get_dataset(
+    data_name: str,
     networks_config: list[dict[str, Any]],
     label: str,
     input_dim: int,
     output_dim: int,
-) -> DataFrameHeteroDataset:
-    return DataFrameHeteroDataset(
-        root=str(MODULE_PATH.parent / "data"),
-        networks=[
-            MultilayerNetworkInfo(
-                network=load_network(
-                    net_name=network_config["name"],
-                    as_tensor=False,
-                ),
-                output_label_name=label,
-                spreading_potential=load_sp(network_config["name"]),
-                network_name=network_config["name"],
+) -> BaseHeteroDataset:
+    match data_name:
+        case DataFrameHeteroDataset.__name__:
+            return DataFrameHeteroDataset(
+                root=str(MODULE_PATH.parent / "data"),
+                networks=[
+                    MultilayerNetworkInfo(
+                        network=load_network(
+                            net_name=network_config["name"],
+                            as_tensor=False,
+                        ),
+                        output_label_name=label,
+                        spreading_potential=load_sp(network_config["name"]),
+                        network_name=network_config["name"],
+                    )
+                    for network_config in networks_config
+                ],
+                input_dim=input_dim,
+                output_dim=output_dim,
             )
-            for network_config in networks_config
-        ],
-        input_dim=input_dim,
-        output_dim=output_dim,
-    )
+            
+        case _:
+            raise AttributeError(f"Unknown dataset: {data_name}")
 
 
-def get_datasets(config: dict[str, Any]) -> dict[str, DataFrameHeteroDataset]:
+def get_datasets(config: dict[str, Any]) -> dict[str, BaseHeteroDataset]:
     train_dataset = _get_dataset(
+        data_name=config["data"]["name"],
         networks_config=config["data"]["train_networks"],
         label=config["data"]["label_name"],
         input_dim=config["model"]["parameters"]["input_dim"],
         output_dim=config["model"]["parameters"]["output_dim"],
     )
     val_dataset = _get_dataset(
+        data_name=config["data"]["name"],
         networks_config=config["data"]["val_dataset"],
         label=config["data"]["label_name"],
         input_dim=config["model"]["parameters"]["input_dim"],
         output_dim=config["model"]["parameters"]["output_dim"],
     )
     test_dataset = _get_dataset(
+        data_name=config["data"]["name"],
         networks_config=config["data"]["test_dataset"],
         label=config["data"]["label_name"],
         input_dim=config["model"]["parameters"]["input_dim"],
@@ -64,7 +74,7 @@ def get_datasets(config: dict[str, Any]) -> dict[str, DataFrameHeteroDataset]:
 
 
 def get_datamodule(
-    datasets: dict[str, DataFrameHeteroDataset],
+    datasets: dict[str, BaseHeteroDataset],
     config: dict[str, Any],
 ) -> LightningDataset:
     return LightningDataset(
@@ -77,7 +87,7 @@ def get_datamodule(
 
 
 def get_metadata(
-    datasets: list[DataFrameHeteroDataset],
+    datasets: list[BaseHeteroDataset],
 ) -> tuple[list[NodeType], list[EdgeType]]:
     nodes_data = set()
     edges_data = set()

@@ -2,6 +2,7 @@ base:
   random_seed: 43
   
 data:
+  name: DataFrameHeteroDataset
   num_workers: -1
   real_batch_size: 1
   label_name: exposed
@@ -31,6 +32,7 @@ model:
         dropout: 0.6
 
 training:
+  loss_name: CrossEntropyLoss # Depends on output_dim
   max_epochs: 2
   learning_rate: 0.01
   loggers:

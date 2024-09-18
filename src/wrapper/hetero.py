@@ -7,9 +7,11 @@ import torch
 from torch_geometric.data.batch import Batch
 from torch_geometric.nn import to_hetero
 from src.infmax_models.base.base import BaseHeteroModule
+from src.utils.wrapper import get_loss
 
 @dataclass
 class HetergoGNN_WrapperConfig:
+    loss_name: str
     learning_rate: float
     aggr: str
     metadata: tuple
@@ -30,7 +32,7 @@ class HeteroGNN_Wrapper(pl.LightningModule):
                 metadata=self._config.metadata,
                 aggr=self._config.aggr,
             )
-        self._loss = torch.nn.CrossEntropyLoss()
+        self._loss = get_loss(config.loss_name)
 
         self.test_preds = {
             "trues": [],

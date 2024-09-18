@@ -2,10 +2,10 @@ from typing import Iterable
 
 from torch_geometric.data import HeteroData
 from src.utils.multilayer_network import MultilayerNetworkInfo
-from torch import tensor, zeros, long
+from torch import tensor, zeros, long, Tensor, float32
 from sklearn.preprocessing import KBinsDiscretizer
 from typing_extensions import Self
-import numpy as np
+from pandas import DataFrame
 
 class LightningHeteroData(HeteroData):
     def __iter__(self) -> Iterable:
@@ -26,20 +26,12 @@ class LightningHeteroData(HeteroData):
             .mean()
             .reset_index()
         )
-
-        est = KBinsDiscretizer(
-            n_bins=output_dim,
-            encode="ordinal",
-            strategy="kmeans",
-        )
-        labels = est.fit_transform(df[network_info.output_label_name].values.reshape(-1, 1))
-        labels = tensor(labels.squeeze(), dtype=long)
-
+        
         data = HeteroData()
         data["actor"].x = zeros(
             (len(network.actors_map), input_dim)
         )
-        data["actor"].y = labels
+        data["actor"].y = cls._prepare_labels(output_dim=output_dim, network_info=network_info, df=df,)
 
         for idx, _ in enumerate(network.layers_order):
             layer_edge_indexes = network.adjacency_tensor[idx, ...].coalesce().indices()
@@ -49,4 +41,24 @@ class LightningHeteroData(HeteroData):
             ].edge_index = layer_edge_indexes
 
         return data
+    
+    @staticmethod
+    def _prepare_labels(output_dim: int, network_info: MultilayerNetworkInfo, df: DataFrame,) -> Tensor:
+        match output_dim:
+            case 0:
+                raise AttributeError(f"Output dimmension must be greater than 0: {output_dim}")
+            
+            case 1:
+                labels = tensor(df[network_info.output_label_name].values.reshape(-1, 1), dtype=float32)
+                
+            case _:
+                est = KBinsDiscretizer(
+                    n_bins=output_dim,
+                    encode="ordinal",
+                    strategy="kmeans",
+                )
+                labels = est.fit_transform(df[network_info.output_label_name].values.reshape(-1, 1))
+                labels = tensor(labels.squeeze(), dtype=long)
+        
+        return labels
     
