@@ -9,6 +9,10 @@ def get_callbacks(config: dict[str, Any]) -> list[callbacks.Callback]:
 
     for callback_config in config["training"]["callbacks"]:
         match callback_config["name"]:
+            case "model_summary":
+                result.append(
+                    callbacks.ModelSummary(max_depth=callback_config["max_depth"])
+                )
             case "model_checkpoint":
                 result.append(
                     callbacks.ModelCheckpoint(

@@ -33,11 +33,18 @@ model:
 
 training:
   loss_name: CrossEntropyLoss # Depends on output_dim
-  max_epochs: 2
+  max_epochs: 10
   learning_rate: 0.01
   loggers:
     - name: tensor_board
+    - name: neptune
+      model_summary_max_depth: -1
+      tags:
+        - name: training
+        - name: gnn
   callbacks:
+   - name: model_summary
+     max_depth: -1
    - name: model_checkpoint
      mode: max
      save_last: True

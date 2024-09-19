@@ -3,14 +3,21 @@
 # TODO: consider adding runners and defaulf configs for each method
 # TODO: change print statements to logs
 import logging
+from pathlib import Path
 
 import hydra
+from dotenv import load_dotenv
 from omegaconf import DictConfig
 
 from src import CONFIGS_PATH
 from src.training.trainers.train import train
 from src.training.trainers.utils import set_seed
 from src.utils.config import get_available_configs, load_config
+
+load_dotenv(
+    dotenv_path=Path(__file__).parent / ".env",
+    override=True,
+)
 
 
 @hydra.main(
