@@ -40,7 +40,7 @@ class LightningHeteroData(HeteroData):
         for idx, _ in enumerate(network.layers_order):
             layer_edge_indexes = network.adjacency_tensor[idx, ...].coalesce().indices()
 
-            data["actor", f"{idx}_n", "actor"].edge_index = layer_edge_indexes
+            data["actor", f"n_{idx}", "actor"].edge_index = layer_edge_indexes
 
         return data
 
