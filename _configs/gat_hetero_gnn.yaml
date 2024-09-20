@@ -1,0 +1,62 @@
+base:
+  random_seed: 43
+  
+data:
+  name: DataFrameHeteroDataset
+  num_workers: -1
+  real_batch_size: 1
+  label_name: exposed
+  train_networks:
+    - name: lazega
+    - name: lazega
+  val_dataset:
+    - name: toy_network
+  test_dataset:
+    - name: lazega
+
+model:
+  name: GATHeteroGNN
+  aggr: sum
+  parameters:
+    input_dim: 2   # Input dimensionf of the first layer
+    output_dim: 2     # Output dimension of the last layer
+    num_layers: 3     # Number of GATConv layers
+    params:
+      - out_channels: 8
+        heads: 8
+        dropout: 0.6
+      - out_channels: 8
+        heads: 8
+        dropout: 0.6
+      - heads: 1
+        dropout: 0.6
+
+training:
+  loss_name: CrossEntropyLoss # Depends on output_dim
+  max_epochs: 10
+  learning_rate: 0.01
+  loggers:
+    - name: tensor_board
+    - name: neptune
+      model_summary_max_depth: -1
+      tags:
+        - name: training
+        - name: gnn
+  callbacks:
+   - name: model_summary
+     max_depth: -1
+   - name: model_checkpoint
+     mode: max
+     save_last: True
+     save_top_k: 1
+     verbose: True
+   - name: early_stopping
+     monitor: val_loss
+     mode: max
+     patience: 15
+   - name: gradient_accumulation_scheduler
+     gradient_scheduling: 8
+    #  gradient_scheduling: # Alternative
+    #    0: 8
+    #    5: 4
+    

@@ -2,36 +2,46 @@
 
 # TODO: consider adding runners and defaulf configs for each method
 # TODO: change print statements to logs
-import argparse
-import yaml
+import logging
+from pathlib import Path
 
-from trainers.utils import set_seed
+import hydra
+from dotenv import load_dotenv
+from omegaconf import DictConfig
+
+from src import CONFIGS_PATH
+from src.training.trainers.train import train
+from src.training.trainers.utils import set_seed
+from src.utils.config import get_available_configs, load_config
+
+load_dotenv(
+    dotenv_path=Path(__file__).parent / ".env",
+    override=True,
+)
 
 
-def parse_args(*args):
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "config",
-        help="Experiment config file (default: config.yaml).",
-        type=str,
+@hydra.main(
+    version_base=None,
+    config_path=str(CONFIGS_PATH),
+    config_name="hydra",
+)
+def main(cfg: DictConfig) -> None:
+    if cfg["experiment-config"] not in get_available_configs():
+        raise ValueError(
+            f"Invalid option: {cfg['experiment-config']}. Choose from {get_available_configs()}"
+        )
+
+    config = load_config(
+        cfg=cfg,
+        cofig_path=CONFIGS_PATH / f"{cfg['experiment-config']}.yaml",
     )
-    return parser.parse_args(*args)
+    if random_seed := config["base"].get("random_seed"):
+        logging.info(f"Setting randomness seed as {random_seed}!")
+        set_seed(config["base"]["random_seed"])
+
+    logging.info(f"Loaded config: {config}")
+    train(config)
 
 
 if __name__ == "__main__":
-
-    # uncomment for debugging
-    args = parse_args(["_configs/mn2vkma.yaml"])
-
-    # comment this line while debugging
-    # args = parse_args()
-
-    with open(args.config, "r", encoding="utf-8") as f:
-        config = yaml.safe_load(f)
-    if random_seed := config["train"].get("random_seed"):
-        print(f"Setting randomness seed as {random_seed}!")
-        set_seed(config["train"]["random_seed"])
-    print(f"Loaded config: {config}")
-
-    from trainers.train import train
-    train(config)
+    main()

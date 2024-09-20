@@ -1,3 +1,6 @@
+base:
+  random_seed: 43
+
 model:
   name: "MultiNode2VecKMeansAuto"
   parameters:
@@ -28,7 +31,6 @@ networks: [
 
 train:
   seed_size: 2
-  random_seed: 43
 
 spreading_regime:
   protocol: "OR"

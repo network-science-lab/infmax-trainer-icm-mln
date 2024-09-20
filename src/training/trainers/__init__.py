@@ -1,0 +1,3 @@
+TRAINABLE = [
+    "GATHeteroGNN",
+]
