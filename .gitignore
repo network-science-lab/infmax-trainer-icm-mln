@@ -1,3 +1,5 @@
+.env
+.neptune
 data
 _data_results
 results
