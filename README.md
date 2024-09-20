@@ -44,17 +44,17 @@ request to get  an access via  e-mail (michal.czuba@pwr.edu.pl). Then, simply ex
 ├── _configs                -> def. of the training configs
 ├── _data_set               -> evaluated networks
 ├── env                     -> a definition of the runtime environment
-├── src                     -> module with main implementation
+├── src                     -> a module with main implementation
 │   |── datamodule          -> code for converting datasets into datamodule
 │   |── dataset             -> implemented datasets for preparing HeteroData
-│   |── hetero_data         -> extension of HeteroData from torch_geometric
+│   |── hetero_data         -> an extension of HeteroData from torch_geometric
 │   |── infmax_models       -> implemented ML models for Influence Maximisation
 │   |── training            -> code related to training execution
 │   │   ├── trainers        -> scripts to train models according to provided configs
 │   │   ├── callbacks.py    -> allowed training callbacks defined in executed config
 │   │   └── loggers.py      -> allowed training loggers defined in executed config 
-│   |── utils               -> logic for helpers across whole repository
-│   └── wrapper             -> wrappers for trainable models implemented in torch
+│   |── utils               -> the logic for helpers across whole repository
+│   └── wrapper             -> the wrappers for trainable models implemented in torch
 ├── trainers                -> scripts to train models according to provided configs
 ├── README.md          
 └── run_experiments.py      -> main entrypoint to trigger the pipeline

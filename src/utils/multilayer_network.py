@@ -6,6 +6,8 @@ from pandas import DataFrame
 
 
 # TODO: ENABLE output_label_name AS LIST
+# TODO: ADD SPREADING PROTOCOL
+# TODO: ADD different feature generation
 @dataclass
 class MultilayerNetworkInfo:
     network: MultilayerNetwork | MultilayerNetworkTorch

@@ -10,6 +10,7 @@ from src.utils.multilayer_network import MultilayerNetworkInfo
 
 
 class LightningHeteroData(HeteroData):
+    # TODO: In case of need use the following code as a starter for iter function
     def __iter__(self) -> Iterable:
         for key in self.stores:
             yield key
