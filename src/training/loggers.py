@@ -25,10 +25,9 @@ def get_loggers(
                 )
             case "neptune":
                 logger = loggers.NeptuneLogger(
-                    api_key=(
-                        key
-                        if (key := os.getenv("NEPTUNE_API_KEY")) is not None
-                        else neptune.ANONYMOUS_API_TOKEN
+                    api_key=os.getenv(
+                        key="NEPTUNE_API_KEY",
+                        default=neptune.ANONYMOUS_API_TOKEN,
                     ),
                     project="infmax/infmax-gnn",
                     tags=[tag_config["name"] for tag_config in logger_config["tags"]],
