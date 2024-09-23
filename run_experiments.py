@@ -11,7 +11,7 @@ from omegaconf import DictConfig
 
 from src import CONFIGS_PATH
 from src.training.trainers.train import train
-from src.training.trainers.utils import set_seed
+from src.utils.seed import set_seed
 from src.utils.config import get_available_configs, load_config
 
 load_dotenv(

@@ -7,7 +7,9 @@ from torch_geometric.data import HeteroData
 from typing_extensions import Self
 
 from src.utils.multilayer_network import MultilayerNetworkInfo
-
+from _data_set.nsl_data_utils.loaders.constants import (
+    ACTOR, PROTOCOL
+)
 
 class LightningHeteroData(HeteroData):
     # TODO: In case of need use the following code as a starter for iter function
@@ -23,16 +25,25 @@ class LightningHeteroData(HeteroData):
         input_dim: int,
     ) -> Self:
         network = network_info.network
+        spreading_potential_columns = [ACTOR, PROTOCOL]
+        if isinstance(network_info.output_label_name, list):
+            spreading_potential_columns.extend(network_info.output_label_name) 
+        else:
+            spreading_potential_columns.append(network_info.output_label_name)
+            
+        df = network_info.spreading_potential[spreading_potential_columns]
+        df = df[df[PROTOCOL] == network_info.protocol].drop(PROTOCOL, axis=1)
         df = (
-            network_info.spreading_potential[["actor", network_info.output_label_name]]
-            .groupby(["actor"])
+            df
+            .groupby([ACTOR])
             .mean()
             .reset_index()
         )
 
         data = HeteroData()
-        data["actor"].x = zeros((len(network.actors_map), input_dim))
-        data["actor"].y = cls._prepare_labels(
+        # TODO: ADD different feature generation
+        data[ACTOR].x = zeros((len(network.actors_map), input_dim))
+        data[ACTOR].y = cls._prepare_labels(
             output_dim=output_dim,
             network_info=network_info,
             df=df,
@@ -41,7 +52,7 @@ class LightningHeteroData(HeteroData):
         for idx, _ in enumerate(network.layers_order):
             layer_edge_indexes = network.adjacency_tensor[idx, ...].coalesce().indices()
 
-            data["actor", f"n_{idx}", "actor"].edge_index = layer_edge_indexes
+            data[ACTOR, f"n_{idx}", ACTOR].edge_index = layer_edge_indexes
 
         return data
 
@@ -51,19 +62,22 @@ class LightningHeteroData(HeteroData):
         network_info: MultilayerNetworkInfo,
         df: DataFrame,
     ) -> Tensor:
-        match output_dim:
-            case 0:
+        match network_info.output_label_name:
+            case None:
                 raise AttributeError(
                     f"Output dimmension must be greater than 0: {output_dim}"
                 )
 
-            case 1:
+            case list():
+                Y_raw = df[network_info.output_label_name]
+                Y_raw["actor_idx"] = Y_raw.index.map(network_info.network.actors_map)
+                Y_raw = Y_raw.set_index("actor_idx").sort_index()
                 labels = tensor(
-                    df[network_info.output_label_name].values.reshape(-1, 1),
+                    Y_raw.values,
                     dtype=float32,
                 )
 
-            case _:
+            case str():
                 est = KBinsDiscretizer(
                     n_bins=output_dim,
                     encode="ordinal",

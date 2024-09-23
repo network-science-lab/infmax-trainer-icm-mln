@@ -18,6 +18,7 @@ def _get_dataset(
     label: str,
     input_dim: int,
     output_dim: int,
+    protocol: str,
 ) -> BaseHeteroDataset:
     match data_name:
         case DataFrameHeteroDataset.__name__:
@@ -32,6 +33,7 @@ def _get_dataset(
                         output_label_name=label,
                         spreading_potential=load_sp(network_config["name"]),
                         network_name=network_config["name"],
+                        protocol=protocol,
                     )
                     for network_config in networks_config
                 ],
@@ -47,23 +49,26 @@ def get_datasets(config: dict[str, Any]) -> dict[str, BaseHeteroDataset]:
     train_dataset = _get_dataset(
         data_name=config["data"]["name"],
         networks_config=config["data"]["train_networks"],
-        label=config["data"]["label_name"],
+        label=config["data"]["output_label_name"],
         input_dim=config["model"]["parameters"]["input_dim"],
         output_dim=config["model"]["parameters"]["output_dim"],
+        protocol=config["data"]["protocol"],
     )
     val_dataset = _get_dataset(
         data_name=config["data"]["name"],
         networks_config=config["data"]["val_dataset"],
-        label=config["data"]["label_name"],
+        label=config["data"]["output_label_name"],
         input_dim=config["model"]["parameters"]["input_dim"],
         output_dim=config["model"]["parameters"]["output_dim"],
+        protocol=config["data"]["protocol"],
     )
     test_dataset = _get_dataset(
         data_name=config["data"]["name"],
         networks_config=config["data"]["test_dataset"],
-        label=config["data"]["label_name"],
+        label=config["data"]["output_label_name"],
         input_dim=config["model"]["parameters"]["input_dim"],
         output_dim=config["model"]["parameters"]["output_dim"],
+        protocol=config["data"]["protocol"],
     )
 
     return {

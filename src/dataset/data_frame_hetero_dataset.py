@@ -8,7 +8,6 @@ from src.hetero_data.hetero_data import LightningHeteroData
 from src.utils.multilayer_network import MultilayerNetworkInfo
 
 
-# TODO: Discuss what experiments we want to conduct and specify code for that
 class DataFrameHeteroDataset(BaseHeteroDataset):
     r"""Dataset class for creating graph datasets based on hetero data.
 

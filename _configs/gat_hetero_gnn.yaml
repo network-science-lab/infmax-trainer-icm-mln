@@ -5,7 +5,12 @@ data:
   name: DataFrameHeteroDataset
   num_workers: -1
   real_batch_size: 1
-  label_name: exposed
+  protocol: OR
+  output_label_name: 
+    - exposed
+    - simulation_length
+    - peak_iteration
+    - peak_infected
   train_networks:
     - name: lazega
     - name: lazega
@@ -19,7 +24,7 @@ model:
   aggr: sum
   parameters:
     input_dim: 2   # Input dimensionf of the first layer
-    output_dim: 2     # Output dimension of the last layer
+    output_dim: 4     # Output dimension of the last layer
     num_layers: 3     # Number of GATConv layers
     params:
       - out_channels: 8
@@ -32,16 +37,16 @@ model:
         dropout: 0.6
 
 training:
-  loss_name: CrossEntropyLoss # Depends on output_dim
+  loss_name: MSELoss # Depends on output_dim
   max_epochs: 10
   learning_rate: 0.01
   loggers:
     - name: tensor_board
-    - name: neptune
-      model_summary_max_depth: -1
-      tags:
-        - name: training
-        - name: gnn
+    # - name: neptune
+    #   model_summary_max_depth: -1
+    #   tags:
+    #     - name: training
+    #     - name: gnn
   callbacks:
    - name: model_summary
      max_depth: -1
