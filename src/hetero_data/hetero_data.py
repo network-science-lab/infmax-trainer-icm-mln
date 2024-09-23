@@ -6,10 +6,9 @@ from torch import Tensor, float32, long, tensor, zeros
 from torch_geometric.data import HeteroData
 from typing_extensions import Self
 
+from _data_set.nsl_data_utils.loaders.constants import ACTOR, PROTOCOL
 from src.utils.multilayer_network import MultilayerNetworkInfo
-from _data_set.nsl_data_utils.loaders.constants import (
-    ACTOR, PROTOCOL
-)
+
 
 class LightningHeteroData(HeteroData):
     # TODO: In case of need use the following code as a starter for iter function
@@ -27,18 +26,13 @@ class LightningHeteroData(HeteroData):
         network = network_info.network
         spreading_potential_columns = [ACTOR, PROTOCOL]
         if isinstance(network_info.output_label_name, list):
-            spreading_potential_columns.extend(network_info.output_label_name) 
+            spreading_potential_columns.extend(network_info.output_label_name)
         else:
             spreading_potential_columns.append(network_info.output_label_name)
-            
+
         df = network_info.spreading_potential[spreading_potential_columns]
         df = df[df[PROTOCOL] == network_info.protocol].drop(PROTOCOL, axis=1)
-        df = (
-            df
-            .groupby([ACTOR])
-            .mean()
-            .reset_index()
-        )
+        df = df.groupby([ACTOR]).mean().reset_index()
 
         data = HeteroData()
         # TODO: ADD different feature generation

@@ -4,11 +4,10 @@ load model
 train model
 evaluate model
 """
-from dataclasses import dataclass
+import logging
 from pathlib import Path
 from typing import Any
 
-import network_diffusion as nd
 import pytorch_lightning as pl
 import torch
 
@@ -49,7 +48,7 @@ def indirectly_trainable(args: dict[str, Any]) -> None:
     seed_size = args["train"]["seed_size"]
 
     for net in networks:
-        print(f"Dataset: {net.network_name}")
+        logging.info(f"Dataset: {net.network_name}")
 
         pred_seeds = model(network=net.network)
         pred_performance = evaluate_seed_set(
@@ -60,8 +59,8 @@ def indirectly_trainable(args: dict[str, Any]) -> None:
             n_steps=n_steps,
             n_repetitions=n_repetitions,
         )
-        print(f"Predicted seed set: {pred_seeds}")
-        print(f"{pred_performance.mean()}\n")
+        logging.info(f"Predicted seed set: {pred_seeds}")
+        logging.info(f"{pred_performance.mean()}\n")
 
         ref_seeds = get_gt_data(net.network_name, proto, p, seed_size)
         ref_performance = evaluate_seed_set(
@@ -72,8 +71,8 @@ def indirectly_trainable(args: dict[str, Any]) -> None:
             n_steps=n_steps,
             n_repetitions=n_repetitions,
         )
-        print(f"Reference seed set: {ref_seeds}")
-        print(f"{ref_performance.mean()}\n")
+        logging.info(f"Reference seed set: {ref_seeds}")
+        logging.info(f"{ref_performance.mean()}\n")
 
 
 def directly_trainable(args: dict[str, Any]) -> None:

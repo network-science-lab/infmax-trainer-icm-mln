@@ -1,5 +1,6 @@
 """A naive seed set selector which just clusters embedding space and seeks for central points."""
 
+import logging
 import pathlib
 import warnings
 
@@ -296,7 +297,9 @@ class KMeansAutoSeedSelector(KMeansSeedSelector):
         if visualise:
             self._visualise(silhouette_coefficients=split_silhouettes)
         optimal_model = split_models[np.argmax(split_silhouettes)]
-        print(f"Optimal split into: {np.argmax(split_silhouettes) + 2} clusters.")
+        logging.info(
+            f"Optimal split into: {np.argmax(split_silhouettes) + 2} clusters."
+        )
         seeds = self.extract_seeds(kmeans=optimal_model)
         if visualise:
             super()._visualise(seeds_ids=seeds, kmeans=optimal_model)

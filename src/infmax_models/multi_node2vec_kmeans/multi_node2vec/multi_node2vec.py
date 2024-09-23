@@ -16,6 +16,7 @@ University of San Francisco, Department of Mathematics and Statistics
 
 Questions or Bugs? Contact James D. Wilson at jdwilson4@usfca.edu
 """
+import logging
 import os
 import time
 
@@ -34,7 +35,7 @@ def main(args):
 
     # check if layers were parsed
     if not layers:
-        print("Whoops!")
+        logging.warning("Whoops!")
         return
 
     # EXTRACT NEIGHBORHOODS
@@ -59,12 +60,12 @@ def main(args):
             workers=args.w2v_workers,
         ),
     )
-    print(
+    logging.info(
         "Completed Multilayer Network Embedding for r="
         + str(args.rvals)
         + " in {:.2f} secs.\nSee results:".format(time.time() - start)
     )
-    print("\t" + out_path + ".csv")
+    logging.info("\t" + out_path + ".csv")
 
 
 if __name__ == "__main__":
@@ -79,5 +80,5 @@ if __name__ == "__main__":
         #     "--rvals", "0.25"
         # ]
     )
-    # print(args)
+    # logging.info(args)
     main(args)

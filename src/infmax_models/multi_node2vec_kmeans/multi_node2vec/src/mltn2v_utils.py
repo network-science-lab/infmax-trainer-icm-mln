@@ -16,6 +16,7 @@ University of San Francisco, Department of Mathematics and Statistics
 
 Questions or Bugs? Contact James D. Wilson at jdwilson4@usfca.edu
 """
+import logging
 import os
 import time
 
@@ -46,7 +47,7 @@ def parse_matrix_layers(network_dir, delim=",", binary=False, thresh=None):
             # read as pandas DataFrame, index=source, col=target
             layer = pd.read_csv(file_path, index_col=0)
             if layer.shape[0] != layer.shape[1]:
-                print(
+                logging.info(
                     "[ERROR] Invalid adjacency matrix. Expecting matrix with index as source and column as target."
                 )
                 return
@@ -65,7 +66,7 @@ def parse_matrix_layers(network_dir, delim=",", binary=False, thresh=None):
             layer.columns = ["source", "target", "weight"]
             layers.append(layer)
         except Exception as e:
-            print('[ERROR] Could not read file "{}": {} '.format(file_path, e))
+            logging.error('[ERROR] Could not read file "{}": {} '.format(file_path, e))
     return layers
 
 
@@ -102,14 +103,16 @@ def timed_invoke(action_desc, method):
     :param method: The method to invoke
     :return: The return object of the method
     """
-    print("Started {}...".format(action_desc))
+    logging.info("Started {}...".format(action_desc))
     start = time.time()
     try:
         output = method()
-        print("Finished {} in {} seconds".format(action_desc, int(time.time() - start)))
+        logging.info(
+            "Finished {} in {} seconds".format(action_desc, int(time.time() - start))
+        )
         return output
     except Exception:
-        print(
+        logging.exception(
             "Exception while {} after {} seconds".format(
                 action_desc, int(time.time() - start)
             )
@@ -126,5 +129,5 @@ def clean_output(directory):
         return directory
     else:
         os.makedirs(directory)
-        print("[WARNING] Directory not found. Created {}".format(directory))
+        logging.warning("[WARNING] Directory not found. Created {}".format(directory))
         return directory
