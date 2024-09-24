@@ -41,7 +41,10 @@ model:
         dropout: 0.6
 
 training:
-  loss_name: MSELoss # Depends on output_dim
+  loss:
+    name: MSELoss # Depends on output_dim
+    args:
+      reduction: mean
   max_epochs: 10
   learning_rate: 0.01
   loggers:

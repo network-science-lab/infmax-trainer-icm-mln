@@ -85,7 +85,8 @@ def directly_trainable(args: dict[str, Any]) -> None:
     wrapper = HeteroGNN_Wrapper(
         model=load_model(config=args),
         config=HetergoGNN_WrapperConfig(
-            loss_name=args["training"]["loss_name"],
+            loss_name=args["training"]["loss"]["name"],
+            loss_args=args["training"]["loss"]["args"],
             learning_rate=args["training"]["learning_rate"],
             aggr=args["model"]["aggr"],
             metadata=get_metadata(datasets.values()),
