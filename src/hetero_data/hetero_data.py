@@ -1,3 +1,4 @@
+import logging
 from typing import Iterable
 
 from pandas import DataFrame
@@ -35,8 +36,10 @@ class LightningHeteroData(HeteroData):
         df = df.groupby([ACTOR]).mean().reset_index()
 
         data = HeteroData()
-        # TODO: ADD different feature generation
-        data[ACTOR].x = zeros((len(network.actors_map), input_dim))
+        data[ACTOR].x = cls._prepare_features(
+            network_info=network_info,
+            input_dim=input_dim,
+        )
         data[ACTOR].y = cls._prepare_labels(
             output_dim=output_dim,
             network_info=network_info,
@@ -51,15 +54,40 @@ class LightningHeteroData(HeteroData):
         return data
 
     @staticmethod
+    def _prepare_features(
+        network_info: MultilayerNetworkInfo,
+        input_dim: int,
+    ) -> Tensor:
+        logging.info(f"Preparing features: {network_info.network_name}")
+        match network_info.features_type:
+            case None:
+                raise AttributeError(
+                    f"Feature name must be passed and dimmension must be greater than 0: {input_dim}"
+                )
+            case "zeros":
+                return zeros((len(network_info.network.actors_map), input_dim))
+            case "centralities":
+                #TODO
+                raise NotImplementedError(
+                    f"{network_info.features_type} has not been implemented yet"
+                )
+            case "scraped":
+                #TODO
+                raise NotImplementedError(
+                    f"{network_info.features_type} has not been implemented yet"
+                )
+
+    @staticmethod
     def _prepare_labels(
         output_dim: int,
         network_info: MultilayerNetworkInfo,
         df: DataFrame,
     ) -> Tensor:
+        logging.info(f"Preparing labels: {network_info.network_name}")
         match network_info.output_label_name:
             case None:
                 raise AttributeError(
-                    f"Output dimmension must be greater than 0: {output_dim}"
+                    f"Output label name must be passed and dimmension must be greater than 0: {output_dim}"
                 )
 
             case list():

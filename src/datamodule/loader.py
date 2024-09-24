@@ -34,6 +34,7 @@ def _get_dataset(
                         spreading_potential=load_sp(network_config["name"]),
                         network_name=network_config["name"],
                         protocol=protocol,
+                        features_type=network_config["features_type"],
                     )
                     for network_config in networks_config
                 ],

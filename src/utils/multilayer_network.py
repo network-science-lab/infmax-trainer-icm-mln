@@ -5,12 +5,12 @@ from network_diffusion.mln.mlnetwork import MultilayerNetwork
 from pandas import DataFrame
 
 
-# TODO: ADD different feature generation
 @dataclass
 class MultilayerNetworkInfo:
     network: MultilayerNetwork | MultilayerNetworkTorch
     network_name: str
     protocol: str | None
+    features_type: str | None
     output_label_name: str | list[str] | None
     spreading_potential: DataFrame | None
 
