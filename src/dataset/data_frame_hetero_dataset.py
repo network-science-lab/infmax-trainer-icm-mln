@@ -1,7 +1,6 @@
 from typing import Callable
 
-from torch_geometric.data import Dataset, HeteroData
-from torch_geometric.typing import EdgeType, NodeType
+from torch_geometric.data import HeteroData
 
 from src.dataset.base_hetero_dataset import BaseHeteroDataset
 from src.hetero_data.hetero_data import LightningHeteroData

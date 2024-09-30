@@ -33,9 +33,8 @@ def main(args):
         lambda: mltn2v.parse_matrix_layers(args.dir, binary=True, thresh=args.thresh),
     )
 
-    # check if layers were parsed
     if not layers:
-        logging.warning("Whoops!")
+        logging.warning("There is no parsed network layers")
         return
 
     # EXTRACT NEIGHBORHOODS

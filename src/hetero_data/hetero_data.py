@@ -1,9 +1,9 @@
 import logging
 from typing import Iterable
 
+import torch
 from pandas import DataFrame
 from sklearn.preprocessing import KBinsDiscretizer
-from torch import Tensor, float32, long, tensor, zeros
 from torch_geometric.data import HeteroData
 from typing_extensions import Self
 
@@ -57,7 +57,7 @@ class LightningHeteroData(HeteroData):
     def _prepare_features(
         network_info: MultilayerNetworkInfo,
         input_dim: int,
-    ) -> Tensor:
+    ) -> torch.Tensor:
         logging.info(f"Preparing features: {network_info.network_name}")
         match network_info.features_type:
             case None:
@@ -65,14 +65,14 @@ class LightningHeteroData(HeteroData):
                     f"Feature name must be passed and dimmension must be greater than 0: {input_dim}"
                 )
             case "zeros":
-                return zeros((len(network_info.network.actors_map), input_dim))
+                return torch.zeros((len(network_info.network.actors_map), input_dim))
             case "centralities":
-                #TODO
+                # TODO
                 raise NotImplementedError(
                     f"{network_info.features_type} has not been implemented yet"
                 )
             case "scraped":
-                #TODO
+                # TODO
                 raise NotImplementedError(
                     f"{network_info.features_type} has not been implemented yet"
                 )
@@ -82,32 +82,30 @@ class LightningHeteroData(HeteroData):
         output_dim: int,
         network_info: MultilayerNetworkInfo,
         df: DataFrame,
-    ) -> Tensor:
+    ) -> torch.Tensor:
         logging.info(f"Preparing labels: {network_info.network_name}")
-        match network_info.output_label_name:
-            case None:
-                raise AttributeError(
-                    f"Output label name must be passed and dimmension must be greater than 0: {output_dim}"
-                )
+        if not network_info.output_label_name:
+            raise AttributeError(
+                f"Output label name must be passed and dimmension must be greater than 0: {output_dim}"
+            )
 
-            case list():
-                Y_raw = df[network_info.output_label_name]
-                Y_raw["actor_idx"] = Y_raw.index.map(network_info.network.actors_map)
-                Y_raw = Y_raw.set_index("actor_idx").sort_index()
-                labels = tensor(
-                    Y_raw.values,
-                    dtype=float32,
-                )
-
-            case str():
-                est = KBinsDiscretizer(
-                    n_bins=output_dim,
-                    encode="ordinal",
-                    strategy="kmeans",
-                )
-                labels = est.fit_transform(
-                    df[network_info.output_label_name].values.reshape(-1, 1)
-                )
-                labels = tensor(labels.squeeze(), dtype=long)
+        if isinstance(network_info.output_label_name, str):
+            est = KBinsDiscretizer(
+                n_bins=output_dim,
+                encode="ordinal",
+                strategy="kmeans",
+            )
+            labels = est.fit_transform(
+                df[network_info.output_label_name].values.reshape(-1, 1)
+            )
+            labels = torch.tensor(labels.squeeze(), dtype=torch.long)
+        elif isinstance(network_info.output_label_name, list):
+            Y_raw = df[network_info.output_label_name]
+            Y_raw["actor_idx"] = Y_raw.index.map(network_info.network.actors_map)
+            Y_raw = Y_raw.set_index("actor_idx").sort_index()
+            labels = torch.tensor(
+                Y_raw.values,
+                dtype=torch.float32,
+            )
 
         return labels

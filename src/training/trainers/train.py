@@ -30,7 +30,10 @@ def indirectly_trainable(args: dict[str, Any]) -> None:
     networks = [
         MultilayerNetworkInfo(
             network_name=n,
-            network=load_network(net_name=n, as_tensor=True),
+            network=load_network(
+                net_name=n,
+                as_tensor=True,
+            ),
             output_label_name=None,
             spreading_potential=None,
         )

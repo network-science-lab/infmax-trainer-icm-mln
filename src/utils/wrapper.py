@@ -1,8 +1,13 @@
-from torch.nn import CrossEntropyLoss, MSELoss
-from torch.nn.modules.loss import _Loss
 from typing import Any
 
-def get_loss(loss_name: str, loss_args: dict[str, Any],) -> _Loss:
+from torch.nn import CrossEntropyLoss, MSELoss
+from torch.nn.modules.loss import _Loss
+
+
+def get_loss(
+    loss_name: str,
+    loss_args: dict[str, Any],
+) -> _Loss:
     match loss_name:
         case CrossEntropyLoss.__name__:
             return CrossEntropyLoss(**loss_args)

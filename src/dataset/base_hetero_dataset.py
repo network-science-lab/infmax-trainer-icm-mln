@@ -4,7 +4,6 @@ from torch_geometric.data import Dataset, HeteroData
 from torch_geometric.typing import EdgeType, NodeType
 
 from src.hetero_data.hetero_data import LightningHeteroData
-from src.utils.multilayer_network import MultilayerNetworkInfo
 
 
 class BaseHeteroDataset(Dataset):
