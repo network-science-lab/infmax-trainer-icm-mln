@@ -1,7 +1,9 @@
 import logging
 from typing import Iterable
 
+import bidict
 import torch
+from network_diffusion.mln import MultilayerNetworkTorch
 from pandas import DataFrame
 from sklearn.preprocessing import KBinsDiscretizer
 from torch_geometric.data import HeteroData
@@ -35,7 +37,7 @@ class LightningHeteroData(HeteroData):
         df = df[df[PROTOCOL] == network_info.protocol].drop(PROTOCOL, axis=1)
         df = df.groupby([ACTOR]).mean().reset_index()
 
-        data = HeteroData()
+        data = cls()
         data[ACTOR].x = cls._prepare_features(
             network_info=network_info,
             input_dim=input_dim,
@@ -46,10 +48,18 @@ class LightningHeteroData(HeteroData):
             df=df,
         )
 
+        data.actors_map = bidict.bidict(
+            {str(actor): actors_map for actor, actors_map in network.actors_map.items()}
+        )
+        data.layers_map = bidict.bidict(
+            {l_name: f"l_{l_idx}" for l_idx, l_name in enumerate(network.layers_order)}
+        )
+        data[ACTOR].z = network.nodes_mask.T
+
         for idx, _ in enumerate(network.layers_order):
             layer_edge_indexes = network.adjacency_tensor[idx, ...].coalesce().indices()
 
-            data[ACTOR, f"n_{idx}", ACTOR].edge_index = layer_edge_indexes
+            data[ACTOR, f"l_{idx}", ACTOR].edge_index = layer_edge_indexes
 
         return data
 
@@ -62,7 +72,7 @@ class LightningHeteroData(HeteroData):
         match network_info.features_type:
             case None:
                 raise AttributeError(
-                    f"Feature name must be passed and dimmension must be greater than 0: {input_dim}"
+                    f"Feature name must be passed and dimension must be greater than 0: {input_dim}"
                 )
             case "zeros":
                 return torch.zeros((len(network_info.network.actors_map), input_dim))
@@ -86,7 +96,10 @@ class LightningHeteroData(HeteroData):
         logging.info(f"Preparing labels: {network_info.network_name}")
         if not network_info.output_label_name:
             raise AttributeError(
-                f"Output label name must be passed and dimmension must be greater than 0: {output_dim}"
+                (
+                    "Output label name must be passed and "
+                    f"dimmension must be greater than 0: {output_dim}"
+                )
             )
 
         if isinstance(network_info.output_label_name, str):

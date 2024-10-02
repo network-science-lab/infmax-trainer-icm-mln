@@ -24,7 +24,17 @@ import src as mltn2v
 from src.cli_args import parse_args
 
 
+def init_logger() -> None:
+    """Initialises logger."""
+    logging.basicConfig(
+        level=logging.INFO,
+        format='[%(asctime)-8s] [%(levelname)s] msg: "%(message)s"',
+        datefmt="%H:%M:%S",
+    )
+
+
 def main(args):
+    init_logger()
     start = time.time()
 
     # PARSE LAYERS -- THRESHOLD & CONVERT TO BINARY

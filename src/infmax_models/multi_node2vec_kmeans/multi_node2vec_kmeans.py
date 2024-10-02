@@ -83,7 +83,7 @@ class MultiNode2VecKMeans:  # TODO: even if it's not necessary, consider modifyi
         )
         for line in container.attach(stdout=True, stream=True, logs=True):
             logging.info(colorama.Fore.CYAN + line.decode("utf-8"))
-        logging.info(colorama.Style.RESET_ALL, end="")
+        logging.info(colorama.Style.RESET_ALL)
 
     def __call__(self, network: nd.MultilayerNetworkTorch) -> np.ndarray:
         """Select seeds using multi_node2vec and kmeans."""

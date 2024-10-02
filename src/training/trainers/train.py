@@ -36,6 +36,8 @@ def indirectly_trainable(args: dict[str, Any]) -> None:
             ),
             output_label_name=None,
             spreading_potential=None,
+            protocol=args["spreading_regime"]["protocol"],
+            features_type=None,
         )
         for n in args["networks"]
     ]

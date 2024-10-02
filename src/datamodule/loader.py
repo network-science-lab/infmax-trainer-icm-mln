@@ -28,7 +28,7 @@ def _get_dataset(
                     MultilayerNetworkInfo(
                         network=load_network(
                             net_name=network_config["name"],
-                            as_tensor=True,
+                            as_tensor=False,
                         ),
                         output_label_name=label,
                         spreading_potential=load_sp(network_config["name"]),
