@@ -63,3 +63,6 @@ request to get  an access via  e-mail (michal.czuba@pwr.edu.pl). Then, simply ex
 ## Running the pipeline
 
 To run experiments execute: `run_experiments.py` and provide proper CLI arguments defined in `_config/hydra.yaml`, i.e. a name of the configuration file.
+
+### Neptune.ai dashboard
+https://app.neptune.ai/o/infmax/org/infmax-gnn/runs/table?viewId=standard-view

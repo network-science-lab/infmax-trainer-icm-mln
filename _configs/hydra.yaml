@@ -2,4 +2,4 @@ hydra:
   run:
     dir: _data_results/model_outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
 
-experiment-config: gat_hetero_gnn
+experiment-config: ssnet

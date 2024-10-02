@@ -1,0 +1,68 @@
+base:
+  random_seed: 43
+  
+data:
+  name: DataFrameHeteroDataset
+  num_workers: -1
+  real_batch_size: 1
+  protocol: OR
+  output_label_name: 
+    - exposed
+    - simulation_length
+    - peak_iteration
+    - peak_infected
+  train_networks:
+    - name: ckm_physicians
+      features_type: zeros
+    - name: toy_network
+      features_type: zeros
+    - name: lazega
+      features_type: zeros
+  val_dataset:
+    - name: lazega
+      features_type: zeros
+  test_dataset:
+    - name: toy_network
+      features_type: zeros
+
+model:
+  name: SSNet
+  aggr: sum
+  parameters:
+    input_dim: 32 
+    output_dim: 4
+    hidden_channels: 100  
+
+training:
+  devices: auto
+  loss:
+    name: WeightedMSE # Depends on output_dim
+    args:
+      w_sl: 1 
+      w_e: 2.5 
+      w_pin: 1 
+      w_pit: 1
+      reduction: mean
+  max_epochs: 5000
+  learning_rate: 0.01
+  loggers:
+    - name: tensor_board
+    - name: neptune
+      model_summary_max_depth: -1
+      tags:
+        - name: training
+        - name: gnn
+  callbacks:
+   - name: model_summary
+     max_depth: -1
+   - name: model_checkpoint
+     mode: min
+     monitor: val_loss
+     save_last: True
+     save_top_k: 1
+     verbose: True
+   - name: early_stopping
+     monitor: val_loss
+     mode: min
+     patience: 1500
+    

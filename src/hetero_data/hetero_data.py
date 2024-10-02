@@ -3,7 +3,6 @@ from typing import Iterable
 
 import bidict
 import torch
-from network_diffusion.mln import MultilayerNetworkTorch
 from pandas import DataFrame
 from sklearn.preprocessing import KBinsDiscretizer
 from torch_geometric.data import HeteroData
@@ -120,5 +119,6 @@ class LightningHeteroData(HeteroData):
                 Y_raw.values,
                 dtype=torch.float32,
             )
+            labels = labels / len(df[ACTOR])
 
         return labels

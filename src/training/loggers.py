@@ -39,6 +39,10 @@ def get_loggers(
                     model=model,
                     max_depth=logger_config["model_summary_max_depth"],
                 )
+                logger.log_hyperparams(
+                    {key: value for key, value in config.items() if key != "hydra"}
+                )
+
                 result.append(logger)
                 logging.getLogger("neptune").setLevel(logging.CRITICAL)
             case _:

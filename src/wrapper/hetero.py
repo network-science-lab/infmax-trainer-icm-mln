@@ -31,9 +31,10 @@ class HeteroGNN_Wrapper(pl.LightningModule):
     ) -> None:
         super().__init__()
         self._config = config
+        self.student = model
         if not model.is_hetero:
             self.student = to_hetero(
-                module=model,
+                module=self.student,
                 metadata=self._config.metadata,
                 aggr=self._config.aggr,
             )

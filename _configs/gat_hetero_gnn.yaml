@@ -14,7 +14,7 @@ data:
   train_networks:
     - name: lazega
       features_type: zeros
-    - name: lazega
+    - name: toy_network
       features_type: zeros
   val_dataset:
     - name: toy_network
