@@ -1,5 +1,6 @@
 """Functions to help in evaluating performance of a given seed set."""
 
+import logging
 from typing import Any, Literal
 
 import network_diffusion as nd
@@ -44,4 +45,4 @@ if __name__ == "__main__":
     net = load_network(net_name, as_tensor=True)
     seed_set = get_gt_data(net_name, proto, p, budget)
     raw_results = evaluate_seed_set(net, seed_set, proto, p, n_steps, n_repetitions)
-    print("Performance of given seed set:\n", raw_results.mean())
+    logging.info("Performance of given seed set:\n", raw_results.mean())

@@ -16,6 +16,7 @@ University of San Francisco, Department of Mathematics and Statistics
 
 Questions or Bugs? Contact James D. Wilson at jdwilson4@usfca.edu
 """
+import logging
 import time
 
 import networkx as nx
@@ -43,7 +44,7 @@ def generate_features(nbrhds, d, out, nbrhd_size=-1, w2v_iter=1, workers=8, sg=1
     :param sg: sets word2vec architecture. 1 for Skip-Gram, 0 for CBOW
     :return: n x d network embedding
     """
-    print("Total Neighborhoods: {}".format(len(nbrhds)))
+    logging.info("Total Neighborhoods: {}".format(len(nbrhds)))
     w2v_model = w2v.Word2Vec(
         nbrhds,
         size=d,
@@ -80,7 +81,7 @@ def extract_neighborhoods_walk(
 
     start = time.time()
     nbrhd_gen = NeighborhoodGen(nxg, p, q, is_directed=is_directed, weighted=weighted)
-    print(
+    logging.info(
         "Finished initialization of neighborhood generator in "
         + str(time.time() - start)
         + " seconds."
@@ -96,7 +97,7 @@ def extract_neighborhoods_walk(
                     neighborhoods.append(
                         nbrhd_gen.multinode2vec_walk(w, nbrhd_size, node, i)
                     )
-        print("Finished nbrhd generation for r=" + str(w))
+        logging.info("Finished nbrhd generation for r=" + str(w))
         neighborhood_dict[w] = neighborhoods
 
     return neighborhood_dict
@@ -132,7 +133,7 @@ def extract_neighborhoods(layers, nbrhd_size, n_samples, weighted=False):
 
 def extract_node_neighborhoods(node, neighbors, nbrhd_size, n_samples):
     if len(neighbors) < nbrhd_size:
-        print(
+        logging.info(
             "[WARNING] Selected neighborhood size {} > node-{}'s degree {}. "
             "Setting neighborhood size to {} for node-{}.".format(
                 nbrhd_size, node, len(neighbors), len(neighbors), node

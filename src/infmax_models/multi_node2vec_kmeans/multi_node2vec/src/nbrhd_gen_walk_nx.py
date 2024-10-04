@@ -18,12 +18,12 @@ Questions or Bugs? Contact James D. Wilson at jdwilson4@usfca.edu
 """
 
 
+import logging
 import random
 # import multiprocessing
 import threading
 import time
 
-import networkx as nx
 import numpy as np
 
 # is is_directed needed?
@@ -105,9 +105,9 @@ class NeighborhoodGen:
         for layer in G:
             walks[layer] = []
             nodes = list(layer.nodes())
-            print("Walk iteration:")
+            logging.info("Walk iteration:")
             for walk_iter in range(num_walks):
-                print(str(walk_iter + 1), "/", str(num_walks))
+                logging.info(str(walk_iter + 1), "/", str(num_walks))
                 random.shuffle(nodes)
                 for node in nodes:
                     walks[layer].append(
@@ -188,7 +188,7 @@ class NeighborhoodGen:
 
     def preprocess_thread(self, layer, counter):
         start_time = time.time()
-        print("Starting thread for layer " + str(counter))
+        logging.info("Starting thread for layer " + str(counter))
         alias_nodes = {}
         for node in layer.nodes():
             unnormalized_probs = [
@@ -220,7 +220,7 @@ class NeighborhoodGen:
         finally:
             self.lock.release()
 
-        print(
+        logging.info(
             "Finished thread for layer "
             + str(counter)
             + " in "

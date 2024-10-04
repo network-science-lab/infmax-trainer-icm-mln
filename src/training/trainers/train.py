@@ -4,11 +4,10 @@ load model
 train model
 evaluate model
 """
-from dataclasses import dataclass
+import logging
 from pathlib import Path
 from typing import Any
 
-import network_diffusion as nd
 import pytorch_lightning as pl
 import torch
 
@@ -31,9 +30,14 @@ def indirectly_trainable(args: dict[str, Any]) -> None:
     networks = [
         MultilayerNetworkInfo(
             network_name=n,
-            network=load_network(net_name=n, as_tensor=True),
+            network=load_network(
+                net_name=n,
+                as_tensor=True,
+            ),
             output_label_name=None,
             spreading_potential=None,
+            protocol=args["spreading_regime"]["protocol"],
+            features_type=None,
         )
         for n in args["networks"]
     ]
@@ -49,7 +53,7 @@ def indirectly_trainable(args: dict[str, Any]) -> None:
     seed_size = args["train"]["seed_size"]
 
     for net in networks:
-        print(f"Dataset: {net.network_name}")
+        logging.info(f"Dataset: {net.network_name}")
 
         pred_seeds = model(network=net.network)
         pred_performance = evaluate_seed_set(
@@ -60,8 +64,8 @@ def indirectly_trainable(args: dict[str, Any]) -> None:
             n_steps=n_steps,
             n_repetitions=n_repetitions,
         )
-        print(f"Predicted seed set: {pred_seeds}")
-        print(f"{pred_performance.mean()}\n")
+        logging.info(f"Predicted seed set: {pred_seeds}")
+        logging.info(f"{pred_performance.mean()}\n")
 
         ref_seeds = get_gt_data(net.network_name, proto, p, seed_size)
         ref_performance = evaluate_seed_set(
@@ -72,8 +76,8 @@ def indirectly_trainable(args: dict[str, Any]) -> None:
             n_steps=n_steps,
             n_repetitions=n_repetitions,
         )
-        print(f"Reference seed set: {ref_seeds}")
-        print(f"{ref_performance.mean()}\n")
+        logging.info(f"Reference seed set: {ref_seeds}")
+        logging.info(f"{ref_performance.mean()}\n")
 
 
 def directly_trainable(args: dict[str, Any]) -> None:
@@ -86,7 +90,8 @@ def directly_trainable(args: dict[str, Any]) -> None:
     wrapper = HeteroGNN_Wrapper(
         model=load_model(config=args),
         config=HetergoGNN_WrapperConfig(
-            loss_name=args["training"]["loss_name"],
+            loss_name=args["training"]["loss"]["name"],
+            loss_args=args["training"]["loss"]["args"],
             learning_rate=args["training"]["learning_rate"],
             aggr=args["model"]["aggr"],
             metadata=get_metadata(datasets.values()),

@@ -1,14 +1,12 @@
 from typing import Callable
 
-from torch_geometric.data import Dataset, HeteroData
-from torch_geometric.typing import EdgeType, NodeType
+from torch_geometric.data import HeteroData
 
 from src.dataset.base_hetero_dataset import BaseHeteroDataset
 from src.hetero_data.hetero_data import LightningHeteroData
 from src.utils.multilayer_network import MultilayerNetworkInfo
 
 
-# TODO: Discuss what experiments we want to conduct and specify code for that
 class DataFrameHeteroDataset(BaseHeteroDataset):
     r"""Dataset class for creating graph datasets based on hetero data.
 

@@ -1,6 +1,7 @@
 import json
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import pytorch_lightning as pl
 import torch
@@ -14,6 +15,7 @@ from src.utils.wrapper import get_loss
 @dataclass
 class HetergoGNN_WrapperConfig:
     loss_name: str
+    loss_args: dict[str, Any]
     learning_rate: float
     aggr: str
     metadata: tuple
@@ -35,7 +37,10 @@ class HeteroGNN_Wrapper(pl.LightningModule):
                 metadata=self._config.metadata,
                 aggr=self._config.aggr,
             )
-        self._loss = get_loss(config.loss_name)
+        self._loss = get_loss(
+            loss_name=config.loss_name,
+            loss_args=config.loss_args,
+        )
 
         self.test_preds = {
             "trues": [],

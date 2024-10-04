@@ -1,5 +1,6 @@
 """Method to select seeds with multi_node2vec and k-means."""
 
+import logging
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -64,7 +65,9 @@ class MultiNode2VecKMeans:  # TODO: even if it's not necessary, consider modifyi
         """Prepare embedding of the given input."""
         multi_node2vec_src_path = self.get_multi_node2vec_src_path()
         cmd_python = self.get_python_cmd(network=network)
-        print(f"Running multi_node2vec with args: {' '.join(cmd_python.split())}")
+        logging.info(
+            f"Running multi_node2vec with args: {' '.join(cmd_python.split())}"
+        )
         self.export_network(data_dir=data_dir, network=network)
         container = self.docker_client.containers.run(
             image=self.docker_image,
@@ -79,13 +82,13 @@ class MultiNode2VecKMeans:  # TODO: even if it's not necessary, consider modifyi
             command=cmd_python,
         )
         for line in container.attach(stdout=True, stream=True, logs=True):
-            print(colorama.Fore.CYAN + line.decode("utf-8"))
-        print(colorama.Style.RESET_ALL, end="")
+            logging.info(colorama.Fore.CYAN + line.decode("utf-8"))
+        logging.info(colorama.Style.RESET_ALL)
 
     def __call__(self, network: nd.MultilayerNetworkTorch) -> np.ndarray:
         """Select seeds using multi_node2vec and kmeans."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            print(f"Temporary directory: {temp_dir}")
+            logging.info(f"Temporary directory: {temp_dir}")
             self.multi_node2vec(data_dir=temp_dir, network=network)
             seeds = self.kmeans_method(
                 emb_path=f"{temp_dir}/mltn2v_results.csv",
@@ -104,7 +107,7 @@ class MultiNode2VecKMeansAuto(MultiNode2VecKMeans):
     def __call__(self, network: nd.MultilayerNetworkTorch) -> np.ndarray:
         """Select seeds using multi_node2vec and kmeans which is autotuned."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            print(f"Temporary directory: {temp_dir}")
+            logging.info(f"Temporary directory: {temp_dir}")
             self.multi_node2vec(data_dir=temp_dir, network=network)
             seeds = self.kmeans_method(
                 emb_path=f"{temp_dir}/mltn2v_results.csv",
