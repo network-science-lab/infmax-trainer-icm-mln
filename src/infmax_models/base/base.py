@@ -18,5 +18,5 @@ class BaseHeteroModule(Module):
         self,
         x_dict: Proxy,
         edge_index_dict: Proxy,
-    ) -> Tensor:
-        ...
+    ) -> dict[str, Tensor]:
+        pass

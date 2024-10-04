@@ -70,7 +70,7 @@ class SSNet(BaseHeteroModule):
         self,
         x_dict: dict[str, torch.Tensor],
         edge_index_dict: dict[str, torch.Tensor],
-    ) -> torch.Tensor:
+    ) -> dict[str, torch.Tensor]:
         """
         Regress spreading potentials for actors of the given mln.
 

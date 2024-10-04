@@ -59,6 +59,7 @@ training:
      max_depth: -1
    - name: model_checkpoint
      mode: max
+     monitor: val_loss
      save_last: True
      save_top_k: 1
      verbose: True

@@ -87,7 +87,7 @@ class HeteroGNN_Wrapper(pl.LightningModule):
         self,
         x_dict: dict[str, torch.Tensor],
         edge_index_dict: dict[str, torch.Tensor],
-    ) -> torch.Tensor:
+    ) -> dict[str, torch.Tensor]:
         x_dict, edge_index_dict = self._mask_batch(
             x_dict=x_dict,
             edge_index_dict=edge_index_dict,
@@ -98,7 +98,7 @@ class HeteroGNN_Wrapper(pl.LightningModule):
     def _calculate_loss(
         self,
         batch: Batch,
-        predictions: torch.Tensor,
+        predictions: dict[str, torch.Tensor],
     ) -> float:
         loss = 0
         for layer in batch.x_dict.keys():
