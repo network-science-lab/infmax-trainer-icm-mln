@@ -3,6 +3,7 @@ from typing import Any, Callable
 from src.infmax_models.hetero_gat_conv import GATHeteroGNN
 from src.infmax_models.multi_node2vec_kmeans import (MultiNode2VecKMeans,
                                                      MultiNode2VecKMeansAuto)
+from src.infmax_models.ssnet.ssnet import SSNet
 
 
 def load_model(config: dict[str, Any]) -> Callable:
@@ -29,6 +30,9 @@ def load_model(config: dict[str, Any]) -> Callable:
 
         case GATHeteroGNN.__name__:
             return GATHeteroGNN(**model_params)
+
+        case SSNet.__name__:
+            return SSNet(**model_params)
 
         case _:
             raise AttributeError(f"Unknown model: {model_name}")

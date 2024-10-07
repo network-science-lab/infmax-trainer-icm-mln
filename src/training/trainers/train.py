@@ -102,6 +102,9 @@ def directly_trainable(args: dict[str, Any]) -> None:
     trainer = pl.Trainer(
         max_epochs=args["training"]["max_epochs"],
         accelerator="gpu" if torch.cuda.is_available() else "cpu",
+        devices=args["training"]["devices"]
+        if "devices" in args["training"] is not None
+        else "auto",
         log_every_n_steps=1,
         callbacks=get_callbacks(args),
         logger=get_loggers(

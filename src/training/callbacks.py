@@ -18,6 +18,7 @@ def get_callbacks(config: dict[str, Any]) -> list[callbacks.Callback]:
                     callbacks.ModelCheckpoint(
                         dirpath=config["hydra"]["run"]["dir"],
                         mode=callback_config["mode"],
+                        monitor=callback_config["monitor"],
                         save_last=callback_config["save_last"],
                         save_top_k=callback_config["save_top_k"],
                         verbose=callback_config["verbose"],

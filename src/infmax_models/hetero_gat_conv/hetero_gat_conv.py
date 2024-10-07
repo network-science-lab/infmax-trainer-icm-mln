@@ -48,7 +48,7 @@ class GATHeteroGNN(BaseHeteroModule):
         self,
         x_dict: Proxy,
         edge_index_dict: Proxy,
-    ) -> Tensor:
+    ) -> dict[str, Tensor]:
         for layer in self.layers[:-1]:
             x_dict = F.relu(layer(x=x_dict, edge_index=edge_index_dict))
 

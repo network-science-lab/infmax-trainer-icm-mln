@@ -14,7 +14,7 @@ data:
   train_networks:
     - name: lazega
       features_type: zeros
-    - name: lazega
+    - name: toy_network
       features_type: zeros
   val_dataset:
     - name: toy_network
@@ -59,6 +59,7 @@ training:
      max_depth: -1
    - name: model_checkpoint
      mode: max
+     monitor: val_loss
      save_last: True
      save_top_k: 1
      verbose: True
