@@ -2,13 +2,16 @@ import logging
 from typing import Iterable
 
 import bidict
+import numpy as np
 import torch
+from network_diffusion.mln import MLNetworkActor
 from pandas import DataFrame
 from sklearn.preprocessing import KBinsDiscretizer
 from torch_geometric.data import HeteroData
 from typing_extensions import Self
 
 from _data_set.nsl_data_utils.loaders.constants import ACTOR, PROTOCOL
+from src.hetero_data import CENTRALITY_FUNCTIONS
 from src.utils.multilayer_network import MultilayerNetworkInfo
 
 
@@ -70,16 +73,45 @@ class LightningHeteroData(HeteroData):
         logging.info(f"Preparing features: {network_info.network_name}")
         match network_info.features_type:
             case None:
-                raise AttributeError(
+                raise ValueError(
                     f"Feature name must be passed and dimension must be greater than 0: {input_dim}"
                 )
             case "zeros":
                 return torch.zeros((len(network_info.network.actors_map), input_dim))
             case "centralities":
-                # TODO
-                raise NotImplementedError(
-                    f"{network_info.features_type} has not been implemented yet"
+                if input_dim > len(CENTRALITY_FUNCTIONS) or input_dim <= 0:
+                    raise ValueError(
+                        (
+                            f"Input dim({input_dim}) must be greater than 0 and"
+                            f"lower or equal number of implemented centralities({len(CENTRALITY_FUNCTIONS)})"
+                        )
+                    )
+
+                mln_centralities: list[dict[MLNetworkActor, float]] = [
+                    centrality_function(network_info.mln_network)
+                    for centrality_function in CENTRALITY_FUNCTIONS[:input_dim]
+                ]
+
+                features_raw = {}
+                for actor in mln_centralities[0]:
+                    features_raw[actor.actor_id] = [
+                        mln_centrality[actor] for mln_centrality in mln_centralities
+                    ]
+
+                keys = list(features_raw.keys())
+                values = np.array(list(features_raw.values()))
+
+                actor_indices = np.array(
+                    [network_info.network.actors_map[key] for key in keys]
                 )
+                sorted_indices = np.argsort(actor_indices)
+                sorted_features = values[sorted_indices]
+
+                return torch.tensor(
+                    data=sorted_features,
+                    dtype=torch.float32,
+                )
+
             case "scraped":
                 # TODO
                 raise NotImplementedError(

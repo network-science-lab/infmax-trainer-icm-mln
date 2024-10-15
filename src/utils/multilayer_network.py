@@ -13,7 +13,9 @@ class MultilayerNetworkInfo:
     features_type: str | None
     output_label_name: str | list[str] | None
     spreading_potential: DataFrame | None
+    mln_network: MultilayerNetwork | None = None
 
     def __post_init__(self):
         if type(self.network) is MultilayerNetwork:
+            self.mln_network = self.network
             self.network = MultilayerNetworkTorch.from_mln(self.network)

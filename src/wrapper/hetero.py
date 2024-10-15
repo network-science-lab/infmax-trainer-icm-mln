@@ -74,7 +74,7 @@ class HeteroGNN_Wrapper(pl.LightningModule):
 
         for edge_type in missing_edge_types:
             edge_index_dict[edge_type] = torch.empty(
-                size=0,
+                size=[edge_index_dict[list(present_edge_types)[0]].shape[0], 0],
                 dtype=torch.long,
             ).to(self._config.device)
 
