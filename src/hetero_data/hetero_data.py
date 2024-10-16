@@ -82,10 +82,9 @@ class LightningHeteroData(HeteroData):
             case "centralities":
                 if input_dim > len(CENTRALITY_FUNCTIONS) or input_dim <= 0:
                     raise ValueError(
-                        (
-                            f"Input dim({input_dim}) must be greater than 0 and"
-                            f"lower or equal number of implemented centralities({len(CENTRALITY_FUNCTIONS)})"
-                        )
+                        f"Input dim({input_dim}) must be greater than 0 and "
+                        "lower or equal number of implemented "
+                        f"centralities({len(CENTRALITY_FUNCTIONS)})"
                     )
 
                 mln_centralities: list[dict[MLNetworkActor, float]] = [
@@ -93,26 +92,25 @@ class LightningHeteroData(HeteroData):
                     for centrality_function in CENTRALITY_FUNCTIONS[:input_dim]
                 ]
 
-                features_raw = {}
+                features_raw = []
+                actor_indices = []
                 for actor in mln_centralities[0]:
-                    features_raw[actor.actor_id] = [
-                        mln_centrality[actor] for mln_centrality in mln_centralities
-                    ]
+                    actor_indices.append(
+                        network_info.network.actors_map[actor.actor_id]
+                    )
+                    features_raw.append(
+                        [mln_centrality[actor] for mln_centrality in mln_centralities]
+                    )
+                values = np.array(features_raw)
 
-                keys = list(features_raw.keys())
-                values = np.array(list(features_raw.values()))
-
-                actor_indices = np.array(
-                    [network_info.network.actors_map[key] for key in keys]
-                )
-                sorted_indices = np.argsort(actor_indices)
-                sorted_features = values[sorted_indices]
+                actor_indices = np.array(actor_indices)
+                sorted_features = values[actor_indices.argsort()]
 
                 features = torch.tensor(
                     data=sorted_features,
                     dtype=torch.float32,
                 )
-                features = features / len(keys)
+                features = features / len(features_raw)
 
                 return features
 
