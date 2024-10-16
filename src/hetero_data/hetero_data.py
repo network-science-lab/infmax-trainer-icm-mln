@@ -50,6 +50,7 @@ class LightningHeteroData(HeteroData):
             df=df,
         )
 
+        data.network_name = network_info.network_name
         data.actors_map = bidict.bidict(
             {str(actor): actors_map for actor, actors_map in network.actors_map.items()}
         )
@@ -107,10 +108,13 @@ class LightningHeteroData(HeteroData):
                 sorted_indices = np.argsort(actor_indices)
                 sorted_features = values[sorted_indices]
 
-                return torch.tensor(
+                features = torch.tensor(
                     data=sorted_features,
                     dtype=torch.float32,
                 )
+                features = features / len(keys)
+
+                return features
 
             case "scraped":
                 # TODO

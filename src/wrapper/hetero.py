@@ -156,8 +156,9 @@ class HeteroGNN_Wrapper(pl.LightningModule):
             batch=batch,
             predictions=predictions,
         )
+        assert len(batch) == 1
         self.log(
-            name="test_loss",
+            name=f"test_loss_{batch.network_name[0]}",
             value=loss,
             batch_size=len(batch),
         )
