@@ -94,12 +94,15 @@ class LightningHeteroData(HeteroData):
 
                 features_raw = []
                 actor_indices = []
-                for actor in mln_centralities[0]:
+                for actor in network_info.mln_network.get_actors():
                     actor_indices.append(
                         network_info.network.actors_map[actor.actor_id]
                     )
                     features_raw.append(
-                        [mln_centrality[actor] for mln_centrality in mln_centralities]
+                        [
+                            mln_centrality[actor] if actor in mln_centrality else 0
+                            for mln_centrality in mln_centralities
+                        ]
                     )
                 values = np.array(features_raw)
 
