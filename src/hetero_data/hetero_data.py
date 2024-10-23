@@ -2,13 +2,16 @@ import logging
 from typing import Iterable
 
 import bidict
+import numpy as np
 import torch
+from network_diffusion.mln import MLNetworkActor
 from pandas import DataFrame
 from sklearn.preprocessing import KBinsDiscretizer
 from torch_geometric.data import HeteroData
 from typing_extensions import Self
 
 from _data_set.nsl_data_utils.loaders.constants import ACTOR, PROTOCOL
+from src.hetero_data import CENTRALITY_FUNCTIONS
 from src.utils.multilayer_network import MultilayerNetworkInfo
 
 
@@ -47,6 +50,7 @@ class LightningHeteroData(HeteroData):
             df=df,
         )
 
+        data.network_name = network_info.network_name
         data.actors_map = bidict.bidict(
             {str(actor): actors_map for actor, actors_map in network.actors_map.items()}
         )
@@ -70,16 +74,49 @@ class LightningHeteroData(HeteroData):
         logging.info(f"Preparing features: {network_info.network_name}")
         match network_info.features_type:
             case None:
-                raise AttributeError(
+                raise ValueError(
                     f"Feature name must be passed and dimension must be greater than 0: {input_dim}"
                 )
             case "zeros":
                 return torch.zeros((len(network_info.network.actors_map), input_dim))
             case "centralities":
-                # TODO
-                raise NotImplementedError(
-                    f"{network_info.features_type} has not been implemented yet"
+                if input_dim > len(CENTRALITY_FUNCTIONS) or input_dim <= 0:
+                    raise ValueError(
+                        f"Input dim({input_dim}) must be greater than 0 and "
+                        "lower or equal number of implemented "
+                        f"centralities({len(CENTRALITY_FUNCTIONS)})"
+                    )
+
+                mln_centralities: list[dict[MLNetworkActor, float]] = [
+                    centrality_function(network_info.mln_network)
+                    for centrality_function in CENTRALITY_FUNCTIONS[:input_dim]
+                ]
+
+                features_raw = []
+                actor_indices = []
+                for actor in network_info.mln_network.get_actors():
+                    actor_indices.append(
+                        network_info.network.actors_map[actor.actor_id]
+                    )
+                    features_raw.append(
+                        [
+                            mln_centrality[actor] if actor in mln_centrality else 0
+                            for mln_centrality in mln_centralities
+                        ]
+                    )
+                values = np.array(features_raw)
+
+                actor_indices = np.array(actor_indices)
+                sorted_features = values[actor_indices.argsort()]
+
+                features = torch.tensor(
+                    data=sorted_features,
+                    dtype=torch.float32,
                 )
+                features = features / len(features_raw)
+
+                return features
+
             case "scraped":
                 # TODO
                 raise NotImplementedError(

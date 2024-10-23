@@ -74,7 +74,7 @@ class HeteroGNN_Wrapper(pl.LightningModule):
 
         for edge_type in missing_edge_types:
             edge_index_dict[edge_type] = torch.empty(
-                size=0,
+                size=[edge_index_dict[list(present_edge_types)[0]].shape[0], 0],
                 dtype=torch.long,
             ).to(self._config.device)
 
@@ -156,8 +156,9 @@ class HeteroGNN_Wrapper(pl.LightningModule):
             batch=batch,
             predictions=predictions,
         )
+        assert len(batch) == 1
         self.log(
-            name="test_loss",
+            name=f"test_loss_{batch.network_name[0]}",
             value=loss,
             batch_size=len(batch),
         )
