@@ -7,36 +7,34 @@ A repository to train and evaluate Influence Maximisation ML models for multilay
 
 ## Configuration of the runtime
 
-First, initialise the enviornment:
-
-```bash
-conda env create -f env/conda.yaml
-conda activate infmax-simulator-icm-mln
-```
-
-Then, pull the submodule and install its code:
+First, initialise the submodule with utilities:
 
 ```bash
 git submodule init && git submodule update
-pip install -e _data_set
+```
+
+Then, initialise the enviornment:
+
+```bash
+conda env create -f env/conda.yaml
+conda activate infmax-trainer-icm-mln
 ```
 
 `multi_node2vec` is an external codebase that can be executed with a deprecated Python version. Hence,
 it has been contenerised. Before using it, please build the docker image:
 
 ```bash
-cd infmax_models/multi_node2vec
+cd src/infmax_models/multi_node2vec_kmeans/multi_node2vec
 docker build -t multi-node2vec --platform=linux/amd64 .
-cd ../..
 ```
 
 ## Data
 
 Dataset is stored in a separate repository bounded with this project as a git submodule. Thus, to
-obtain it you have to pull the data from the DVC remote. In order to access it, please sent a
-request to get  an access via  e-mail (michal.czuba@pwr.edu.pl). Then, simply execute in a shell:
-* `cd _data_set && dvc pull ns-data-sources/raw/multi_layer_networks/*.dvc && cd ..`
-* `cd _data_set && dvc pull ns-data-sources/spreading_potentials/multi_layer_networks/*.dvc && cd ..`
+obtain it you have to pull the data from the DVC remote. In order to access it, please send a
+request to get an access via e-mail (michal.czuba@pwr.edu.pl). Then, simply execute in a shell:
+* `cd _data_set && dvc pull nsl_data_sources/raw/multi_layer_networks/**.dvc && cd ..`
+* `cd _data_set && dvc pull nsl_data_sources/spreading_potentials/multi_layer_networks/**.dvc && cd ..`
 
 ## Structure of the repository
 ```
@@ -62,7 +60,10 @@ request to get  an access via  e-mail (michal.czuba@pwr.edu.pl). Then, simply ex
 
 ## Running the pipeline
 
-To run experiments execute: `run_experiments.py` and provide proper CLI arguments defined in `_config/hydra.yaml`, i.e. a name of the configuration file.
+To run experiments execute: `run_experiments.py` and provide proper CLI arguments defined in
+`_configs/hydra.yaml`, i.e. a name of the configuration file.
 
-### Neptune.ai dashboard
-https://app.neptune.ai/o/infmax/org/infmax-gnn/runs/table?viewId=standard-view
+### `neptune.ai` dashboard
+
+The dashboard is here: https://app.neptune.ai/o/infmax/org/infmax-gnn/runs/table?viewId=standard-view.
+Prior using it please fill in the `AUTH_KEY` in the `.env` file (as shown in `.env-example`).
