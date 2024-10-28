@@ -12,24 +12,34 @@ data:
     - peak_iteration
     - peak_infected
   train_networks:
-    - name: ckm_physicians
+    - name: artificial_er
       features_type: zeros
-    - name: toy_network
+      val_split: True
+    - name: artificial_pa
       features_type: zeros
-    - name: lazega
-      features_type: zeros
+      val_split: True
   val_dataset:
+    - name: artificial_er
+      features_type: zeros
+      val_split: True
+    - name: artificial_pa
+      features_type: zeros
+      val_split: True
+  test_dataset:
     - name: lazega
       features_type: zeros
-  test_dataset:
     - name: toy_network
+      features_type: zeros
+    - name: timik1q2009
+      features_type: zeros
+    - name: fmri74
       features_type: zeros
 
 model:
   name: SSNet
   aggr: sum
   parameters:
-    input_dim: 32 
+    input_dim: 5 
     output_dim: 4
     hidden_channels: 100  
 
