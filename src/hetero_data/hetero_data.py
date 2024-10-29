@@ -5,6 +5,7 @@ import bidict
 import numpy as np
 import torch
 from network_diffusion.mln import MLNetworkActor
+from network_diffusion.mln.functions import remove_selfloop_edges
 from pandas import DataFrame
 from sklearn.preprocessing import KBinsDiscretizer
 from torch_geometric.data import HeteroData
@@ -72,6 +73,7 @@ class LightningHeteroData(HeteroData):
         input_dim: int,
     ) -> torch.Tensor:
         logging.info(f"Preparing features: {network_info.network_name}")
+        network_info.network = remove_selfloop_edges(network_info.network)
         match network_info.features_type:
             case None:
                 raise ValueError(

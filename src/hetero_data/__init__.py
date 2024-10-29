@@ -15,7 +15,7 @@ CENTRALITY_FUNCTIONS = [
     degree,
     betweenness,
     closeness,
-    # core_number, # related with k-shell-mln
+    core_number, # related with k-shell-mln
     neighbourhood_size,
     voterank,
 ]
