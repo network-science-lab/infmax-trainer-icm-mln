@@ -40,7 +40,7 @@ def _load_networks_info(
             for name, mln in network.items()
         ]
 
-        if network_config["val_split"]:
+        if "val_split" in network_config and network_config["val_split"]:
             train_networks, val_networks = train_test_split(
                 network_info,
                 test_size=0.2,
