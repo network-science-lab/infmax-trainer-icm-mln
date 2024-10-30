@@ -12,8 +12,8 @@ from torch_geometric.data import HeteroData
 from typing_extensions import Self
 
 from _data_set.nsl_data_utils.loaders.constants import ACTOR
-from src.hetero_data import CENTRALITY_FUNCTIONS
-from src.utils.multilayer_network import MultilayerNetworkInfo
+from src.netsp_models.aux import CENTRALITY_FUNCTIONS
+from src.netsp_models.mln_info import MultilayerNetworkInfo
 
 
 class LightningHeteroData(HeteroData):
