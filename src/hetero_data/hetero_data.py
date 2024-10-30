@@ -17,6 +17,19 @@ from src.utils.multilayer_network import MultilayerNetworkInfo
 
 
 class LightningHeteroData(HeteroData):
+    """
+    Target class to store multilayergraph data for trained GNNs.
+
+    Attributes:
+    self["actor"].x - tensor of input features for actors of the network
+    self["actor"].y - tensor of output labels denoting spreading potential for each actor
+    self["actor"].z - tensor of mask with "1"s denoting nodes artificially added on each layer to 
+        make the netwrork multiplex
+    self["actor", "l_<idx>", "actor"] - tensor edges in layer named "l_<idx"
+    self.network_name - name of the network
+    self.actors_map - map of the actors' original names to their indices in tensors
+    self.layers_map - map of the layers' original names to their indices in tensors
+    """
 
     # TODO: In case of need use the following code as a starter for iter function
     def __iter__(self) -> Iterable:
@@ -106,18 +119,18 @@ class LightningHeteroData(HeteroData):
         # convert the dataframe with raw data to have only values following the training setting
         sp_transformed = network_info.transform_sp()
 
-        # this is for classification task
-        if isinstance(network_info.y_type, str):
+        # this is for classification task  TODO: test it!
+        if len(network_info.y_type) == 1:
             est = KBinsDiscretizer(n_bins=output_dim, encode="ordinal", strategy="kmeans")
             labels = est.fit_transform(sp_transformed[network_info.y_type].values.reshape(-1, 1))
             labels = torch.tensor(labels.squeeze(), dtype=torch.long)
         
         # this is for regression task
-        elif isinstance(network_info.y_type, list):
-            Y_raw = sp_transformed[network_info.y_type]
-            Y_raw["actor_idx"] = Y_raw.index.map(network_info.net_pt.actors_map)
+        else:
+            Y_raw = sp_transformed[[ACTOR, *network_info.y_type]]
+            Y_raw["actor_idx"] = Y_raw[ACTOR].map(network_info.net_pt.actors_map)
             Y_raw = Y_raw.set_index("actor_idx").sort_index()
-            labels = torch.tensor(Y_raw.values, dtype=torch.float32)
+            labels = torch.tensor(Y_raw[network_info.y_type].values, dtype=torch.float32)
             labels = labels / len(sp_transformed[ACTOR])
 
         return labels

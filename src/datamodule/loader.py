@@ -12,78 +12,77 @@ from torch_geometric.data.lightning import LightningDataset
 from torch_geometric.typing import EdgeType, NodeType
 
 
-def _load_networks_info(
-    networks_config: list[dict[str, Any]],
-    label: str,
+def _load_mlni_chunk(
+    network_type: str,
+    labels_type: str,
+    features_type: str,
     protocol: str,
     random_seed: int,
     dataset_type: Literal["train", "val", "test"],
+    validation_split: bool,
 ) -> list[MultilayerNetworkInfo]:
-    networks_info = []
-    for network_config in networks_config:
-        network_name = network_config["name"]
-        network = load_network(
-            net_name=network_name,
-            as_tensor=False,
-        )
-        spreading_potential = load_sp(network_name)
+    """Load raw networks and target labels for given network type and spreading params."""
 
-        network_info = [
-            MultilayerNetworkInfo(
-                network=mln,
-                output_label_name=label,
-                spreading_potential=spreading_potential[name],
-                network_name=f"{network_name}_{name}",
-                protocol=protocol,
-                features_type=network_config["features_type"],
-            )
-            for name, mln in network.items()
-        ]
+    nets_dict = load_network(net_name=network_type, as_tensor=False)
+    sps_dict = load_sp(net_name=network_type)
+    nets_to_use = list(nets_dict.keys())
+    assert len(nets_dict) == len(sps_dict)
 
-        if "val_split" in network_config and network_config["val_split"]:
-            train_networks, val_networks = train_test_split(
-                network_info,
-                test_size=0.2,
-                random_state=random_seed,
-            )
-            match dataset_type:
-                case "train":
-                    networks_info.extend(train_networks)
-                case "val":
-                    networks_info.extend(val_networks)
-                case "test":
-                    raise ValueError(f"Invalid option: val_split for test network")
+    if validation_split: # if we make a split here, loading is speeded up
+        train_nets, val_nets = train_test_split(nets_to_use, test_size=0.2, random_state=random_seed)
+        if dataset_type == "train":
+            nets_to_use = train_nets
+        elif dataset_type == "val":
+            nets_to_use = val_nets
         else:
-            networks_info.extend(network_info)
+            raise ValueError(f"Invalid option: val_split for the test network!")
 
-    return networks_info
+    mln_info = [  # for the reduced size of data, we create shorter list of MNI objects
+        MultilayerNetworkInfo(
+            name=f"{network_type}_{net_name}",
+            net_nd=nets_dict[net_name],
+            icm_protocol=protocol,
+            x_type=features_type,
+            y_type=labels_type,
+            sp_raw=sps_dict[net_name],
+        )
+        for net_name in nets_to_use
+    ]
+
+    return mln_info
 
 
 def _get_dataset(
     data_name: str,
     networks_config: list[dict[str, Any]],
-    label: str,
-    input_dim: int,
-    output_dim: int,
+    labels: list[str],
+    features: str,
     protocol: str,
     random_seed: int,
+    input_dim: int,
+    output_dim: int,
     dataset_type: Literal["train", "val", "test"],
 ) -> BaseHeteroDataset:
     match data_name:
         case DataFrameHeteroDataset.__name__:
-            return DataFrameHeteroDataset(
-                root=str(MODULE_PATH.parent / "data"),
-                networks=_load_networks_info(
-                    networks_config=networks_config,
-                    label=label,
+            mlni_nets = []
+            for network_config in networks_config:
+                mlni_chunk = _load_mlni_chunk(
+                    network_type=network_config["name"],
+                    labels_type=labels,
+                    features_type=features,
                     protocol=protocol,
                     random_seed=random_seed,
                     dataset_type=dataset_type,
-                ),
+                    validation_split=bool(network_config.get("val_split")),
+                )
+                mlni_nets.extend(mlni_chunk)
+            return DataFrameHeteroDataset(
+                root=str(MODULE_PATH.parent / "data"),  # TODO: this path doesn't exist
+                networks=mlni_nets,
                 input_dim=input_dim,
                 output_dim=output_dim,
             )
-
         case _:
             raise AttributeError(f"Unknown dataset: {data_name}")
 
@@ -92,7 +91,8 @@ def get_datasets(config: dict[str, Any]) -> dict[str, BaseHeteroDataset]:
     train_dataset = _get_dataset(
         data_name=config["data"]["name"],
         networks_config=config["data"]["train_networks"],
-        label=config["data"]["output_label_name"],
+        labels=config["data"]["output_label_name"],
+        features=config["data"]["features_type"],
         input_dim=config["model"]["parameters"]["input_dim"],
         output_dim=config["model"]["parameters"]["output_dim"],
         protocol=config["data"]["protocol"],
@@ -102,7 +102,8 @@ def get_datasets(config: dict[str, Any]) -> dict[str, BaseHeteroDataset]:
     val_dataset = _get_dataset(
         data_name=config["data"]["name"],
         networks_config=config["data"]["val_dataset"],
-        label=config["data"]["output_label_name"],
+        labels=config["data"]["output_label_name"],
+        features=config["data"]["features_type"],
         input_dim=config["model"]["parameters"]["input_dim"],
         output_dim=config["model"]["parameters"]["output_dim"],
         protocol=config["data"]["protocol"],
@@ -112,19 +113,15 @@ def get_datasets(config: dict[str, Any]) -> dict[str, BaseHeteroDataset]:
     test_dataset = _get_dataset(
         data_name=config["data"]["name"],
         networks_config=config["data"]["test_dataset"],
-        label=config["data"]["output_label_name"],
+        labels=config["data"]["output_label_name"],
+        features=config["data"]["features_type"],
         input_dim=config["model"]["parameters"]["input_dim"],
         output_dim=config["model"]["parameters"]["output_dim"],
         protocol=config["data"]["protocol"],
         random_seed=config["base"]["random_seed"],
         dataset_type="test",
     )
-
-    return {
-        "train": train_dataset,
-        "val": val_dataset,
-        "test": test_dataset,
-    }
+    return {"train": train_dataset, "val": val_dataset, "test": test_dataset}
 
 
 def get_datamodule(
