@@ -8,6 +8,7 @@ import torch
 from torch_geometric.data.batch import Batch
 from torch_geometric.nn import to_hetero
 
+from _data_set.nsl_data_utils.loaders.constants import ACTOR
 from src.infmax_models.base.base import BaseHeteroModule
 from src.utils.wrapper import get_loss
 
@@ -88,11 +89,10 @@ class HeteroGNN_Wrapper(pl.LightningModule):
         x_dict: dict[str, torch.Tensor],
         edge_index_dict: dict[str, torch.Tensor],
     ) -> dict[str, torch.Tensor]:
-        x_dict, edge_index_dict = self._mask_batch(
-            x_dict=x_dict,
-            edge_index_dict=edge_index_dict,
-        )
-
+        if not self.student.is_hetero:
+            x_dict, edge_index_dict = self._mask_batch(
+                x_dict=x_dict, edge_index_dict=edge_index_dict
+            )
         return self.student.forward(x_dict, edge_index_dict)
 
     def _calculate_loss(
@@ -100,11 +100,7 @@ class HeteroGNN_Wrapper(pl.LightningModule):
         batch: Batch,
         predictions: dict[str, torch.Tensor],
     ) -> float:
-        loss = 0
-        for layer in batch.x_dict.keys():
-            loss += self._loss(predictions[layer], batch[layer].y)
-
-        return loss
+        return self._loss(predictions[ACTOR], batch[ACTOR].y)
 
     def training_step(
         self,

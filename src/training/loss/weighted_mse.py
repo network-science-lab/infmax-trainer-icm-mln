@@ -11,12 +11,12 @@ class WeightedMSE(torch.nn.Module):
         reduction: str = "mean",
     ) -> None:
         super().__init__()
-        self.weights = torch.tensor([w_sl, w_e, w_pin, w_pit], dtype=torch.float32)
+        self.weights = torch.tensor([w_sl, w_e, w_pin, w_pit], dtype=torch.float32)  # TODO: add softmax here
         self.mse = torch.nn.MSELoss(reduction=reduction)
 
     def forward(self, y_hat: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         loss = 0
         for i, weight in enumerate(self.weights):
-            loss += weight * self.mse(y_hat[:, i], y[:, i])
+            loss += weight * self.mse(y_hat[:, i], y[:, i])  # this can be misleading if the entire network is an input, not a bunch of actors
 
         return loss
