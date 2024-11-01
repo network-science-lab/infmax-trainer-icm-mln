@@ -28,7 +28,7 @@ class SSNet(BaseHeteroModule):
         self.layerwise_encoder = Sequential(
             "x_actors, x_edges",
             [
-                (Dropout(p=0.2), "x_actors -> x_actors"),
+                # (Dropout(p=0.2), "x_actors -> x_actors"),  # TODO: verify if dropout also works with edges
                 (
                     GCNConv(
                         in_channels=input_dim,
@@ -81,7 +81,7 @@ class SSNet(BaseHeteroModule):
 
         # embed actors on each mln layer separately
         for layer_edges in edge_index_dict.values():
-            y_relation = self.layerwise_encoder(x_dict[ACTOR], layer_edges)
+            y_relation = self.layerwise_encoder(x_dict[ACTOR], layer_edges)  # TODO: we pass here centralities only. where is the mask for artificially added nodes?
             y_relations.append(y_relation)
         y_relations = torch.stack(y_relations)
 
@@ -89,6 +89,6 @@ class SSNet(BaseHeteroModule):
         y_aggregated = self.layerwise_aggregator(y_relations)
 
         # obtain final prediction
-        y_pred = self.head(y_aggregated)
+        y_pred = self.head(y_aggregated)  # TODO: enforce only positive values!!! errors can compenstate right now
 
         return {ACTOR: y_pred}

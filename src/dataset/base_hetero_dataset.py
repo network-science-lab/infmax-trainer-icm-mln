@@ -3,7 +3,7 @@ from typing import Callable
 from torch_geometric.data import Dataset, HeteroData
 from torch_geometric.typing import EdgeType, NodeType
 
-from src.hetero_data.hetero_data import LightningHeteroData
+from src.netsp_models.lh_data import LightningHeteroData
 
 
 class BaseHeteroDataset(Dataset):
@@ -61,4 +61,4 @@ class BaseHeteroDataset(Dataset):
             nodes_data.extend(node_data)
             edges_data.extend(edge_data)
 
-        return nodes_data, edges_data
+        return nodes_data, edges_data  # TODO: confirm that this func is used only for nonhetero models

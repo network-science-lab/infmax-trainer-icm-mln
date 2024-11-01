@@ -3,8 +3,8 @@ from typing import Callable
 from torch_geometric.data import HeteroData
 
 from src.dataset.base_hetero_dataset import BaseHeteroDataset
-from src.hetero_data.hetero_data import LightningHeteroData
-from src.utils.multilayer_network import MultilayerNetworkInfo
+from src.netsp_models.lh_data import LightningHeteroData
+from src.netsp_models.mln_info import MultilayerNetworkInfo
 
 
 class DataFrameHeteroDataset(BaseHeteroDataset):

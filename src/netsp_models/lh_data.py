@@ -76,7 +76,7 @@ class LightningHeteroData(HeteroData):
 
     @staticmethod
     def _prepare_features(network_info: MultilayerNetworkInfo, input_dim: int) -> torch.Tensor:
-        logging.info(f"Preparing features: {network_info.name}")
+        logging.debug(f"Preparing features: {network_info.name}")
 
         if network_info.x_type == "zeros":
                 return torch.zeros((len(network_info.net_pt.actors_map), input_dim))
@@ -114,7 +114,7 @@ class LightningHeteroData(HeteroData):
 
     @staticmethod
     def _prepare_labels(network_info: MultilayerNetworkInfo, output_dim: int) -> torch.Tensor:
-        logging.info(f"Preparing labels: {network_info.name}")
+        logging.debug(f"Preparing labels: {network_info.name}")
 
         # convert the dataframe with raw data to have only values following the training setting
         sp_transformed = network_info.transform_sp()
