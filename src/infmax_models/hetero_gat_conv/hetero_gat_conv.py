@@ -47,6 +47,7 @@ class GATHeteroGNN(BaseHeteroModule):
     def forward(
         self,
         x_dict: Proxy,
+        z_dict: Proxy,
         edge_index_dict: Proxy,
     ) -> dict[str, Tensor]:
         for layer in self.layers[:-1]:

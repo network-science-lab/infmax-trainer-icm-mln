@@ -28,7 +28,6 @@ class SSNet(BaseHeteroModule):
         self.layerwise_encoder = Sequential(
             "x_actors, x_edges",
             [
-                # (Dropout(p=0.2), "x_actors -> x_actors"),  # TODO: verify if dropout also works with edges
                 (
                     GCNConv(
                         in_channels=input_dim,
@@ -69,19 +68,25 @@ class SSNet(BaseHeteroModule):
     def forward(
         self,
         x_dict: dict[str, torch.Tensor],
+        z_dict: dict[str, torch.Tensor],
         edge_index_dict: dict[str, torch.Tensor],
     ) -> dict[str, torch.Tensor]:
         """
         Regress spreading potentials for actors of the given mln.
 
-        :param data: multilayer network
+        :param x_dict: dict with actors' features `{"actor": torch.Tensor}`
+        :param z_dict: dict with the mask of artificially added nodes `{"actor": torch.Tensor}`
+        :param edge_index_dict: dict with edges `{("actor", "<layer_idx>", "actor"): torch.Tensor}`
+
         :return: spreading potentials as a vector of shape `[nb_mln_actors, out_channels]`
         """
         y_relations = []
+        z_mask = 1 - z_dict[ACTOR]
 
         # embed actors on each mln layer separately
-        for layer_edges in edge_index_dict.values():
-            y_relation = self.layerwise_encoder(x_dict[ACTOR], layer_edges)  # TODO: we pass here centralities only. where is the mask for artificially added nodes?
+        for layer_idx, layer_edges in enumerate(edge_index_dict.values()):
+            layer_x = x_dict[ACTOR] * z_mask[:, layer_idx].unsqueeze(dim=1).expand_as(x_dict[ACTOR])
+            y_relation = self.layerwise_encoder(layer_x, layer_edges)
             y_relations.append(y_relation)
         y_relations = torch.stack(y_relations)
 

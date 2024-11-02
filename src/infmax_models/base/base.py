@@ -17,6 +17,7 @@ class BaseHeteroModule(Module):
     def forward(
         self,
         x_dict: Proxy,
+        z_dict: Proxy,
         edge_index_dict: Proxy,
     ) -> dict[str, Tensor]:
         pass
