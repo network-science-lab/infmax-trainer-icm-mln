@@ -60,9 +60,13 @@ class SSNet(BaseHeteroModule):
             ],
         )
         self.layerwise_aggregator = LayerwiseAggregation(hidden_channels // 2)
-        self.head = torch.nn.Linear(
-            in_features=hidden_channels // 2,
-            out_features=output_dim,
+        self.head = torch.nn.Sequential(
+            torch.nn.Linear(
+                in_features=hidden_channels // 2,
+                out_features=output_dim,
+            ),
+            # torch.nn.ReLU(),  # TODO: for consideration enforcing all values to me positive
+            torch.nn.Softplus(),  # ditto
         )
 
     def forward(
@@ -94,6 +98,6 @@ class SSNet(BaseHeteroModule):
         y_aggregated = self.layerwise_aggregator(y_relations)
 
         # obtain final prediction
-        y_pred = self.head(y_aggregated)  # TODO: enforce only positive values!!! errors can compenstate right now
+        y_pred = self.head(y_aggregated)
 
         return {ACTOR: y_pred}

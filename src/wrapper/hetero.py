@@ -147,7 +147,7 @@ class HeteroGNN_Wrapper(pl.LightningModule):
         batch_idx: int,
     ) -> torch.Tensor:
         with torch.no_grad():
-            predictions = self(batch.x_dict, batch.edge_index_dict)
+            predictions = self(batch.x_dict, batch.z_dict, batch.edge_index_dict)
 
         loss = self._calculate_loss(
             batch=batch,
