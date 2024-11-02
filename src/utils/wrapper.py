@@ -4,6 +4,7 @@ from torch.nn import CrossEntropyLoss, MSELoss
 from torch.nn.modules.loss import _Loss
 
 from src.training.loss.weighted_mse import WeightedMSE
+from src.training.loss.mrtwse import MRTWSE
 
 
 def get_loss(
@@ -19,6 +20,9 @@ def get_loss(
 
         case WeightedMSE.__name__:
             return WeightedMSE(**loss_args)
+
+        case MRTWSE.__name__:
+            return MRTWSE(**loss_args)
 
         case _:
             raise AttributeError(f"Unknown loss function: {loss_name}")
