@@ -3,7 +3,7 @@ base:
   
 data:
   name: DataFrameHeteroDataset
-  num_workers: -1
+  num_workers: 0  # TODO -1 does not work on thorium
   real_batch_size: 1
   protocol: OR
   output_label_name: 
@@ -19,7 +19,7 @@ data:
       features_type: zeros
       val_split: True
     - name: artificial_small
-      features_type: zeros
+      features_type: centralities
       val_split: True
     - name: l2_course_net_1
       features_type: centralities
@@ -28,7 +28,7 @@ data:
       features_type: centralities
       val_split: True
     - name: artificial_pa
-      features_type: centralities
+      features_type: zeros
       val_split: True
     - name: artificial_small
       features_type: centralities
@@ -51,7 +51,7 @@ data:
     - name: toy_network
       features_type: centralities
     - name: timik1q2009
-      features_type: centralities
+      features_type: zeros
     - name: toy_network
       features_type: centralities
 
