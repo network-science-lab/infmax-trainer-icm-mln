@@ -86,7 +86,7 @@ def directly_trainable(args: dict[str, Any]) -> None:
             loss_name=args["training"]["loss"]["name"],
             loss_args=args["training"]["loss"]["args"],
             learning_rate=args["training"]["learning_rate"],
-            aggr=args["model"]["aggr"],
+            aggr=args["model"].get("aggr"),
             metadata=get_metadata(list(datasets.values())),
             device="cuda" if torch.cuda.is_available() else "cpu",
         ),

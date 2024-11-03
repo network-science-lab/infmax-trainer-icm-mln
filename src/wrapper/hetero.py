@@ -18,7 +18,7 @@ class HetergoGNN_WrapperConfig:
     loss_name: str
     loss_args: dict[str, Any]
     learning_rate: float
-    aggr: str
+    aggr: str | None
     metadata: tuple
     device: str
 
