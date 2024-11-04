@@ -4,17 +4,15 @@ import logging
 
 from typing import Iterable
 
-import numpy as np
 import torch
 
-from network_diffusion.mln import MLNetworkActor
 from bidict import bidict
 from sklearn.preprocessing import KBinsDiscretizer
 from torch_geometric.data import HeteroData
 from typing_extensions import Self
 
-from _data_set.nsl_data_utils.loaders.constants import ACTOR
-from src.data_models.aux import CENTRALITY_FUNCTIONS
+from _data_set.nsl_data_utils.loaders.centrality_loader import load_centralities
+from _data_set.nsl_data_utils.loaders.constants import ACTOR, CENTRALITY_FUNCTIONS
 from src.data_models.mln_info import MLNInfo
 
 
@@ -89,24 +87,19 @@ class MLNHeteroData(HeteroData):
                     f"Input dim({input_dim}) must be > 0 and <= number of implemented centralities "
                     f"({len(CENTRALITY_FUNCTIONS)})"
                 )
-            mln_centralities: list[dict[MLNetworkActor, float]] = [
-                centrality_function(network_info.mln)
-                for centrality_function in CENTRALITY_FUNCTIONS[:input_dim]
-            ]
-            actor_indices, features_raw = [], []
-            for actor in network_info.mln.get_actors():
-                actor_indices.append(network_info.mln_torch.actors_map[actor.actor_id])
-                features_raw.append(
-                    [
-                        mln_centrality[actor] if actor in mln_centrality else 0
-                        for mln_centrality in mln_centralities
-                    ]
-                )
-            features_raw = np.array(features_raw)
-            actor_indices = np.array(actor_indices)
-            sorted_features = features_raw[actor_indices.argsort()]
-            features = torch.tensor(data=sorted_features, dtype=torch.float32)
-            features = features / features.shape[0]
+
+            sorted_features = load_centralities(
+                network_name=network_info.mln_name,
+                network_type=network_info.mln_type,
+            )
+            sorted_features = sorted_features[:, :input_dim]
+
+            features = torch.tensor(
+                data=sorted_features,
+                dtype=torch.float32,
+            )
+            features = features / len(network_info.mln.get_actors())
+
             return features
 
         elif network_info.x_type == "scrapped":

@@ -43,7 +43,8 @@ def _load_mln_info_chunk(
 
     mln_info = [  # for the reduced size of data, we create shorter list of MNI objects
         MLNInfo(
-            name=f"{network_type}_{net_name}",
+            mln_type=network_type,
+            mln_name=net_name,
             mln=nets_dict[net_name],
             icm_protocol=protocol,
             x_type=features_type,

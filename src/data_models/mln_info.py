@@ -15,7 +15,8 @@ from _data_set.nsl_data_utils.loaders.constants import (
 class MLNInfo:
     """Base class to keep network with its ground truth data and prediciton params."""
 
-    name: str  # its type and name, e.g. aucs_aucs artificial_small_er2
+    mln_type: str
+    mln_name: str
     mln: MultilayerNetwork
     icm_protocol: Literal["OR", "AND"]
     x_type: Literal["zeros", "scrapped", "centralities"]
@@ -37,3 +38,7 @@ class MLNInfo:
         df = df[df[PROTOCOL] == self.icm_protocol].drop(PROTOCOL, axis=1)
         df = df.groupby([ACTOR]).mean().reset_index()
         return df
+
+    @property
+    def name(self) -> str:
+        return f"{self.mln_type}_{self.mln_name}"
