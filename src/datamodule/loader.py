@@ -8,13 +8,13 @@ from sklearn.model_selection import train_test_split
 from src import MODULE_PATH
 from src.dataset.base_hetero_dataset import BaseHeteroDataset
 from src.dataset.data_frame_hetero_dataset import DataFrameHeteroDataset
-from src.netsp_models.mln_info import MultilayerNetworkInfo
+from src.data_models.mln_info import MLNInfo
 from src.utils.worker import get_num_workers
 from torch_geometric.data.lightning import LightningDataset
 from torch_geometric.typing import EdgeType, NodeType
 
 
-def _load_mlni_chunk(
+def _load_mln_info_chunk(
     network_type: str,
     labels_type: str,
     features_type: str,
@@ -22,7 +22,7 @@ def _load_mlni_chunk(
     random_seed: int,
     dataset_type: Literal["train", "val", "test"],
     validation_split: bool,
-) -> list[MultilayerNetworkInfo]:
+) -> list[MLNInfo]:
     """Load raw networks and target labels for given network type and spreading params."""
 
     nets_dict = load_network(net_name=network_type, as_tensor=False)
@@ -31,7 +31,9 @@ def _load_mlni_chunk(
     assert len(nets_dict) == len(sps_dict)
 
     if validation_split: # if we make a split here, loading is speeded up
-        train_nets, val_nets = train_test_split(nets_to_use, test_size=0.2, random_state=random_seed)
+        train_nets, val_nets = train_test_split(
+            nets_to_use, test_size=0.2, random_state=random_seed
+        )
         if dataset_type == "train":
             nets_to_use = train_nets
         elif dataset_type == "val":
@@ -40,9 +42,9 @@ def _load_mlni_chunk(
             raise ValueError(f"Invalid option: val_split for the test network!")
 
     mln_info = [  # for the reduced size of data, we create shorter list of MNI objects
-        MultilayerNetworkInfo(
+        MLNInfo(
             name=f"{network_type}_{net_name}",
-            net_nd=nets_dict[net_name],
+            mln=nets_dict[net_name],
             icm_protocol=protocol,
             x_type=features_type,
             y_type=labels_type,
@@ -69,7 +71,7 @@ def _get_dataset(
         case DataFrameHeteroDataset.__name__:
             mlni_nets = []
             for network_config in networks_config:
-                mlni_chunk = _load_mlni_chunk(
+                mlni_chunk = _load_mln_info_chunk(
                     network_type=network_config["name"],
                     labels_type=labels,
                     features_type=network_config["features_type"],
@@ -120,7 +122,11 @@ def get_datasets(config: dict[str, Any]) -> dict[str, BaseHeteroDataset]:
         random_seed=config["base"]["random_seed"],
         dataset_type="test",
     )
-    return {"train": train_dataset, "val": val_dataset, "test": test_dataset}
+    return {
+        "train": train_dataset,
+        "val": val_dataset,
+        "test": test_dataset
+    }
 
 
 def get_datamodule(
