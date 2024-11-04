@@ -15,7 +15,7 @@ from _data_set.nsl_data_utils.loaders.net_loader import load_network
 from _data_set.nsl_data_utils.loaders.sp_loader import get_gt_data
 from src.datamodule.loader import get_datamodule, get_datasets, get_metadata
 from src.infmax_models.loader import load_model
-from src.netsp_models.mln_info import MultilayerNetworkInfo
+from src.data_models.mln_info import MLNInfo
 from src.training.callbacks import get_callbacks
 from src.training.loggers import get_loggers
 from src.training.trainers import TRAINABLE
@@ -28,16 +28,13 @@ from src.wrapper.hetero import HetergoGNN_WrapperConfig, HeteroGNN_Wrapper
 def indirectly_trainable(args: dict[str, Any]) -> None:
     # load dataset
     networks = [
-        MultilayerNetworkInfo(
+        MLNInfo(
             name=n,
-            net_pt=load_network(
-                net_name=n,
-                as_tensor=True,
-            ),
-            y_type=None,
-            sp_raw=None,
+            mln=load_network(net_name=n, as_tensor=False),
             icm_protocol=args["spreading_regime"]["protocol"],
             x_type=None,
+            y_type=None,
+            sp_raw=None,
         )
         for n in args["networks"]
     ]
@@ -55,9 +52,9 @@ def indirectly_trainable(args: dict[str, Any]) -> None:
     for net in networks:
         logging.info(f"Dataset: {net.name}")
 
-        pred_seeds = model(network=net.net_pt)
+        pred_seeds = model(network=net.mln_torch)
         pred_performance = evaluate_seed_set(
-            net=net.net_pt,
+            net=net.mln_torch,
             seed_set=pred_seeds,
             protocol=proto,
             probability=p,
@@ -69,7 +66,7 @@ def indirectly_trainable(args: dict[str, Any]) -> None:
 
         ref_seeds = get_gt_data(net.name, proto, p, seed_size)
         ref_performance = evaluate_seed_set(
-            net=net.net_pt,
+            net=net.mln_torch,
             seed_set=ref_seeds,
             protocol=proto,
             probability=p,
