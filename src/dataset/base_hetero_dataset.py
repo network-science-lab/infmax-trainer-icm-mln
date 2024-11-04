@@ -3,7 +3,7 @@ from typing import Callable
 from torch_geometric.data import Dataset, HeteroData
 from torch_geometric.typing import EdgeType, NodeType
 
-from src.hetero_data.hetero_data import LightningHeteroData
+from src.data_models.mln_hetero_data import MLNHeteroData
 
 
 class BaseHeteroDataset(Dataset):
@@ -45,7 +45,7 @@ class BaseHeteroDataset(Dataset):
             pre_filter=pre_filter,
         )
 
-        self.data_list: list[LightningHeteroData]
+        self.data_list: list[MLNHeteroData]
 
     def len(self) -> int:
         return len(self.data_list)
@@ -61,4 +61,4 @@ class BaseHeteroDataset(Dataset):
             nodes_data.extend(node_data)
             edges_data.extend(edge_data)
 
-        return nodes_data, edges_data
+        return nodes_data, edges_data  # TODO: confirm that this func is used only for nonhetero models

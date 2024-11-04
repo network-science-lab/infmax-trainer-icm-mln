@@ -3,8 +3,8 @@ from typing import Callable
 from torch_geometric.data import HeteroData
 
 from src.dataset.base_hetero_dataset import BaseHeteroDataset
-from src.hetero_data.hetero_data import LightningHeteroData
-from src.utils.multilayer_network import MultilayerNetworkInfo
+from src.data_models.mln_hetero_data import MLNHeteroData
+from src.data_models.mln_info import MLNInfo
 
 
 class DataFrameHeteroDataset(BaseHeteroDataset):
@@ -39,7 +39,7 @@ class DataFrameHeteroDataset(BaseHeteroDataset):
 
     def __init__(
         self,
-        networks: list[MultilayerNetworkInfo],
+        networks: list[MLNInfo],
         input_dim: int,
         output_dim: int,
         root: str,
@@ -58,7 +58,7 @@ class DataFrameHeteroDataset(BaseHeteroDataset):
         self._output_dim = output_dim
 
         self.data_list = [
-            LightningHeteroData.from_network_info(
+            MLNHeteroData.from_network_info(
                 network_info=network_info,
                 output_dim=output_dim,
                 input_dim=input_dim,
