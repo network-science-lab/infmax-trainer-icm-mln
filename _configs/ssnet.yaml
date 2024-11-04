@@ -3,7 +3,7 @@ base:
   
 data:
   name: DataFrameHeteroDataset
-  num_workers: 0  # TODO -1 does not work on thorium
+  num_workersges not work on thorium
   real_batch_size: 1
   protocol: OR
   output_label_name: 
@@ -60,7 +60,7 @@ model:
   parameters:
     input_dim: 5 
     output_dim: 4
-    hidden_channels: 200 
+    hidden_channels: 400 
 
 training:
   devices: [0]  # TODO it seems that if more than 1 GPU is available, then training is repeated on all available devices
@@ -68,19 +68,22 @@ training:
     name: MRTWSE # Depends on output_dim
     args:
       w_sl: 1
-      w_e: 2.5
+      w_e: 4
       w_pin: 1
       w_pit: 1
   max_epochs: 5000
   learning_rate: 0.001
   loggers:
-    - name: tensor_board
+    - name: tensor_board  # TODO do we need tensorboard?
     - name: neptune
       model_summary_max_depth: -1
       tags:
         - name: training
         - name: gnn
-        - name: ssnet_mrtwse_big
+        - name: net-ssnet_deep
+        - name: data-big
+        - name: loss-mrtwse
+        - name: protocol-or
   callbacks:
    - name: model_summary
      max_depth: -1

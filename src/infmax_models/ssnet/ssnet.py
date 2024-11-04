@@ -31,10 +31,20 @@ class SSNet(BaseHeteroModule):
                 (
                     GCNConv(
                         in_channels=input_dim,
-                        out_channels=hidden_channels // 2,
+                        out_channels=hidden_channels // 4,
                         normalize=True,
                     ),
                     "x_actors, x_edges -> x_interim",
+                ),
+                torch.nn.LeakyReLU(inplace=True),
+                (Dropout(p=0.2), "x_interim -> x_interim"),
+                (
+                    SAGEConv(
+                        in_channels=hidden_channels // 4,
+                        out_channels=hidden_channels // 2,
+                        aggr="mean",
+                    ),
+                    "x_interim, x_edges -> x_interim",
                 ),
                 torch.nn.LeakyReLU(inplace=True),
                 (Dropout(p=0.2), "x_interim -> x_interim"),
@@ -57,15 +67,24 @@ class SSNet(BaseHeteroModule):
                     "x_interim, x_edges -> x_interim",
                 ),
                 torch.nn.LeakyReLU(inplace=True),
+                (Dropout(p=0.2), "x_interim -> x_interim"),
+                (
+                    SAGEConv(
+                        in_channels=hidden_channels // 2,
+                        out_channels=hidden_channels // 4,
+                        aggr="mean",
+                    ),
+                    "x_interim, x_edges -> x_interim",
+                ),
+                torch.nn.LeakyReLU(inplace=True),
             ],
         )
-        self.layerwise_aggregator = LayerwiseAggregation(hidden_channels // 2)
+        self.layerwise_aggregator = LayerwiseAggregation(hidden_channels // 4)
         self.head = torch.nn.Sequential(
             torch.nn.Linear(
-                in_features=hidden_channels // 2,
+                in_features=hidden_channels // 4,
                 out_features=output_dim,
             ),
-            # torch.nn.ReLU(),  # TODO: for consideration enforcing all values to me positive
             torch.nn.Softplus(),  # ditto
         )
 
