@@ -38,4 +38,4 @@ class MRTWSE(torch.nn.Module):
         wse = se * self.weights.expand_as(se)  # weighted se
         rtwse = torch.sqrt(wse.sum(dim=1))  # root total wse (for each y_i sum err and sqrt them)
         mrtwse = rtwse.mean()  # compute mean rtwse in the batch
-        return mrtwse
+        return mrtwse  # TODO: consider adding penalty for negative predictions!

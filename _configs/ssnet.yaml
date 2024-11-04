@@ -3,7 +3,7 @@ base:
   
 data:
   name: DataFrameHeteroDataset
-  num_workers: -1
+  num_workers: 0 # TODO values different than 0 it do not work on thorium
   real_batch_size: 1
   protocol: OR
   output_label_name: 
@@ -13,55 +13,80 @@ data:
     - peak_infected
   train_networks:
     - name: artificial_er
-      features_type: zeros
+      features_type: centralities
       val_split: True
     - name: artificial_pa
       features_type: zeros
       val_split: True
+    - name: artificial_small
+      features_type: centralities
+      val_split: True
+    - name: l2_course_net_1
+      features_type: centralities
   val_dataset:
     - name: artificial_er
-      features_type: zeros
+      features_type: centralities
       val_split: True
     - name: artificial_pa
       features_type: zeros
       val_split: True
+    - name: artificial_small
+      features_type: centralities
+    - name: arxiv_netscience_coauthorship
+      features_type: centralities
+      val_split: True
+    - name: ckm_physicians
+      features_type: centralities
+    - name: eu_transport_klm
+      features_type: centralities
+    - name: l2_course_net_2
+      features_type: centralities
   test_dataset:
-    - name: lazega
-      features_type: zeros
-    - name: toy_network
-      features_type: zeros
-    - name: timik1q2009
-      features_type: zeros
+    - name: aucs
+      features_type: centralities
+    - name: arxiv_netscience_coauthorship_math.oc
+      features_type: centralities
+    - name: eu_transportation
+      features_type: centralities
     - name: fmri74
+      features_type: centralities
+    - name: l2_course_net_3
+      features_type: centralities
+    - name: lazega
+      features_type: centralities
+    - name: toy_network
+      features_type: centralities
+    - name: timik1q2009
       features_type: zeros
 
 model:
   name: SSNet
-  aggr: sum
   parameters:
     input_dim: 5 
     output_dim: 4
-    hidden_channels: 100  
+    hidden_channels: 400 
 
 training:
-  devices: auto
+  devices: [0]  # TODO it seems that if more than 1 GPU is available, then training is repeated on all available devices
   loss:
-    name: WeightedMSE # Depends on output_dim
+    name: MRTWSE # Depends on output_dim
     args:
-      w_sl: 1 
-      w_e: 2.5 
-      w_pin: 1 
+      w_sl: 1
+      w_e: 4
+      w_pin: 1
       w_pit: 1
-      reduction: mean
   max_epochs: 5000
-  learning_rate: 0.01
+  learning_rate: 0.001
   loggers:
-    - name: tensor_board
     - name: neptune
       model_summary_max_depth: -1
       tags:
         - name: training
         - name: gnn
+        - name: net-ssnet_deep
+        - name: data-big
+        - name: loss-mrtwse
+        - name: protocol-or
   callbacks:
    - name: model_summary
      max_depth: -1
@@ -74,5 +99,5 @@ training:
    - name: early_stopping
      monitor: val_loss
      mode: min
-     patience: 1500
+     patience: 30
     

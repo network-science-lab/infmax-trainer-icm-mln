@@ -18,7 +18,7 @@ class HetergoGNN_WrapperConfig:
     loss_name: str
     loss_args: dict[str, Any]
     learning_rate: float
-    aggr: str
+    aggr: str | None
     metadata: tuple
     device: str
 
@@ -87,13 +87,14 @@ class HeteroGNN_Wrapper(pl.LightningModule):
     def forward(
         self,
         x_dict: dict[str, torch.Tensor],
+        z_dict: dict[str, torch.Tensor],
         edge_index_dict: dict[str, torch.Tensor],
     ) -> dict[str, torch.Tensor]:
         if not self.student.is_hetero:
             x_dict, edge_index_dict = self._mask_batch(
                 x_dict=x_dict, edge_index_dict=edge_index_dict
             )
-        return self.student.forward(x_dict, edge_index_dict)
+        return self.student.forward(x_dict, z_dict, edge_index_dict)
 
     def _calculate_loss(
         self,
@@ -107,7 +108,7 @@ class HeteroGNN_Wrapper(pl.LightningModule):
         batch: Batch,
         batch_idx: int,
     ) -> torch.Tensor:
-        predictions = self(batch.x_dict, batch.edge_index_dict)
+        predictions = self(batch.x_dict, batch.z_dict, batch.edge_index_dict)
         loss = self._calculate_loss(
             batch=batch,
             predictions=predictions,
@@ -126,7 +127,7 @@ class HeteroGNN_Wrapper(pl.LightningModule):
         batch_idx: int,
     ) -> torch.Tensor:
         with torch.no_grad():
-            predictions = self(batch.x_dict, batch.edge_index_dict)
+            predictions = self(batch.x_dict, batch.z_dict, batch.edge_index_dict)
 
         loss = self._calculate_loss(
             batch=batch,
@@ -146,7 +147,7 @@ class HeteroGNN_Wrapper(pl.LightningModule):
         batch_idx: int,
     ) -> torch.Tensor:
         with torch.no_grad():
-            predictions = self(batch.x_dict, batch.edge_index_dict)
+            predictions = self(batch.x_dict, batch.z_dict, batch.edge_index_dict)
 
         loss = self._calculate_loss(
             batch=batch,
