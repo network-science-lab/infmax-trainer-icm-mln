@@ -63,6 +63,9 @@ request to get an access via e-mail (michal.czuba@pwr.edu.pl). Then, simply exec
 To run experiments execute: `run_experiments.py` and provide proper CLI arguments defined in
 `_configs/hydra.yaml`, i.e. a name of the configuration file.
 
+To select device on thorium please set up envitonment variable: `export CUDA_VISIBLE_DEVICES=2` and
+then in the config file select list of devices as `[0]`.
+
 ### `neptune.ai` dashboard
 
 The dashboard is here: https://app.neptune.ai/o/infmax/org/infmax-gnn/runs/table?viewId=standard-view.

@@ -3,7 +3,7 @@ base:
   
 data:
   name: DataFrameHeteroDataset
-  num_workersges not work on thorium
+  num_workers: 0 # TODO values different than 0 it do not work on thorium
   real_batch_size: 1
   protocol: OR
   output_label_name: 
@@ -32,13 +32,19 @@ data:
       val_split: True
     - name: artificial_small
       features_type: centralities
+    - name: arxiv_netscience_coauthorship
+      features_type: centralities
       val_split: True
     - name: ckm_physicians
+      features_type: centralities
+    - name: eu_transport_klm
       features_type: centralities
     - name: l2_course_net_2
       features_type: centralities
   test_dataset:
     - name: aucs
+      features_type: centralities
+    - name: arxiv_netscience_coauthorship_math.oc
       features_type: centralities
     - name: eu_transportation
       features_type: centralities
@@ -52,8 +58,6 @@ data:
       features_type: centralities
     - name: timik1q2009
       features_type: zeros
-    - name: toy_network
-      features_type: centralities
 
 model:
   name: SSNet
@@ -74,7 +78,6 @@ training:
   max_epochs: 5000
   learning_rate: 0.001
   loggers:
-    - name: tensor_board  # TODO do we need tensorboard?
     - name: neptune
       model_summary_max_depth: -1
       tags:
