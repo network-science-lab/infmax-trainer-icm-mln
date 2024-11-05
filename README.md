@@ -20,14 +20,6 @@ conda env create -f env/conda.yaml
 conda activate infmax-trainer-icm-mln
 ```
 
-`multi_node2vec` is an external codebase that can be executed with a deprecated Python version. Hence,
-it has been contenerised. Before using it, please build the docker image:
-
-```bash
-cd src/infmax_models/multi_node2vec_kmeans/multi_node2vec
-docker build -t multi-node2vec --platform=linux/amd64 .
-```
-
 ## Data
 
 Dataset is stored in a separate repository bounded with this project as a git submodule. Thus, to

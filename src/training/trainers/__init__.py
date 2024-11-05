@@ -1,4 +1,1 @@
-TRAINABLE = [
-    "GATHeteroGNN",
-    "SSNet",
-]
+"""Scripts to train infmax models."""
