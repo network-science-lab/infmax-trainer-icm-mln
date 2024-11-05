@@ -1,6 +1,5 @@
 """Main entrypoint to the experiments."""
 
-# TODO: consider adding runners and defaulf configs for each method
 import logging
 from pathlib import Path
 
@@ -9,7 +8,7 @@ from dotenv import load_dotenv
 from omegaconf import DictConfig
 
 from src import CONFIGS_PATH
-from src.training.trainers.train import train
+from src.training.trainer import train
 from src.utils.config import get_available_configs, load_config
 from src.utils.seed import set_seed
 
