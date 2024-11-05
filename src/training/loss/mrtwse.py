@@ -10,6 +10,7 @@ class MRTWSE(torch.nn.Module):
         w_e: float,
         w_pin: float,
         w_pit: float,
+        use_penalty: bool = False,
     ) -> None:
         """
         Mean Root Total Weighted Squared Error.
@@ -29,6 +30,7 @@ class MRTWSE(torch.nn.Module):
         raw_weights = torch.tensor([w_sl, w_e, w_pin, w_pit], dtype=torch.float32)
         self.weights = torch.softmax(raw_weights, dim=0)
         self._bypass_flag = False
+        self._penalty = use_penalty
 
     def forward(self, y_hat: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         if not self._bypass_flag:
@@ -40,4 +42,11 @@ class MRTWSE(torch.nn.Module):
             wse.sum(dim=1)
         )  # root total wse (for each y_i sum err and sqrt them)
         mrtwse = rtwse.mean()  # compute mean rtwse in the batch
+
+        if self._penalty:
+            negative_distance = torch.abs(y_hat) * (y_hat < 0).float()
+            penalty = torch.sqrt(negative_distance.sum(dim=1)).mean()
+            if penalty > 0 or torch.isnan(penalty):
+                mrtwse += torch.tensor(penalty.item()).to(y.device)
+
         return mrtwse
