@@ -1,4 +1,0 @@
-TRAINABLE = [
-    "GATHeteroGNN",
-    "SSNet",
-]

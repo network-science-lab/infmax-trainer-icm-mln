@@ -20,14 +20,6 @@ conda env create -f env/conda.yaml
 conda activate infmax-trainer-icm-mln
 ```
 
-`multi_node2vec` is an external codebase that can be executed with a deprecated Python version. Hence,
-it has been contenerised. Before using it, please build the docker image:
-
-```bash
-cd src/infmax_models/multi_node2vec_kmeans/multi_node2vec
-docker build -t multi-node2vec --platform=linux/amd64 .
-```
-
 ## Data
 
 Dataset is stored in a separate repository bounded with this project as a git submodule. Thus, to
@@ -43,17 +35,17 @@ request to get an access via e-mail (michal.czuba@pwr.edu.pl). Then, simply exec
 ├── _data_set               -> evaluated networks
 ├── env                     -> a definition of the runtime environment
 ├── src                     -> a module with main implementation
+│   |── data_models         -> an extension of HeteroData from torch_geometric
 │   |── datamodule          -> code for converting datasets into datamodule
 │   |── dataset             -> implemented datasets for preparing HeteroData
-│   |── hetero_data         -> an extension of HeteroData from torch_geometric
-│   |── infmax_models       -> implemented ML models for Influence Maximisation
+│   |── infmax_models       -> trainable ML models for Influence Maximisation
 │   |── training            -> code related to training execution
-│   │   ├── trainers        -> scripts to train models according to provided configs
+│   │   ├── loss            -> loss functions used in the training
 │   │   ├── callbacks.py    -> allowed training callbacks defined in executed config
-│   │   └── loggers.py      -> allowed training loggers defined in executed config 
-│   |── utils               -> the logic for helpers across whole repository
+│   │   ├── loggers.py      -> allowed training loggers defined in executed config 
+│   │   └── trainer.py      -> script to train models according to provided configs
+│   |── utils               -> the logic for helpers across the whole repository
 │   └── wrapper             -> the wrappers for trainable models implemented in torch
-├── trainers                -> scripts to train models according to provided configs
 ├── README.md          
 └── run_experiments.py      -> main entrypoint to trigger the pipeline
 ```

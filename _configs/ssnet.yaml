@@ -32,9 +32,9 @@ data:
       val_split: True
     - name: artificial_small
       features_type: centralities
+      val_split: True
     - name: arxiv_netscience_coauthorship
       features_type: centralities
-      val_split: True
     - name: ckm_physicians
       features_type: centralities
     - name: eu_transport_klm
