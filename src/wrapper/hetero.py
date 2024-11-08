@@ -5,25 +5,28 @@ from typing import Any
 
 import pytorch_lightning as pl
 import torch
-from torch_geometric.data.batch import Batch
-from torch_geometric.nn import to_hetero
-
 from _data_set.nsl_data_utils.loaders.constants import ACTOR
 from src.infmax_models.base.base import BaseHeteroModule
-from src.utils.wrapper import get_loss
+from src.utils.wrapper import get_loss, get_optimizer, get_scheduler
+from torch.optim import Optimizer
+from torch_geometric.data.batch import Batch
+from torch_geometric.nn import to_hetero_with_bases
 
 
 @dataclass
 class HetergoGNN_WrapperConfig:
     loss_name: str
     loss_args: dict[str, Any]
-    learning_rate: float
+    optimizer_name: str
+    optimizer_args: dict[str, Any]
+    scheduler_name: str | None
+    scheduler_args: dict[str, Any] | None
+    scheduler_config: dict[str, Any] | None
     aggr: str | None
     metadata: tuple
     device: str
 
 
-# TODO: CONSIDER WIGHTED SUM, WEIGHTS ASSIGNED TO THE LAYERS
 class HeteroGNN_Wrapper(pl.LightningModule):
     def __init__(
         self,
@@ -33,11 +36,12 @@ class HeteroGNN_Wrapper(pl.LightningModule):
         super().__init__()
         self._config = config
         self.student = model
+        self.is_hetero = model.is_hetero
         if not model.is_hetero:
-            self.student = to_hetero(
+            self.student = to_hetero_with_bases(
                 module=self.student,
                 metadata=self._config.metadata,
-                aggr=self._config.aggr,
+                num_bases=len(config.metadata[1]),
             )
         self._loss = get_loss(
             loss_name=config.loss_name,
@@ -90,7 +94,7 @@ class HeteroGNN_Wrapper(pl.LightningModule):
         z_dict: dict[str, torch.Tensor],
         edge_index_dict: dict[str, torch.Tensor],
     ) -> dict[str, torch.Tensor]:
-        if not self.student.is_hetero:
+        if not self.is_hetero:
             x_dict, edge_index_dict = self._mask_batch(
                 x_dict=x_dict, edge_index_dict=edge_index_dict
             )
@@ -137,6 +141,8 @@ class HeteroGNN_Wrapper(pl.LightningModule):
             name="val_loss",
             value=loss,
             batch_size=len(batch),
+            prog_bar=True,
+            on_epoch=True,
         )
 
         return loss
@@ -163,20 +169,26 @@ class HeteroGNN_Wrapper(pl.LightningModule):
         layers = batch.x_dict.keys()
         for layer in layers:
             self.test_preds["trues"] += batch[layer].y.tolist()
-            self.test_preds["preds"] += torch.argmax(
-                input=predictions[layer],
-                dim=1,
-            ).tolist()
+            self.test_preds["preds"] += predictions[layer].tolist()
 
         return loss
 
-    def configure_optimizers(self) -> torch.optim.Adam:
-        optimizer = torch.optim.Adam(
-            params=self.parameters(),
-            lr=self._config.learning_rate,
+    def configure_optimizers(self) -> dict[str, Optimizer | dict[str, Any]]:
+        configures_optimizers = {}
+        configures_optimizers["optimizer"] = get_optimizer(
+            optimizer_name=self._config.optimizer_name,
+            optimizer_args=self._config.optimizer_args,
+            model_parameters=self.parameters(),
         )
+        if self._config.scheduler_name:
+            configures_optimizers["scheduler"] = get_scheduler(
+                scheduler_name=self._config.scheduler_name,
+                scheduler_args=self._config.scheduler_args,
+                scheduler_config=self._config.scheduler_config,
+                optimizer=configures_optimizers["optimizer"],
+            )
 
-        return optimizer
+        return configures_optimizers
 
     def clear_test_results(self) -> None:
         self.test_preds = {

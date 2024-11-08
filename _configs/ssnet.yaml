@@ -68,6 +68,7 @@ model:
 
 training:
   devices: [0]  # TODO it seems that if more than 1 GPU is available, then training is repeated on all available devices
+  max_epochs: 5000
   loss:
     name: MRTWSE # Depends on output_dim
     args:
@@ -75,8 +76,21 @@ training:
       w_e: 4
       w_pin: 1
       w_pit: 1
-  max_epochs: 5000
-  learning_rate: 0.001
+  optimizer:
+    name: AdamW
+    args:
+      weight_decay: 0.00001
+      lr: 0.001
+  scheduler:
+    name: ReduceLROnPlateau
+    args:
+      mode: min
+      factor: 0.5
+      patience: 10
+    config:
+      monitor: val_loss
+      interval: epoch
+      frequency: 1
   loggers:
     - name: neptune
       model_summary_max_depth: -1
