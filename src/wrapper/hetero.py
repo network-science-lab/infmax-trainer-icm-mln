@@ -10,6 +10,7 @@ from src.infmax_models.base.base import BaseHeteroModule
 from src.utils.wrapper import get_loss, get_optimizer, get_scheduler
 from torch.optim import Optimizer
 from torch_geometric.data.batch import Batch
+from torch_geometric.loader.neighbor_loader import NeighborLoader
 from torch_geometric.nn import to_hetero_with_bases
 
 
@@ -24,6 +25,8 @@ class HetergoGNN_WrapperConfig:
     scheduler_config: dict[str, Any] | None
     aggr: str | None
     metadata: tuple
+    num_neighbors: list[int]
+    neighbor_batch_size: int
     device: str
 
 
@@ -104,19 +107,43 @@ class HeteroGNN_Wrapper(pl.LightningModule):
         self,
         batch: Batch,
         predictions: dict[str, torch.Tensor],
-    ) -> float:
+    ) -> torch.Tensor:
         return self._loss(predictions[ACTOR], batch[ACTOR].y)
+
+    def _get_neighbour_loader(
+        self,
+        batch: Batch,
+    ) -> NeighborLoader:
+        return NeighborLoader(
+            data=batch,
+            num_neighbors={
+                relation: self._config.num_neighbors
+                for relation in self._config.metadata[1]
+            },
+            input_nodes=(ACTOR, None),
+            batch_size=self._config.neighbor_batch_size,
+            shuffle=True,
+        )
 
     def training_step(
         self,
         batch: Batch,
         batch_idx: int,
     ) -> torch.Tensor:
-        predictions = self(batch.x_dict, batch.z_dict, batch.edge_index_dict)
-        loss = self._calculate_loss(
-            batch=batch,
-            predictions=predictions,
-        )
+        neighbor_loader = self._get_neighbour_loader(batch)
+
+        loss = 0
+        for subgraf_batch in neighbor_loader:
+            predictions = self.forward(
+                x_dict=subgraf_batch.x_dict,
+                z_dict=subgraf_batch.z_dict,
+                edge_index_dict=subgraf_batch.edge_index_dict,
+            )
+            loss += self._calculate_loss(
+                batch=subgraf_batch,
+                predictions=predictions,
+            )
+
         self.log(
             name="train_loss",
             value=loss,
@@ -130,13 +157,21 @@ class HeteroGNN_Wrapper(pl.LightningModule):
         batch: Batch,
         batch_idx: int,
     ) -> torch.Tensor:
-        with torch.no_grad():
-            predictions = self(batch.x_dict, batch.z_dict, batch.edge_index_dict)
+        neighbor_loader = self._get_neighbour_loader(batch)
 
-        loss = self._calculate_loss(
-            batch=batch,
-            predictions=predictions,
-        )
+        loss = 0
+        for subgraf_batch in neighbor_loader:
+            with torch.no_grad():
+                predictions = self.forward(
+                    x_dict=subgraf_batch.x_dict,
+                    z_dict=subgraf_batch.z_dict,
+                    edge_index_dict=subgraf_batch.edge_index_dict,
+                )
+            loss += self._calculate_loss(
+                batch=subgraf_batch,
+                predictions=predictions,
+            )
+
         self.log(
             name="val_loss",
             value=loss,
@@ -152,24 +187,31 @@ class HeteroGNN_Wrapper(pl.LightningModule):
         batch: Batch,
         batch_idx: int,
     ) -> torch.Tensor:
-        with torch.no_grad():
-            predictions = self(batch.x_dict, batch.z_dict, batch.edge_index_dict)
+        neighbor_loader = self._get_neighbour_loader(batch)
+        layers = batch.x_dict.keys()
 
-        loss = self._calculate_loss(
-            batch=batch,
-            predictions=predictions,
-        )
-        assert len(batch) == 1
+        loss = 0
+        for subgraf_batch in neighbor_loader:
+            with torch.no_grad():
+                predictions = self.forward(
+                    x_dict=subgraf_batch.x_dict,
+                    z_dict=subgraf_batch.z_dict,
+                    edge_index_dict=subgraf_batch.edge_index_dict,
+                )
+            loss += self._calculate_loss(
+                batch=subgraf_batch,
+                predictions=predictions,
+            )
+
+            for layer in layers:
+                self.test_preds["trues"] += batch[layer].y.tolist()
+                self.test_preds["preds"] += predictions[layer].tolist()
+
         self.log(
             name=f"test_loss_{batch.network_name[0]}",
             value=loss,
             batch_size=len(batch),
         )
-
-        layers = batch.x_dict.keys()
-        for layer in layers:
-            self.test_preds["trues"] += batch[layer].y.tolist()
-            self.test_preds["preds"] += predictions[layer].tolist()
 
         return loss
 

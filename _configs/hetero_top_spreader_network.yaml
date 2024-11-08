@@ -5,6 +5,8 @@ data:
   name: DataFrameHeteroDataset
   num_workers: 0
   real_batch_size: 1
+  num_neighbors: [10, 10]
+  neighbor_batch_size: 32
   protocol: OR
   output_label_name:
     - exposed
