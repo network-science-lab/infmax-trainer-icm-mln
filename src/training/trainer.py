@@ -17,6 +17,8 @@ def train(args: dict[str, Any]) -> None:
     """Main training loop with args provided by YAML config.."""
     datasets = get_datasets(args)
     datamodule = get_datamodule(datasets=datasets, config=args)
+    scheduler = args["training"].get("scheduler")
+    device = args["training"].get("devices")
     wrapper = HeteroGNN_Wrapper(
         model=load_model(config=args),
         config=HetergoGNN_WrapperConfig(
@@ -24,32 +26,20 @@ def train(args: dict[str, Any]) -> None:
             loss_args=args["training"]["loss"]["args"],
             optimizer_name=args["training"]["optimizer"]["name"],
             optimizer_args=args["training"]["optimizer"]["args"],
-            scheduler_name=scheduler.get("name")
-            if (scheduler := args["training"].get("scheduler"))
-            else None,
-            scheduler_args=scheduler.get("args")
-            if (scheduler := args["training"].get("scheduler"))
-            else None,
-            scheduler_config=scheduler.get("config")
-            if (scheduler := args["training"].get("scheduler"))
-            else None,
+            scheduler_name=scheduler.get("name") if scheduler else None,
+            scheduler_args=scheduler.get("args") if scheduler else None,
+            scheduler_config=scheduler.get("config") if scheduler else None,
             aggr=args["model"].get("aggr"),
             metadata=get_metadata(list(datasets.values())),
             num_neighbors=args["data"]["num_neighbors"],
             neighbor_batch_size=args["data"]["neighbor_batch_size"],
-            device=get_device(args["training"]["devices"])
-            if "devices" in args["training"] is not None
-            else "cuda"
-            if torch.cuda.is_available()
-            else "cpu",
+            device=get_device(device),
         ),
     )
     trainer = pl.Trainer(
         max_epochs=args["training"]["max_epochs"],
         accelerator="gpu" if torch.cuda.is_available() else "cpu",
-        devices=args["training"]["devices"]
-        if "devices" in args["training"] is not None
-        else "auto",
+        devices=device if device else "auto",
         log_every_n_steps=1,
         callbacks=get_callbacks(args),
         logger=get_loggers(config=args, model=wrapper),

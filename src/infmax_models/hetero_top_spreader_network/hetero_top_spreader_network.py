@@ -12,9 +12,9 @@ class HeteroTopSpreaderNetwork(BaseHeteroModule):
         input_dim: int,
         hidden_channels: int,
         output_dim: int,
+        heads: int | None = 4,
     ) -> None:
         super().__init__(is_hetero=False)
-        HEADS = 4
         self.layers = ModuleList()
         self.layers.append(
             Sequential(
@@ -25,13 +25,13 @@ class HeteroTopSpreaderNetwork(BaseHeteroModule):
                             in_channels=input_dim,
                             out_channels=hidden_channels,
                             add_self_loops=False,
-                            heads=HEADS,
+                            heads=heads,
                         ),
                         "x, edge_index -> x",
                     ),
                     (
                         GraphNorm(
-                            in_channels=hidden_channels * HEADS,
+                            in_channels=hidden_channels * heads,
                         ),
                         "x -> x",
                     ),
@@ -47,16 +47,16 @@ class HeteroTopSpreaderNetwork(BaseHeteroModule):
                 [
                     (
                         GATConv(
-                            in_channels=hidden_channels * HEADS,
+                            in_channels=hidden_channels * heads,
                             out_channels=hidden_channels,
                             add_self_loops=False,
-                            heads=HEADS,
+                            heads=heads,
                         ),
                         "x, edge_index -> x",
                     ),
                     (
                         GraphNorm(
-                            in_channels=hidden_channels * HEADS,
+                            in_channels=hidden_channels * heads,
                         ),
                         "x -> x",
                     ),
@@ -67,7 +67,7 @@ class HeteroTopSpreaderNetwork(BaseHeteroModule):
         )
         
         self.head = SAGEConv(
-            in_channels=hidden_channels * HEADS,
+            in_channels=hidden_channels * heads,
             out_channels=output_dim,
             aggr="mean",
         )

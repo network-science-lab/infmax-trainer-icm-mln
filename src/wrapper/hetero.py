@@ -44,7 +44,7 @@ class HeteroGNN_Wrapper(pl.LightningModule):
             self.student = to_hetero_with_bases(
                 module=self.student,
                 metadata=self._config.metadata,
-                num_bases=len(config.metadata[1]),
+                num_bases=5, #TODO: Include in config if we choose this aproach
             )
         self._loss = get_loss(
             loss_name=config.loss_name,
@@ -160,17 +160,17 @@ class HeteroGNN_Wrapper(pl.LightningModule):
         neighbor_loader = self._get_neighbour_loader(batch)
 
         loss = 0
-        for subgraf_batch in neighbor_loader:
-            with torch.no_grad():
+        with torch.no_grad():
+            for subgraf_batch in neighbor_loader:
                 predictions = self.forward(
                     x_dict=subgraf_batch.x_dict,
                     z_dict=subgraf_batch.z_dict,
                     edge_index_dict=subgraf_batch.edge_index_dict,
                 )
-            loss += self._calculate_loss(
-                batch=subgraf_batch,
-                predictions=predictions,
-            )
+                loss += self._calculate_loss(
+                    batch=subgraf_batch,
+                    predictions=predictions,
+                )
 
         self.log(
             name="val_loss",
@@ -191,21 +191,21 @@ class HeteroGNN_Wrapper(pl.LightningModule):
         layers = batch.x_dict.keys()
 
         loss = 0
-        for subgraf_batch in neighbor_loader:
-            with torch.no_grad():
+        with torch.no_grad():
+            for subgraf_batch in neighbor_loader:
                 predictions = self.forward(
                     x_dict=subgraf_batch.x_dict,
                     z_dict=subgraf_batch.z_dict,
                     edge_index_dict=subgraf_batch.edge_index_dict,
                 )
-            loss += self._calculate_loss(
-                batch=subgraf_batch,
-                predictions=predictions,
-            )
+                loss += self._calculate_loss(
+                    batch=subgraf_batch,
+                    predictions=predictions,
+                )
 
-            for layer in layers:
-                self.test_preds["trues"] += batch[layer].y.tolist()
-                self.test_preds["preds"] += predictions[layer].tolist()
+                for layer in layers:
+                    self.test_preds["trues"] += batch[layer].y.tolist()
+                    self.test_preds["preds"] += predictions[layer].tolist()
 
         self.log(
             name=f"test_loss_{batch.network_name[0]}",
@@ -216,12 +216,13 @@ class HeteroGNN_Wrapper(pl.LightningModule):
         return loss
 
     def configure_optimizers(self) -> dict[str, Optimizer | dict[str, Any]]:
-        configures_optimizers = {}
-        configures_optimizers["optimizer"] = get_optimizer(
-            optimizer_name=self._config.optimizer_name,
-            optimizer_args=self._config.optimizer_args,
-            model_parameters=self.parameters(),
-        )
+        configures_optimizers = {
+            "optimizer": get_optimizer(
+                optimizer_name=self._config.optimizer_name,
+                optimizer_args=self._config.optimizer_args,
+                model_parameters=self.parameters(),
+            ),
+        }
         if self._config.scheduler_name:
             configures_optimizers["scheduler"] = get_scheduler(
                 scheduler_name=self._config.scheduler_name,

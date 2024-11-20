@@ -3,8 +3,9 @@ from typing import Any, Iterator
 from torch import cuda
 from torch.nn import CrossEntropyLoss, MSELoss
 from torch.nn.modules.loss import _Loss
-from torch.optim import Optimizer, Adam, AdamW
-from torch.optim.lr_scheduler import ReduceLROnPlateau
+from torch.optim import Optimizer
+from torch import optim
+from torch.optim import lr_scheduler
 from torch.nn.parameter import Parameter
 
 from src.training.loss.weighted_mse import WeightedMSE
@@ -36,37 +37,32 @@ def get_optimizer(
     optimizer_args: dict[str, Any],
     model_parameters: Iterator[Parameter],
 ) -> Optimizer:
-    match optimizer_name:
-        case Adam.__name__:
-            return Adam(params=model_parameters, **optimizer_args)
+    try:
+        cls = getattr(optim, optimizer_name)
+    except AttributeError as e:
+        raise AttributeError(f"Unknown optimizer: {optimizer_name}") from e
+    
+    return cls(params=model_parameters, **optimizer_args)
 
-        case AdamW.__name__:
-            return AdamW(params=model_parameters, **optimizer_args)
-
-        case _:
-            raise AttributeError(f"Unknown optimizer: {optimizer_name}")
-        
 def get_scheduler(
     scheduler_name: str,
     scheduler_config: dict[str, Any],
     scheduler_args: dict[str, Any],
     optimizer: Optimizer,
 ) -> dict[str, Any]:
-    match scheduler_name:
-        case ReduceLROnPlateau.__name__:
-            scheduler_config["scheduler"] = ReduceLROnPlateau(
-                optimizer=optimizer, 
-                **scheduler_args,
-            )
-            return scheduler_config
+    try:
+        cls = getattr(lr_scheduler, scheduler_name)
+    except AttributeError as e:
+        raise AttributeError(f"Unknown scheduler: {scheduler_name}") from e
+    
+    scheduler_config["scheduler"] = cls(
+        optimizer=optimizer,
+        **scheduler_args,
+    )
+    return scheduler_config
 
-        case _:
-            raise AttributeError(f"Unknown scheduler: {scheduler_name}")
-        
-
-def get_device(device: str | list[int]) -> str:
-    if device == 'auto':
-        return 'cuda:0' if cuda.is_available() else 'cpu' 
+def get_device(device: str | list[int] | None) -> str:
+    if device == 'auto' or device == None:
+        return 'cuda:0' if cuda.is_available() else 'cpu'
     elif type(device) == list:
         return f'cuda:{device[0]}'
-        
