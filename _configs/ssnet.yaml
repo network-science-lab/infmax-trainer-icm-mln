@@ -65,7 +65,7 @@ training:
       w_e: 4
       w_pin: 1
       w_pit: 1
-      use_penalty: False
+      use_abs_negative_penalty: False
   optimizer:
     name: AdamW
     args:
