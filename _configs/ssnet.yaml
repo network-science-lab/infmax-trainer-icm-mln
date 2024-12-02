@@ -6,7 +6,7 @@ data:
   num_workers: 0 # TODO values different than 0 it do not work on thorium
   real_batch_size: 1
   num_neighbors: [10, 10]
-  neighbor_batch_size: 32
+  neighbours_batch_size: 32
   protocol: OR
   output_label_name: 
     - exposed

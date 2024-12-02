@@ -32,7 +32,7 @@ def train(args: dict[str, Any]) -> None:
             aggr=args["model"].get("aggr"),
             metadata=get_metadata(list(datasets.values())),
             num_neighbors=args["data"]["num_neighbors"],
-            neighbor_batch_size=args["data"]["neighbor_batch_size"],
+            neighbours_batch_size=args["data"]["neighbours_batch_size"],
             device=get_device(device),
         ),
     )

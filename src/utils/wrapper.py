@@ -61,6 +61,7 @@ def get_scheduler(
     )
     return scheduler_config
 
+# TODO: unify device and accelerator settings
 def get_device(device: str | list[int] | None) -> str:
     if device == 'auto' or device == None:
         return 'cuda:0' if cuda.is_available() else 'cpu'

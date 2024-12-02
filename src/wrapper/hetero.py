@@ -26,7 +26,7 @@ class HetergoGNN_WrapperConfig:
     aggr: str | None
     metadata: tuple
     num_neighbors: list[int]
-    neighbor_batch_size: int
+    neighbours_batch_size: int
     device: str
 
 
@@ -121,8 +121,10 @@ class HeteroGNN_Wrapper(pl.LightningModule):
                 for relation in self._config.metadata[1]
             },
             input_nodes=(ACTOR, None),
-            batch_size=self._config.neighbor_batch_size,
+            batch_size=self._config.neighbours_batch_size,
             shuffle=True,
+            subgraph_type="bidirectional",
+            directed=False,
         )
 
     def training_step(
@@ -130,10 +132,10 @@ class HeteroGNN_Wrapper(pl.LightningModule):
         batch: Batch,
         batch_idx: int,
     ) -> torch.Tensor:
-        neighbor_loader = self._get_neighbour_loader(batch)
+        neighbours_loader = self._get_neighbour_loader(batch)
 
         loss = 0
-        for subgraf_batch in neighbor_loader:
+        for subgraf_batch in neighbours_loader:
             predictions = self.forward(
                 x_dict=subgraf_batch.x_dict,
                 z_dict=subgraf_batch.z_dict,
@@ -157,11 +159,11 @@ class HeteroGNN_Wrapper(pl.LightningModule):
         batch: Batch,
         batch_idx: int,
     ) -> torch.Tensor:
-        neighbor_loader = self._get_neighbour_loader(batch)
+        neighbours_loader = self._get_neighbour_loader(batch)
 
         loss = 0
         with torch.no_grad():
-            for subgraf_batch in neighbor_loader:
+            for subgraf_batch in neighbours_loader:
                 predictions = self.forward(
                     x_dict=subgraf_batch.x_dict,
                     z_dict=subgraf_batch.z_dict,
@@ -187,12 +189,12 @@ class HeteroGNN_Wrapper(pl.LightningModule):
         batch: Batch,
         batch_idx: int,
     ) -> torch.Tensor:
-        neighbor_loader = self._get_neighbour_loader(batch)
+        neighbours_loader = self._get_neighbour_loader(batch)
         layers = batch.x_dict.keys()
 
         loss = 0
         with torch.no_grad():
-            for subgraf_batch in neighbor_loader:
+            for subgraf_batch in neighbours_loader:
                 predictions = self.forward(
                     x_dict=subgraf_batch.x_dict,
                     z_dict=subgraf_batch.z_dict,
