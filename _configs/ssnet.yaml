@@ -23,8 +23,6 @@ data:
     - name: artificial_small
       features_type: centralities
       val_split: True
-    - name: l2_course_net_1
-      features_type: centralities
   val_dataset:
     - name: artificial_er
       features_type: centralities
@@ -35,31 +33,32 @@ data:
     - name: artificial_small
       features_type: centralities
       val_split: True
+  test_dataset:
     - name: arxiv_netscience_coauthorship
+      features_type: centralities
+    - name: aucs
       features_type: centralities
     - name: ckm_physicians
       features_type: centralities
-    - name: eu_transport_klm
-      features_type: centralities
-    - name: l2_course_net_2
-      features_type: centralities
-  test_dataset:
-    - name: aucs
-      features_type: centralities
-    - name: arxiv_netscience_coauthorship_math.oc
-      features_type: centralities
     - name: eu_transportation
       features_type: centralities
-    - name: fmri74
-      features_type: centralities
-    - name: l2_course_net_3
+    - name: l2_course_net_1
       features_type: centralities
     - name: lazega
       features_type: centralities
-    - name: toy_network
-      features_type: centralities
     - name: timik1q2009
-      features_type: zeros
+      features_type: centralities
+    # ##### ##### ##### ##### ##### ##### ##### ##### other available networks 
+    # - name: arxiv_netscience_coauthorship_math.oc
+    #   features_type: centralities
+    # - name: cannes
+    #   features_type: centralities
+    # - name: eu_transport_klm
+    #   features_type: centralities
+    # - name: fmri74
+    #   features_type: centralities
+    # - name: toy_network
+    #   features_type: centralities
 
 model:
   name: SSNet
@@ -116,4 +115,3 @@ training:
      monitor: val_loss
      mode: min
      patience: 30
-    

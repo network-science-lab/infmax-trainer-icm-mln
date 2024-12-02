@@ -87,20 +87,20 @@ class MLNHeteroData(HeteroData):
                     f"Input dim({input_dim}) must be > 0 and <= number of implemented centralities "
                     f"({len(CENTRALITY_FUNCTIONS)})"
                 )
-
-            sorted_features = load_centralities(
+            features_df = load_centralities(
                 network_name=network_info.mln_name,
                 network_type=network_info.mln_type,
             )
-            sorted_features = sorted_features[:, :input_dim]
-
-            features = torch.tensor(
-                data=sorted_features,
-                dtype=torch.float32,
-            )
-            features = features / len(network_info.mln.get_actors())
-
-            return features
+            actors_order = [
+                actor_id for actor_id, actor_idx in sorted(
+                    network_info.mln_torch.actors_map.items(), key=lambda id_idx: id_idx[1]
+                )
+            ]
+            features_sorted_df = features_df.loc[actors_order]
+            features_np = features_sorted_df.to_numpy()
+            features_pt = torch.tensor(data=features_np, dtype=torch.float32)
+            features_norm_pt = features_pt / len(network_info.mln.get_actors())
+            return features_norm_pt[:, :input_dim]
 
         elif network_info.x_type == "scrapped":
             raise NotImplementedError(f"{network_info.x_type} has not been implemented yet")
