@@ -108,7 +108,10 @@ class HeteroGNN_Wrapper(pl.LightningModule):
         batch: Batch,
         predictions: dict[str, torch.Tensor],
     ) -> torch.Tensor:
-        return self._loss(predictions[ACTOR], batch[ACTOR].y)
+        return self._loss(
+            predictions[ACTOR][:batch[ACTOR].batch_size],
+            batch[ACTOR].y[:batch[ACTOR].batch_size],
+        )
 
     def _get_neighbour_loader(
         self,
