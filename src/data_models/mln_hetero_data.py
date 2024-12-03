@@ -92,7 +92,7 @@ class MLNHeteroData(HeteroData):
                 network_type=network_info.mln_type,
             )
             actors_order = [
-                actor_id for actor_id, actor_idx in sorted(
+                str(actor_id) for actor_id, actor_idx in sorted(
                     network_info.mln_torch.actors_map.items(), key=lambda id_idx: id_idx[1]
                 )
             ]
