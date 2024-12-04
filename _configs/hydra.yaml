@@ -3,3 +3,4 @@ hydra:
     dir: _data_results/model_outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
 
 experiment-config: ssnet
+# experiment-config: hetero_top_spreader_network

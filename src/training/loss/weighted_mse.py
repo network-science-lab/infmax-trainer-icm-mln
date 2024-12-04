@@ -11,12 +11,16 @@ class WeightedMSE(torch.nn.Module):
         reduction: str = "mean",
     ) -> None:
         super().__init__()
-        self.weights = torch.tensor([w_sl, w_e, w_pin, w_pit], dtype=torch.float32)  # TODO: here is a bug - device is CPU!
+        self.weights = torch.tensor([w_sl, w_e, w_pin, w_pit], dtype=torch.float32)
         self.mse = torch.nn.MSELoss(reduction=reduction)
+        self._bypass_flag = False
 
     def forward(self, y_hat: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
-        loss = 0
-        for i, weight in enumerate(self.weights):
-            loss += weight * self.mse(y_hat[:, i], y[:, i])
+        if not self._bypass_flag:
+            self.weights = self.weights.to(device=y.device)
+            self._bypass_flag = True
+
+        mse = self.weights * self.mse(y_hat, y)
+        loss = sum(mse)
 
         return loss
