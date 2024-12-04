@@ -61,7 +61,8 @@ model:
     hidden_channels: 100
 
 training:
-  devices: [0]
+  accelerator: cpu # cpu or gpu
+  devices: auto # list[int] | int | str; default=auto
   max_epochs: 200
   loss:
     name: MRTWSE # Depends on output_dim

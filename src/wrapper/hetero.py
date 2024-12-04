@@ -28,7 +28,6 @@ class HetergoGNN_WrapperConfig:
     batch_size: int
     batch_neighbours: list[int]
     batch_subraph_type: str
-    device: str
 
 
 class HeteroGNN_Wrapper(pl.LightningModule):
@@ -69,10 +68,11 @@ class HeteroGNN_Wrapper(pl.LightningModule):
             node_type for node_type in expected_node_types if node_type not in x_dict
         ]
 
+        sample_node_type = x_dict[list(x_dict.keys())[0]]
         for node_type in missing_node_types:
             x_dict[node_type] = torch.empty(
                 size=0,
-            ).to(self._config.device)
+            ).to(sample_node_type.device)
 
         present_edge_types = edge_index_dict.keys()
         missing_edge_types = [
@@ -81,11 +81,12 @@ class HeteroGNN_Wrapper(pl.LightningModule):
             if edge_type not in present_edge_types
         ]
 
+        samle_edge_type = edge_index_dict[list(present_edge_types)[0]]
         for edge_type in missing_edge_types:
             edge_index_dict[edge_type] = torch.empty(
-                size=[edge_index_dict[list(present_edge_types)[0]].shape[0], 0],
+                size=[samle_edge_type.shape[0], 0],
                 dtype=torch.long,
-            ).to(self._config.device)
+            ).to(samle_edge_type.device)
 
         return (
             x_dict,
