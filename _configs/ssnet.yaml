@@ -97,10 +97,9 @@ training:
     - name: neptune
       model_summary_max_depth: -1
       tags:
-        - name: training
-        - name: gnn
-        - name: net-ssnet_deep
-        - name: data-big
+        - name: mode-testing
+        - name: net-ssnet
+        - name: data-full
         - name: loss-mrtwse
         - name: protocol-or
   callbacks:
