@@ -55,6 +55,7 @@ data:
 model:
   name: HeteroTopSpreaderNetwork
   parameters:
+    num_bases: 3
     input_dim: 6
     output_dim: 4
     hidden_channels: 100

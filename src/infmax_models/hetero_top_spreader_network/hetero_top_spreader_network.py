@@ -12,9 +12,11 @@ class HeteroTopSpreaderNetwork(BaseHeteroModule):
         input_dim: int,
         hidden_channels: int,
         output_dim: int,
+        num_bases: int = 3,
         heads: int | None = 4,
     ) -> None:
         super().__init__(is_hetero=False)
+        self.num_bases = num_bases
         self.layers = ModuleList()
         self.layers.append(
             Sequential(

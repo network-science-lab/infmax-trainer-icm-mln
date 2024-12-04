@@ -45,7 +45,7 @@ class HeteroGNN_Wrapper(pl.LightningModule):
             self.student = to_hetero_with_bases(
                 module=self.student,
                 metadata=self._config.metadata,
-                num_bases=5, #TODO: Include in config if we choose this aproach
+                num_bases=model.num_bases,
             )
         self._loss = get_loss(
             loss_name=config.loss_name,
