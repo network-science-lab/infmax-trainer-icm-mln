@@ -11,6 +11,7 @@ from _data_set.nsl_data_utils.loaders.constants import (
 )
 
 
+# TODO: if model generalises badly train it not on the -1 wildcard but particular p
 _VALID_ICM_PARAMS = {AND: {0.80, 0.85, 0.90, 0.95, -1}, OR: {0.05, 0.10, 0.15, 0.20, -1}}
 
 

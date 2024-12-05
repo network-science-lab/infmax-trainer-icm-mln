@@ -1,5 +1,7 @@
 """Main entrypoint to the experiments."""
 
+# TODO: change p_value in the codebase so that its name is related with ICM not statistics
+
 import logging
 from pathlib import Path
 
