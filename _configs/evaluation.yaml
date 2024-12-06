@@ -1,0 +1,20 @@
+base:
+  random_seed: 43
+  project: infmax/infmax-gnn
+  run_id: IN-163
+  nb_seeds: 2
+
+data:
+  protocol: OR
+  output_label_name:
+    - exposed
+    - simulation_length
+    - peak_iteration
+    - peak_infected
+  networks:
+    - name: lazega
+      features_type: zeros
+    - name: toy_network
+      features_type: zeros
+    - name: lazega
+      features_type: zeros

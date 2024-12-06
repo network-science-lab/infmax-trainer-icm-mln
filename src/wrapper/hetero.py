@@ -221,6 +221,33 @@ class HeteroGNN_Wrapper(pl.LightningModule):
 
         return loss
 
+    @torch.no_grad
+    def predict_step(
+        self,
+        batch: Batch,
+        batch_idx: int,
+    ) -> dict[str, torch.Tensor]:
+        self.student.eval()
+        neighbours_loader = self._get_neighbour_loader(batch)
+        layers = batch.x_dict.keys()
+        result = {}
+
+        for subgraf_batch in neighbours_loader:
+            predictions = self.forward(
+                x_dict=subgraf_batch.x_dict,
+                z_dict=subgraf_batch.z_dict,
+                edge_index_dict=subgraf_batch.edge_index_dict,
+            )
+
+            for layer in layers:
+                subgraf_batch_size = subgraf_batch[layer].batch_size
+                result[layer] = {
+                    idx.tolist(): predictions[layer][idx]
+                    for idx in subgraf_batch[layer].n_id[:subgraf_batch_size]
+                }
+
+        return result
+
     def configure_optimizers(self) -> dict[str, Optimizer | dict[str, Any]]:
         configures_optimizers = {
             "optimizer": get_optimizer(
