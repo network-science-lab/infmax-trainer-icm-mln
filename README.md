@@ -7,17 +7,18 @@ A repository to train and evaluate Influence Maximisation ML models for multilay
 
 ## Configuration of the runtime
 
-First, initialise the submodule with utilities:
-
-```bash
-git submodule init && git submodule update
-```
-
-Then, initialise the enviornment:
+First, initialise the environment:
 
 ```bash
 conda env create -f env/conda.yaml
 conda activate infmax-trainer-icm-mln
+```
+
+then, the submodule with utilities:
+
+```bash
+git submodule init && git submodule update
+pip install -e _data_set
 ```
 
 ## Data

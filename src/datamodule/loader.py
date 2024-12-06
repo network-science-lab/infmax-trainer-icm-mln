@@ -144,7 +144,7 @@ def get_datamodule(
         train_dataset=datasets["train"].data_list,
         val_dataset=datasets["val"].data_list,
         test_dataset=datasets["test"].data_list,
-        batch_size=config["data"]["real_batch_size"],
+        batch_size=config["data"]["batch"]["gradient_accumulation_step"],
         num_workers=get_num_workers(config),
     )
 

@@ -12,7 +12,7 @@ from omegaconf import DictConfig
 from src import CONFIGS_PATH
 from src.training.trainer import train
 from src.utils.config import get_available_configs, load_config
-from src.utils.seed import set_seed
+from src.utils.misc import set_seed
 
 load_dotenv(
     dotenv_path=Path(__file__).parent / ".env",

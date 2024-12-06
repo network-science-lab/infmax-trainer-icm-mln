@@ -3,10 +3,12 @@ base:
   
 data:
   name: DataFrameHeteroDataset
-  num_workers: 0 # TODO: values different than 0 it do not work on thorium
-  real_batch_size: 1
-  num_neighbors: [10, 10]
-  neighbours_batch_size: 32
+  num_workers: 32
+  batch: 
+    size: 16
+    neighbours_sampling: [8, 4, 2]
+    subgraph_type: "bidirectional"  # TODO: test with "induced"
+    gradient_accumulation_step: 1
   protocol: OR
   p_value: -1 # AND: {0.80, 0.85, 0.90, 0.95}, OR: {0.05, 0.10, 0.15, 0.20}, -1 to avg SP in protocol
   output_label_name: 
@@ -70,9 +72,9 @@ model:
 
 training:
   devices: [0]  # TODO it seems that if more than 1 GPU is available, then training is repeated on all available devices
-  max_epochs: 5000
+  max_epochs: 200
   loss:
-    name: MRTWSE # Depends on output_dim
+    name: MRTWSE # Depends on the "output_dim"
     args:
       w_sl: 1
       w_e: 4
@@ -97,11 +99,13 @@ training:
     - name: neptune
       model_summary_max_depth: -1
       tags:
-        - name: mode-testing
         - name: net-ssnet
         - name: data-full
+        - name: features-centralities
         - name: loss-mrtwse
-        - name: protocol-or
+        - name: icm_proto-or
+        - name: icm_p-average
+        - name: batch_level-actor
   callbacks:
    - name: model_summary
      max_depth: -1

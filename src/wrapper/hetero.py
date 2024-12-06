@@ -25,8 +25,9 @@ class HetergoGNN_WrapperConfig:
     scheduler_config: dict[str, Any] | None
     aggr: str | None
     metadata: tuple
-    num_neighbors: list[int]
-    neighbours_batch_size: int
+    batch_size: int
+    batch_neighbours: list[int]
+    batch_subraph_type: str
     device: str
 
 
@@ -120,14 +121,13 @@ class HeteroGNN_Wrapper(pl.LightningModule):
         return NeighborLoader(
             data=batch,
             num_neighbors={
-                relation: self._config.num_neighbors
+                relation: self._config.batch_neighbours
                 for relation in self._config.metadata[1]
             },
             input_nodes=(ACTOR, None),
-            batch_size=self._config.neighbours_batch_size,
+            batch_size=self._config.batch_size,
             shuffle=True,
-            subgraph_type="bidirectional",
-            directed=False,
+            subgraph_type=self._config.batch_subraph_type,
         )
 
     def training_step(
