@@ -136,10 +136,11 @@ class HeteroGNN_Wrapper(pl.LightningModule):
         batch: Batch,
         batch_idx: int,
     ) -> torch.Tensor:
-        neighbours_loader = self._get_neighbour_loader(batch)
+        len_batch = len(batch)
+        batch = self._get_neighbour_loader(batch)
 
         loss = 0
-        for subgraf_batch in neighbours_loader:
+        for subgraf_batch in batch:
             predictions = self.forward(
                 x_dict=subgraf_batch.x_dict,
                 z_dict=subgraf_batch.z_dict,
@@ -153,7 +154,7 @@ class HeteroGNN_Wrapper(pl.LightningModule):
         self.log(
             name="train_loss",
             value=loss,
-            batch_size=len(batch),
+            batch_size=len_batch,
         )
 
         return loss
@@ -163,11 +164,12 @@ class HeteroGNN_Wrapper(pl.LightningModule):
         batch: Batch,
         batch_idx: int,
     ) -> torch.Tensor:
-        neighbours_loader = self._get_neighbour_loader(batch)
+        len_batch = len(batch)
+        batch = self._get_neighbour_loader(batch)
 
         loss = 0
         with torch.no_grad():
-            for subgraf_batch in neighbours_loader:
+            for subgraf_batch in batch:
                 predictions = self.forward(
                     x_dict=subgraf_batch.x_dict,
                     z_dict=subgraf_batch.z_dict,
@@ -181,7 +183,7 @@ class HeteroGNN_Wrapper(pl.LightningModule):
         self.log(
             name="val_loss",
             value=loss,
-            batch_size=len(batch),
+            batch_size=len_batch,
             prog_bar=True,
             on_epoch=True,
         )
@@ -193,12 +195,18 @@ class HeteroGNN_Wrapper(pl.LightningModule):
         batch: Batch,
         batch_idx: int,
     ) -> torch.Tensor:
-        neighbours_loader = self._get_neighbour_loader(batch)
         layers = batch.x_dict.keys()
+        test_preds = {
+            layer: batch[layer].y.tolist()
+            for layer in layers
+        }
+        net_name = batch.network_name[0]
+        len_batch = len(batch)
+        batch = self._get_neighbour_loader(batch)
 
         loss = 0
         with torch.no_grad():
-            for subgraf_batch in neighbours_loader:
+            for subgraf_batch in batch:
                 predictions = self.forward(
                     x_dict=subgraf_batch.x_dict,
                     z_dict=subgraf_batch.z_dict,
@@ -210,13 +218,13 @@ class HeteroGNN_Wrapper(pl.LightningModule):
                 )
 
                 for layer in layers:
-                    self.test_preds["trues"] += batch[layer].y.tolist()
+                    self.test_preds["trues"] += test_preds[layer]
                     self.test_preds["preds"] += predictions[layer].tolist()
 
         self.log(
-            name=f"test_loss_{batch.network_name[0]}",
+            name=f"test_loss_{net_name}",
             value=loss,
-            batch_size=len(batch),
+            batch_size=len_batch,
         )
 
         return loss
@@ -228,11 +236,11 @@ class HeteroGNN_Wrapper(pl.LightningModule):
         batch_idx: int,
     ) -> dict[str, torch.Tensor]:
         self.student.eval()
-        neighbours_loader = self._get_neighbour_loader(batch)
         layers = batch.x_dict.keys()
+        batch = self._get_neighbour_loader(batch)
         result = {}
 
-        for subgraf_batch in neighbours_loader:
+        for subgraf_batch in batch:
             predictions = self.forward(
                 x_dict=subgraf_batch.x_dict,
                 z_dict=subgraf_batch.z_dict,
