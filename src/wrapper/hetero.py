@@ -131,6 +131,7 @@ class HeteroGNN_Wrapper(pl.LightningModule):
     def _get_neighbour_loader(
         self,
         batch: Batch,
+        shuffle: bool = True,
     ) -> NeighborLoader:
         return NeighborLoader(
             data=batch,
@@ -140,7 +141,7 @@ class HeteroGNN_Wrapper(pl.LightningModule):
             },
             input_nodes=(ACTOR, None),
             batch_size=self._config.batch_size,
-            shuffle=True,
+            shuffle=shuffle,
             subgraph_type=self._config.batch_subraph_type,
         )
 
@@ -212,7 +213,10 @@ class HeteroGNN_Wrapper(pl.LightningModule):
         test_preds = {layer: batch[layer].y.tolist() for layer in layers}
         net_name = batch.network_name[0]
         len_batch = len(batch)
-        batch = self._get_neighbour_loader(batch)
+        batch = self._get_neighbour_loader(
+            batch=batch,
+            shuffle=False,
+        )
 
         loss = 0
         with torch.no_grad():
@@ -247,7 +251,10 @@ class HeteroGNN_Wrapper(pl.LightningModule):
     ) -> dict[str, torch.Tensor]:
         self.student.eval()
         layers = batch.x_dict.keys()
-        batch = self._get_neighbour_loader(batch)
+        batch = self._get_neighbour_loader(
+            batch=batch,
+            shuffle=False,
+        )
         result = {}
 
         for subgraf_batch in batch:

@@ -175,9 +175,6 @@ def main(cfg: DictConfig) -> None:
         }
         idx += 1
 
-    # TODO: CHECK WHETER MODEL IS DETERMINISTIC
-    pass
-
 
 if __name__ == "__main__":
     main()
