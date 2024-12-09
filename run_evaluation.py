@@ -51,7 +51,8 @@ def _load_model_from_neptune(config: dict[str, Any]) -> HeteroGNN_Wrapper:
         }
     }
     model = load_model(model_config)
-    wrapper_config: HetergoGNN_WrapperConfig = eval(
+
+    wrapper_config = HetergoGNN_WrapperConfig.parse_str(
         run["training/hyperparams/config"].fetch()
     )
     wrapper = HeteroGNN_Wrapper.load_from_checkpoint(
@@ -79,6 +80,15 @@ def get_top_spreaders(
     wrapper: HeteroGNN_Wrapper,
 ) -> np.ndarray:
     model_config = config["model_config"]
+    output_weights = config["data"]["output_weights"]
+    ow = torch.Tensor(
+        [
+            output_weights["w_e"],
+            output_weights["w_sl"],
+            output_weights["w_pit"],
+            output_weights["w_pin"],
+        ]
+    )
 
     net = load_network(net_name=network_type, as_tensor=False)[network_type]
     sp_df = load_sp(net_name=network_type)[network_type]
@@ -113,7 +123,13 @@ def get_top_spreaders(
             batch_idx=0,
         )
 
-        weighted_sums = {k: weighted_sum(v) for k, v in data["actor"].items()}
+        weighted_sums = {
+            k: weighted_sum(
+                score=v,
+                weights=ow,
+            )
+            for k, v in data["actor"].items()
+        }
         max_key = max(weighted_sums, key=weighted_sums.get)
 
         top_spreader = next(
@@ -161,6 +177,7 @@ def main(cfg: DictConfig) -> None:
 
     # TODO: CHECK WHETER MODEL IS DETERMINISTIC
     pass
+
 
 if __name__ == "__main__":
     main()

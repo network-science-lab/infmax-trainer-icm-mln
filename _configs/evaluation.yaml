@@ -11,6 +11,11 @@ data:
     - simulation_length
     - peak_iteration
     - peak_infected
+  output_weights:
+    w_e: 4
+    w_sl: 1
+    w_pit: 1
+    w_pin: 1
   networks:
     - name: lazega
       features_type: zeros

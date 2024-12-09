@@ -1,7 +1,9 @@
+import ast
 import json
+import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Self
 
 import pytorch_lightning as pl
 import torch
@@ -28,6 +30,17 @@ class HetergoGNN_WrapperConfig:
     batch_size: int
     batch_neighbours: list[int]
     batch_subraph_type: str
+
+    @classmethod
+    def parse_str(cls, obj: str) -> Self:
+        match = re.match(r"(\w+)\((.*)\)", obj)
+        args_str = match.group(2)
+        args_list = [arg.strip() for arg in re.split(r",\s\b(?=\D)", args_str)]
+        kwargs = {
+            arg.split("=")[0]: ast.literal_eval(arg.split("=")[1]) for arg in args_list
+        }
+
+        return cls(**kwargs)
 
 
 class HeteroGNN_Wrapper(pl.LightningModule):
@@ -111,8 +124,8 @@ class HeteroGNN_Wrapper(pl.LightningModule):
         predictions: dict[str, torch.Tensor],
     ) -> torch.Tensor:
         return self._loss(
-            predictions[ACTOR][:batch[ACTOR].batch_size],
-            batch[ACTOR].y[:batch[ACTOR].batch_size],
+            predictions[ACTOR][: batch[ACTOR].batch_size],
+            batch[ACTOR].y[: batch[ACTOR].batch_size],
         )
 
     def _get_neighbour_loader(
@@ -196,10 +209,7 @@ class HeteroGNN_Wrapper(pl.LightningModule):
         batch_idx: int,
     ) -> torch.Tensor:
         layers = batch.x_dict.keys()
-        test_preds = {
-            layer: batch[layer].y.tolist()
-            for layer in layers
-        }
+        test_preds = {layer: batch[layer].y.tolist() for layer in layers}
         net_name = batch.network_name[0]
         len_batch = len(batch)
         batch = self._get_neighbour_loader(batch)
