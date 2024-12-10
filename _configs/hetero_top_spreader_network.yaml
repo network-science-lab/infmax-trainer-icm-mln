@@ -55,12 +55,14 @@ data:
 model:
   name: HeteroTopSpreaderNetwork
   parameters:
+    num_bases: 3
     input_dim: 6
     output_dim: 4
     hidden_channels: 100
 
 training:
-  devices: [0]
+  accelerator: cpu # cpu or gpu
+  devices: auto # list[int] | int | str; default=auto
   max_epochs: 200
   loss:
     name: MRTWSE # Depends on output_dim

@@ -1,17 +1,17 @@
 base:
   random_seed: 43
-  
+
 data:
   name: DataFrameHeteroDataset
   num_workers: 32
-  batch: 
+  batch:
     size: 16
     neighbours_sampling: [8, 4, 2]
-    subgraph_type: "bidirectional"  # TODO: test with "induced"
+    subgraph_type: "bidirectional" # TODO: test with "induced"
     gradient_accumulation_step: 1
   protocol: OR
   p_value: -1 # AND: {0.80, 0.85, 0.90, 0.95}, OR: {0.05, 0.10, 0.15, 0.20}, -1 to avg SP in protocol
-  output_label_name: 
+  output_label_name:
     - exposed
     - simulation_length
     - peak_iteration
@@ -51,7 +51,7 @@ data:
       features_type: centralities
     - name: timik1q2009
       features_type: centralities
-    # ##### ##### ##### ##### ##### ##### ##### ##### other available networks 
+    # ##### ##### ##### ##### ##### ##### ##### ##### other available networks
     # - name: arxiv_netscience_coauthorship_math.oc
     #   features_type: centralities
     # - name: cannes
@@ -66,12 +66,13 @@ data:
 model:
   name: SSNet
   parameters:
-    input_dim: 5 
+    input_dim: 5
     output_dim: 4
-    hidden_channels: 400 
+    hidden_channels: 400
 
 training:
-  devices: [0]  # TODO it seems that if more than 1 GPU is available, then training is repeated on all available devices
+  accelerator: gpu # cpu or gpu
+  devices: [0] # list[int] | int | str; default=auto # TODO it seems that if more than 1 GPU is available, then training is repeated on all available devices
   max_epochs: 200
   loss:
     name: MRTWSE # Depends on the "output_dim"
@@ -107,15 +108,15 @@ training:
         - name: icm_p-average
         - name: batch_level-actor
   callbacks:
-   - name: model_summary
-     max_depth: -1
-   - name: model_checkpoint
-     mode: min
-     monitor: val_loss
-     save_last: True
-     save_top_k: 1
-     verbose: True
-   - name: early_stopping
-     monitor: val_loss
-     mode: min
-     patience: 30
+    - name: model_summary
+      max_depth: -1
+    - name: model_checkpoint
+      mode: min
+      monitor: val_loss
+      save_last: True
+      save_top_k: 1
+      verbose: True
+    - name: early_stopping
+      monitor: val_loss
+      mode: min
+      patience: 30
