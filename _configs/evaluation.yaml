@@ -3,6 +3,7 @@ base:
   project: infmax/infmax-gnn
   run_id: IN-163
   nb_seeds: 2
+  selection_function: elimination_approach # elimination_approach or top_k_approach
 
 data:
   protocol: OR

@@ -73,20 +73,18 @@ def weighted_sum(
     return torch.sum(score * weights)
 
 
-def get_top_spreaders(
+def elimination_approach(
     network_type: str,
     features_type: str,
     config: dict[str, Any],
     wrapper: HeteroGNN_Wrapper,
 ) -> np.ndarray:
-    model_config = config["model_config"]
-    output_weights = config["data"]["output_weights"]
     ow = torch.Tensor(
         [
-            output_weights["w_e"],
-            output_weights["w_sl"],
-            output_weights["w_pit"],
-            output_weights["w_pin"],
+            config["data"]["output_weights"]["w_e"],
+            config["data"]["output_weights"]["w_sl"],
+            config["data"]["output_weights"]["w_pit"],
+            config["data"]["output_weights"]["w_pin"],
         ]
     )
 
@@ -95,7 +93,6 @@ def get_top_spreaders(
 
     top_spreader = None
     result = []
-
     for _ in range(config["base"]["nb_seeds"]):
         not_ts_actors = [
             actor for actor in net.get_actors() if actor.actor_id != top_spreader
@@ -114,8 +111,8 @@ def get_top_spreaders(
         )
         network = MLNHeteroData.from_network_info(
             network_info=mln_info,
-            output_dim=model_config["parameters"]["output_dim"],
-            input_dim=model_config["parameters"]["input_dim"],
+            output_dim=config["model_config"]["parameters"]["output_dim"],
+            input_dim=config["model_config"]["parameters"]["input_dim"],
         )
 
         data = wrapper.predict_step(
@@ -138,6 +135,91 @@ def get_top_spreaders(
         result.append(top_spreader)
 
     return np.asarray(result)
+
+
+def top_k_approach(
+    network_type: str,
+    features_type: str,
+    config: dict[str, Any],
+    wrapper: HeteroGNN_Wrapper,
+) -> np.ndarray:
+    ow = torch.Tensor(
+        [
+            config["data"]["output_weights"]["w_e"],
+            config["data"]["output_weights"]["w_sl"],
+            config["data"]["output_weights"]["w_pit"],
+            config["data"]["output_weights"]["w_pin"],
+        ]
+    )
+
+    net = load_network(net_name=network_type, as_tensor=False)[network_type]
+    sp_df = load_sp(net_name=network_type)[network_type]
+
+    mln_info = MLNInfo(
+        mln_type=network_type,
+        mln_name=network_type,
+        mln=net,
+        icm_protocol=config["data"]["protocol"],
+        x_type=features_type,
+        y_type=config["data"]["output_label_name"],
+        sp_raw=sp_df,
+    )
+    network = MLNHeteroData.from_network_info(
+        network_info=mln_info,
+        output_dim=config["model_config"]["parameters"]["output_dim"],
+        input_dim=config["model_config"]["parameters"]["input_dim"],
+    )
+
+    data = wrapper.predict_step(
+        batch=network,
+        batch_idx=0,
+    )
+
+    weighted_sums = {
+        k: weighted_sum(
+            score=v,
+            weights=ow,
+        )
+        for k, v in data["actor"].items()
+    }
+    sorted_actors = sorted(
+        weighted_sums,
+        key=weighted_sums.get,
+        reverse=True,
+    )
+    sorted_actors = sorted_actors[: config["base"]["nb_seeds"]]
+    top_spreaders = [
+        k for k, v in mln_info.mln_torch.actors_map.items() if v in sorted_actors
+    ]
+
+    return np.asarray(top_spreaders)
+
+
+def get_top_spreaders(
+    network_type: str,
+    features_type: str,
+    config: dict[str, Any],
+    wrapper: HeteroGNN_Wrapper,
+) -> np.ndarray:
+    match config["base"]["selection_function"]:
+        case "elimination_approach":
+            return elimination_approach(
+                network_type=network_type,
+                features_type=features_type,
+                config=config,
+                wrapper=wrapper,
+            )
+        case "top_k_approach":
+            return top_k_approach(
+                network_type=network_type,
+                features_type=features_type,
+                config=config,
+                wrapper=wrapper,
+            )
+        case _:
+            raise AttributeError(
+                f"Unknown selecton function: {config['base']['selection_function']}"
+            )
 
 
 @hydra.main(
