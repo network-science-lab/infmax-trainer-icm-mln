@@ -5,7 +5,7 @@ data:
   name: DataFrameHeteroDataset
   num_workers: 32
   batch:
-    size: 16
+    size: 64
     neighbours_sampling: [8, 4, 2]
     subgraph_type: "bidirectional" # TODO: test with "induced"
     gradient_accumulation_step: 1
@@ -31,7 +31,7 @@ data:
       features_type: centralities
       val_split: True
     - name: artificial_pa
-      features_type: zeros
+      features_type: centralities
       val_split: True
     - name: artificial_small
       features_type: centralities
