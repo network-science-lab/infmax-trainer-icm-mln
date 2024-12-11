@@ -7,13 +7,14 @@ from omegaconf import DictConfig
 
 
 def load_config(
-    cfg: DictConfig,
     cofig_path: str | Path,
+    cfg: DictConfig | None = None,
 ) -> dict[str, Any]:
     with open(cofig_path, "r") as file:
         config = yaml.safe_load(file)
 
-    config["default"] = cfg
+    if cfg:
+        config["default"] = cfg
     config["hydra"] = HydraConfig.get()
 
     return config

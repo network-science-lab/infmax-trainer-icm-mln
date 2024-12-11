@@ -32,7 +32,7 @@ class HetergoGNN_WrapperConfig:
     batch_subraph_type: str
 
     @classmethod
-    def parse_str(cls, obj: str) -> Self:
+    def from_str(cls, obj: str) -> Self:
         match = re.match(r"(\w+)\((.*)\)", obj)
         args_str = match.group(2)
         args_list = [arg.strip() for arg in re.split(r",\s\b(?=\D)", args_str)]
@@ -132,7 +132,11 @@ class HeteroGNN_Wrapper(pl.LightningModule):
         self,
         batch: Batch,
         shuffle: bool = True,
+        subgraph_type: str | None = None,
     ) -> NeighborLoader:
+        if not subgraph_type:
+            subgraph_type = self._config.batch_subraph_type
+
         return NeighborLoader(
             data=batch,
             num_neighbors={
@@ -142,7 +146,7 @@ class HeteroGNN_Wrapper(pl.LightningModule):
             input_nodes=(ACTOR, None),
             batch_size=self._config.batch_size,
             shuffle=shuffle,
-            subgraph_type=self._config.batch_subraph_type,
+            subgraph_type=subgraph_type,
         )
 
     def training_step(
@@ -253,8 +257,9 @@ class HeteroGNN_Wrapper(pl.LightningModule):
         batch = self._get_neighbour_loader(
             batch=batch,
             shuffle=False,
+            subgraph_type="induced",
         )
-        result = {}
+        result = {layer: {} for layer in layers}
 
         for subgraf_batch in batch:
             predictions = self.forward(
@@ -265,10 +270,12 @@ class HeteroGNN_Wrapper(pl.LightningModule):
 
             for layer in layers:
                 subgraf_batch_size = subgraf_batch[layer].batch_size
-                result[layer] = {
-                    idx.tolist(): predictions[layer][idx]
-                    for idx in subgraf_batch[layer].n_id[:subgraf_batch_size]
-                }
+                for idx, key in enumerate(
+                    subgraf_batch[layer].n_id[:subgraf_batch_size]
+                ):
+                    result[layer][key.tolist()] = predictions[layer][
+                        :subgraf_batch_size
+                    ][idx]
 
         return result
 
@@ -281,7 +288,7 @@ class HeteroGNN_Wrapper(pl.LightningModule):
             ),
         }
         if self._config.scheduler_name:
-            configures_optimizers["scheduler"] = get_scheduler(
+            configures_optimizers["lr_scheduler"] = get_scheduler(
                 scheduler_name=self._config.scheduler_name,
                 scheduler_args=self._config.scheduler_args,
                 scheduler_config=self._config.scheduler_config,
