@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any
 
 import pytorch_lightning as pl
-from src.data_sets.loader import get_datamodule, get_datasets, get_metadata
+from src.data_loader import get_datamodule, get_datasets, get_metadata
 from src.infmax_models.loader import load_model
 from src.training.callbacks import get_callbacks
 from src.training.loggers import get_loggers
