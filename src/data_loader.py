@@ -2,16 +2,20 @@ import logging
 
 from typing import Any, Literal
 
-from _data_set.nsl_data_utils.loaders.net_loader import load_network
-from _data_set.nsl_data_utils.loaders.sp_loader import load_sp
-from sklearn.model_selection import train_test_split
-from src import MODULE_PATH
-from src.data_sets.base_dataset import BaseDataSet
-from src.data_sets.super_spreaders_dataset import SuperSpreadersDataSet
-from src.data_models.mln_info import MLNInfo
-from src.utils.worker import get_num_workers
+import torch
+import torch.utils
+import torch.utils.data
+
 from torch_geometric.data.lightning import LightningDataset
 from torch_geometric.typing import EdgeType, NodeType
+
+from _data_set.nsl_data_utils.loaders.net_loader import load_net_names
+from _data_set.nsl_data_utils.loaders.sp_loader import load_sp_paths
+from src import MODULE_PATH
+from src.data_models.mln_info import MLNInfo
+from src.data_sets.base_dataset import BaseDataSet
+from src.data_sets.super_spreaders_dataset import SuperSpreadersDataSet
+from src.utils.worker import get_num_workers
 
 
 def _load_mln_info_chunk(
@@ -20,54 +24,31 @@ def _load_mln_info_chunk(
     features_type: str,
     protocol: str,
     p_value: float,
-    random_seed: int,
-    dataset_type: Literal["train", "val", "test"],
-    validation_split: bool,
 ) -> list[MLNInfo]:
     """Load raw networks and target labels for given network type and spreading params."""
-
-    nets_dict = load_network(net_name=network_type, as_tensor=False)
-    sps_dict = load_sp(net_name=network_type)
-    nets_to_use = list(nets_dict.keys())
-    assert len(nets_dict) == len(sps_dict)
-
-    if validation_split: # if we make a split here, loading is speeded up
-        train_nets, val_nets = train_test_split(
-            nets_to_use, test_size=0.2, random_state=random_seed
-        )
-        if dataset_type == "train":
-            nets_to_use = train_nets
-        elif dataset_type == "val":
-            nets_to_use = val_nets
-        else:
-            raise ValueError(f"Invalid option: val_split for the test network!")
-
-    mln_info = [  # for the reduced size of data, we create shorter list of MNI objects
+    return [
         MLNInfo(
             mln_type=network_type,
             mln_name=net_name,
-            mln=nets_dict[net_name],
             icm_protocol=protocol,
             icm_p=p_value,
             x_type=features_type,
             y_type=labels_type,
-            sp_raw=sps_dict[net_name],
+            sp_paths=load_sp_paths(net_type=network_type, net_name=net_name),
         )
-        for net_name in nets_to_use
+        for net_name in load_net_names(net_type=network_type)
     ]
 
-    return mln_info
-
-
+# TODO: remove input_dim, output_dim from config
 def _get_dataset(
     data_name: str,
     networks_config: list[dict[str, Any]],
     labels: list[str],
     protocol: str,
     p_value: float,
-    random_seed: int,
-    input_dim: int,
-    output_dim: int,
+    # random_seed: int,
+    # input_dim: int,
+    # output_dim: int,
     dataset_type: Literal["train", "val", "test"],
 ) -> BaseDataSet:
     logging.info(f"Loading {dataset_type} dataset.")
@@ -81,54 +62,41 @@ def _get_dataset(
                     features_type=network_config["features_type"],
                     protocol=protocol,
                     p_value=p_value,
-                    random_seed=random_seed,
-                    dataset_type=dataset_type,
-                    validation_split=bool(network_config.get("val_split")),
                 )
                 mlni_nets.extend(mlni_chunk)
             return SuperSpreadersDataSet(
-                root=str(MODULE_PATH.parent / "data"),  # TODO: this path doesn't exist
+                root=str(MODULE_PATH.parent / "_data_set/nsl_data_sources"),
                 networks=mlni_nets,
-                input_dim=input_dim,
-                output_dim=output_dim,
+                # input_dim=input_dim,
+                # output_dim=output_dim,
             )
         case _:
             raise AttributeError(f"Unknown dataset: {data_name}")
 
 
 def get_datasets(config: dict[str, Any]) -> dict[str, BaseDataSet]:
-    train_dataset = _get_dataset(
+    dataset = _get_dataset(
         data_name=config["data"]["name"],
-        networks_config=config["data"]["train_networks"],
+        networks_config=config["data"]["train_data"],
         labels=config["data"]["output_label_name"],
-        input_dim=config["model"]["parameters"]["input_dim"],
-        output_dim=config["model"]["parameters"]["output_dim"],
+        # input_dim=config["model"]["parameters"]["input_dim"],
+        # output_dim=config["model"]["parameters"]["output_dim"],
         protocol=config["data"]["protocol"],
         p_value=config["data"]["p_value"],
-        random_seed=config["base"]["random_seed"],
-        dataset_type="train",
+        # random_seed=config["base"]["random_seed"],
     )
-    val_dataset = _get_dataset(
-        data_name=config["data"]["name"],
-        networks_config=config["data"]["val_dataset"],
-        labels=config["data"]["output_label_name"],
-        input_dim=config["model"]["parameters"]["input_dim"],
-        output_dim=config["model"]["parameters"]["output_dim"],
-        protocol=config["data"]["protocol"],
-        p_value=config["data"]["p_value"],
-        random_seed=config["base"]["random_seed"],
-        dataset_type="val",
-    )
+    val_len = int(len(dataset) * config["data"]["train_data"]["val_ratio"])
+    train_len = len(dataset) - val_len
+    train_dataset, val_dataset = torch.utils.data.random_split(train_dataset, [train_len, val_len])  # TODO: check repeitiveness
     test_dataset = _get_dataset(
         data_name=config["data"]["name"],
         networks_config=config["data"]["test_dataset"],
         labels=config["data"]["output_label_name"],
-        input_dim=config["model"]["parameters"]["input_dim"],
-        output_dim=config["model"]["parameters"]["output_dim"],
+        # input_dim=config["model"]["parameters"]["input_dim"],
+        # output_dim=config["model"]["parameters"]["output_dim"],
         protocol=config["data"]["protocol"],
         p_value=config["data"]["p_value"],
-        random_seed=config["base"]["random_seed"],
-        dataset_type="test",
+        # random_seed=config["base"]["random_seed"],
     )
     return {
         "train": train_dataset,
