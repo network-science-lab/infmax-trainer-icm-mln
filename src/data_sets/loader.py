@@ -6,8 +6,8 @@ from _data_set.nsl_data_utils.loaders.net_loader import load_network
 from _data_set.nsl_data_utils.loaders.sp_loader import load_sp
 from sklearn.model_selection import train_test_split
 from src import MODULE_PATH
-from src.dataset.base_hetero_dataset import BaseHeteroDataset
-from src.dataset.data_frame_hetero_dataset import DataFrameHeteroDataset
+from src.data_sets.base_dataset import BaseDataSet
+from src.data_sets.super_spreaders_dataset import SuperSpreadersDataSet
 from src.data_models.mln_info import MLNInfo
 from src.utils.worker import get_num_workers
 from torch_geometric.data.lightning import LightningDataset
@@ -69,10 +69,10 @@ def _get_dataset(
     input_dim: int,
     output_dim: int,
     dataset_type: Literal["train", "val", "test"],
-) -> BaseHeteroDataset:
+) -> BaseDataSet:
     logging.info(f"Loading {dataset_type} dataset.")
     match data_name:
-        case DataFrameHeteroDataset.__name__:
+        case SuperSpreadersDataSet.__name__:
             mlni_nets = []
             for network_config in networks_config:
                 mlni_chunk = _load_mln_info_chunk(
@@ -86,7 +86,7 @@ def _get_dataset(
                     validation_split=bool(network_config.get("val_split")),
                 )
                 mlni_nets.extend(mlni_chunk)
-            return DataFrameHeteroDataset(
+            return SuperSpreadersDataSet(
                 root=str(MODULE_PATH.parent / "data"),  # TODO: this path doesn't exist
                 networks=mlni_nets,
                 input_dim=input_dim,
@@ -96,7 +96,7 @@ def _get_dataset(
             raise AttributeError(f"Unknown dataset: {data_name}")
 
 
-def get_datasets(config: dict[str, Any]) -> dict[str, BaseHeteroDataset]:
+def get_datasets(config: dict[str, Any]) -> dict[str, BaseDataSet]:
     train_dataset = _get_dataset(
         data_name=config["data"]["name"],
         networks_config=config["data"]["train_networks"],
@@ -138,7 +138,7 @@ def get_datasets(config: dict[str, Any]) -> dict[str, BaseHeteroDataset]:
 
 
 def get_datamodule(
-    datasets: dict[str, BaseHeteroDataset], config: dict[str, Any]
+    datasets: dict[str, BaseDataSet], config: dict[str, Any]
 ) -> LightningDataset:
     return LightningDataset(
         train_dataset=datasets["train"].data_list,
@@ -150,7 +150,7 @@ def get_datamodule(
     )
 
 
-def get_metadata(datasets: list[BaseHeteroDataset]) -> tuple[list[NodeType], list[EdgeType]]:
+def get_metadata(datasets: list[BaseDataSet]) -> tuple[list[NodeType], list[EdgeType]]:
     """
     Here, we treat as metadata types of relations and types of agents.
 
