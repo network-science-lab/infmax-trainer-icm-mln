@@ -2,12 +2,12 @@ from typing import Callable
 
 from torch_geometric.data import HeteroData
 
-from src.dataset.base_hetero_dataset import BaseHeteroDataset
+from src.data_sets.base_dataset import BaseDataSet
 from src.data_models.mln_hetero_data import MLNHeteroData
 from src.data_models.mln_info import MLNInfo
 
 
-class DataFrameHeteroDataset(BaseHeteroDataset):
+class SuperSpreadersDataSet(BaseDataSet):
     r"""Dataset class for creating graph datasets based on hetero data.
 
     Args:

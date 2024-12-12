@@ -2,7 +2,7 @@ base:
   random_seed: 43
 
 data:
-  name: DataFrameHeteroDataset
+  name: SuperSpreadersDataSet
   num_workers: 15
   batch:
     size: 32

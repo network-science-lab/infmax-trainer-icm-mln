@@ -6,7 +6,7 @@ from torch_geometric.typing import EdgeType, NodeType
 from src.data_models.mln_hetero_data import MLNHeteroData
 
 
-class BaseHeteroDataset(Dataset):
+class BaseDataSet(Dataset):
     r"""Base Dataset class for creating graph datasets based on hetero data.
 
     Args:

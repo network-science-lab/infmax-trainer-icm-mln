@@ -37,7 +37,6 @@ request to get an access via e-mail (michal.czuba@pwr.edu.pl). Then, simply exec
 ├── env                     -> a definition of the runtime environment
 ├── src                     -> a module with main implementation
 │   |── data_models         -> an extension of HeteroData from torch_geometric
-│   |── datamodule          -> code for converting datasets into datamodule
 │   |── dataset             -> implemented datasets for preparing HeteroData
 │   |── infmax_models       -> trainable ML models for Influence Maximisation
 │   |── training            -> code related to training execution
