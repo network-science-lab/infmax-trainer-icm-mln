@@ -147,6 +147,8 @@ class HeteroGNN_Wrapper(pl.LightningModule):
             batch_size=self._config.batch_size,
             shuffle=shuffle,
             subgraph_type=subgraph_type,
+            # num_workers=15,
+            # pin_memory=False
         )
 
     def training_step(

@@ -146,6 +146,7 @@ def get_datamodule(
         test_dataset=datasets["test"].data_list,
         batch_size=config["data"]["batch"]["gradient_accumulation_step"],
         num_workers=get_num_workers(config),
+        # pin_memory=False,
     )
 
 

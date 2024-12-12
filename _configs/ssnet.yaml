@@ -3,9 +3,9 @@ base:
 
 data:
   name: DataFrameHeteroDataset
-  num_workers: 32
+  num_workers: 15
   batch:
-    size: 16
+    size: 32
     neighbours_sampling: [8, 4, 2]
     subgraph_type: "bidirectional" # TODO: test with "induced"
     gradient_accumulation_step: 1
@@ -73,7 +73,7 @@ model:
 training:
   accelerator: gpu # cpu or gpu
   devices: [0] # list[int] | int | str; default=auto # TODO it seems that if more than 1 GPU is available, then training is repeated on all available devices
-  max_epochs: 200
+  max_epochs: 2
   loss:
     name: MRTWSE # Depends on the "output_dim"
     args:
