@@ -35,18 +35,14 @@ data:
       features_type: centralities
     - name: eu_transportation
       features_type: centralities
-    - name: l2_course_net_1
+    - name: l2_course
       features_type: centralities
     - name: lazega
       features_type: centralities
     - name: timik1q2009
       features_type: centralities
     # ##### ##### ##### ##### ##### ##### ##### ##### other available networks
-    # - name: arxiv_netscience_coauthorship_math.oc
-    #   features_type: centralities
     # - name: cannes
-    #   features_type: centralities
-    # - name: eu_transport_klm
     #   features_type: centralities
     # - name: fmri74
     #   features_type: centralities

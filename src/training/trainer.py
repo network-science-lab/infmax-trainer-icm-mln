@@ -4,20 +4,31 @@ from pathlib import Path
 from typing import Any
 
 import pytorch_lightning as pl
+from tqdm import tqdm
 from src.data_loader import get_datamodule, get_datasets, get_metadata
 from src.infmax_models.loader import load_model
 from src.training.callbacks import get_callbacks
 from src.training.loggers import get_loggers
+from src.utils.config import validate_config
 from src.utils.misc import general_test_result
 from src.utils.wrapper import get_accelerator
 from src.wrapper.hetero import HetergoGNN_WrapperConfig, HeteroGNN_Wrapper
 
 
+
+
 def train(args: dict[str, Any]) -> None:
     """Main training loop with args provided by YAML config.."""
+    validate_config(args)
     datasets = get_datasets(args)
-    datamodule = get_datamodule(datasets=datasets, config=args)
+    # for sample in tqdm(range(len(datasets["train"]))):
+    #     datasets["train"][sample]
+    for sample in tqdm(range(len(datasets["val"]))):
+        datasets["val"][sample]
+    for sample in tqdm(range(len(datasets["test"]))):
+        datasets["test"][sample]
     return
+    datamodule = get_datamodule(datasets=datasets, config=args)
     scheduler = args["training"].get("scheduler")
     device = args["training"].get("devices")
     wrapper = HeteroGNN_Wrapper(
