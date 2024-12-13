@@ -26,18 +26,21 @@ def _load_mln_info_chunk(
     p_value: float,
 ) -> list[MLNInfo]:
     """Load raw networks and target labels for given network type and spreading params."""
-    return [
-        MLNInfo(
-            mln_type=network_type,
-            mln_name=net_name,
-            icm_protocol=protocol,
-            icm_p=p_value,
-            x_type=features_type,
-            y_type=labels_type,
-            sp_paths=load_sp_paths(net_type=network_type, net_name=net_name),
+    mlni_chunk = []
+    for net_name in load_net_names(net_type=network_type):
+        mlni_chunk.append(
+            MLNInfo.from_config(
+                mln_type=network_type,
+                mln_name=net_name,
+                icm_protocol=protocol,
+                icm_p=p_value,
+                x_type=features_type,
+                y_type=labels_type,
+                sp_paths=load_sp_paths(net_type=network_type, net_name=net_name),
+            )
         )
-        for net_name in load_net_names(net_type=network_type)
-    ]
+    return mlni_chunk
+
 
 # TODO: remove input_dim, output_dim from config
 def _get_dataset(
@@ -49,9 +52,8 @@ def _get_dataset(
     # random_seed: int,
     # input_dim: int,
     # output_dim: int,
-    dataset_type: Literal["train", "val", "test"],
+    # dataset_type: Literal["train", "val", "test"],
 ) -> BaseDataSet:
-    logging.info(f"Loading {dataset_type} dataset.")
     match data_name:
         case SuperSpreadersDataSet.__name__:
             mlni_nets = []
@@ -75,6 +77,7 @@ def _get_dataset(
 
 
 def get_datasets(config: dict[str, Any]) -> dict[str, BaseDataSet]:
+    logging.info(f"Loading train dataset.")
     dataset = _get_dataset(
         data_name=config["data"]["name"],
         networks_config=config["data"]["train_data"],
@@ -85,9 +88,11 @@ def get_datasets(config: dict[str, Any]) -> dict[str, BaseDataSet]:
         p_value=config["data"]["p_value"],
         # random_seed=config["base"]["random_seed"],
     )
+    logging.info(f"Splitting to train/eval dataset.")
     val_len = int(len(dataset) * config["data"]["train_data"]["val_ratio"])
     train_len = len(dataset) - val_len
     train_dataset, val_dataset = torch.utils.data.random_split(train_dataset, [train_len, val_len])  # TODO: check repeitiveness
+    logging.info(f"Loading test dataset.")
     test_dataset = _get_dataset(
         data_name=config["data"]["name"],
         networks_config=config["data"]["test_dataset"],

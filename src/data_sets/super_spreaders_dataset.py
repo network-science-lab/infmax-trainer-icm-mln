@@ -1,5 +1,3 @@
-from typing import Callable
-
 from torch_geometric.data import HeteroData
 
 from src.data_sets.base_dataset import BaseDataSet
@@ -8,63 +6,36 @@ from src.data_models.mln_info import MLNInfo
 
 
 class SuperSpreadersDataSet(BaseDataSet):
-    r"""Dataset class for creating graph datasets based on hetero data.
-
-    Args:
-        networks (list[MultilayerNetworkInfo]): List of objects containing
-            information for creating hetero data.
-        input_dim (int): Size of features for h0 vector.
-        output_dim (int): Number of output classes created during
-            discretization.
-        root (str, optional): Root directory where the dataset should be saved.
-            (optional: :obj:`None`)
-        transform (callable, optional): A function/transform that takes in a
-            :class:`~torch_geometric.data.Data` or
-            :class:`~torch_geometric.data.HeteroData` object and returns a
-            transformed version.
-            The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            a :class:`~torch_geometric.data.Data` or
-            :class:`~torch_geometric.data.HeteroData` object and returns a
-            transformed version.
-            The data object will be transformed before being saved to disk.
-            (default: :obj:`None`)
-        pre_filter (callable, optional): A function that takes in a
-            :class:`~torch_geometric.data.Data` or
-            :class:`~torch_geometric.data.HeteroData` object and returns a
-            boolean value, indicating whether the data object should be
-            included in the final dataset. (default: :obj:`None`)
-    """
+    """Class handling the main dataset."""
 
     def __init__(
         self,
         networks: list[MLNInfo],
-        input_dim: int,
-        output_dim: int,
+        # input_dim: int,
+        # output_dim: int,
         root: str,
-        transform: Callable | None = None,
-        pre_filter: Callable | None = None,
-        pre_transform: Callable | None = None,
     ) -> None:
-        super().__init__(
-            root=root,
-            transform=transform,
-            pre_transform=pre_transform,
-            pre_filter=pre_filter,
-        )
+        """
+        Initialise the object.
 
-        self._input_dim = input_dim
-        self._output_dim = output_dim
+        :param networks: list of objects containing information for creating hetero data.
+        :param input_dim: number of features for h0 vector
+        :param output_dim: number of output classes created during discretization (if any).
+        :param root: required by parent, a root path of the dataset
+        """
+        super().__init__(root=root)
+        # self._input_dim = input_dim
+        # self._output_dim = output_dim
+        self.data_list = networks
 
-        self.data_list = [
-            MLNHeteroData.from_network_info(
-                network_info=network_info,
-                output_dim=output_dim,
-                input_dim=input_dim,
-            )
-            for network_info in networks
-        ]
+        # self.data_list = [
+        #     MLNHeteroData.from_network_info(
+        #         network_info=network_info,
+        #         output_dim=output_dim,
+        #         input_dim=input_dim,
+        #     )
+        #     for network_info in networks
+        # ]
 
     def len(self) -> int:
         return len(self.data_list)

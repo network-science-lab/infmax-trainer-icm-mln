@@ -17,6 +17,7 @@ def train(args: dict[str, Any]) -> None:
     """Main training loop with args provided by YAML config.."""
     datasets = get_datasets(args)
     datamodule = get_datamodule(datasets=datasets, config=args)
+    return
     scheduler = args["training"].get("scheduler")
     device = args["training"].get("devices")
     wrapper = HeteroGNN_Wrapper(

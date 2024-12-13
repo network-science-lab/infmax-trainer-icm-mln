@@ -55,14 +55,14 @@ class MLNInfo:
     @staticmethod
     def _filter_sp_path(sp_paths: Path, icm_protocol: str, icm_p: float, mln_name: str) -> list[Path]:
         "Filters filenames based on protocol, p, and the network name."
-        icm_protocol = re.escape(icm_protocol)
-        mln_name = re.escape(mln_name)
         if icm_p == -1:
-            p_pattern = "|".join([re.escape(f"{val}") for val in _VALID_ICM_PARAMS[icm_protocol]])
+            valid_p_values = _VALID_ICM_PARAMS[icm_protocol].difference({-1})
+            regex_vpvs = [r"\.".join(str(vpv).split(".")) for vpv in valid_p_values]
+            icm_p_pattern = "|".join(regex_vpvs)
         else:
-            p_pattern = re.escape(f"{icm_p}")
-        pattern = re.compile(rf"^proto-{icm_protocol}--p-({p_pattern})--net-{mln_name}\\.csv$")
-        return [sp_path for sp_path in sp_paths if pattern.match(sp_path.stem)]
+            icm_p_pattern = re.escape(f"{icm_p:.2f}")
+        pattern = rf"^proto-{icm_protocol}--p-({icm_p_pattern})--net-{mln_name}\.csv$"
+        return [sp_path for sp_path in sp_paths if re.match(pattern, sp_path.name)]
 
     @classmethod
     def from_config(
@@ -77,7 +77,9 @@ class MLNInfo:
             cls._validate_args(icm_protocol, icm_p, x_type, y_type)
             sp_paths_all = load_sp_paths(net_type=mln_type, net_name=mln_name)
             sp_paths_filtered = cls._filter_sp_path(sp_paths_all, icm_protocol, icm_p, mln_name)
+            if len(sp_paths_filtered) == 0: raise ValueError  # TODO: remove it after test
             ft_path = cls._get_ft_path(x_type, mln_type, mln_name)
+            if ft_path is None and x_type == "centralities": raise ValueError  # TODO: remove it after test
             return cls(
                 mln_type=mln_type,
                 mln_name=mln_name,
@@ -86,5 +88,5 @@ class MLNInfo:
                 x_type=x_type,
                 y_type=y_type,
                 sp_paths=sp_paths_filtered,
-                ft_paths=ft_path,
+                ft_path=ft_path,
             )
