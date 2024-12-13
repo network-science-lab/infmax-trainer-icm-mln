@@ -1,6 +1,6 @@
 import logging
 
-from typing import Any, Literal
+from typing import Any
 
 import torch
 import torch.utils
@@ -10,7 +10,6 @@ from torch_geometric.data.lightning import LightningDataset
 from torch_geometric.typing import EdgeType, NodeType
 
 from _data_set.nsl_data_utils.loaders.net_loader import load_net_names
-from _data_set.nsl_data_utils.loaders.sp_loader import load_sp_paths
 from src import MODULE_PATH
 from src.data_models.mln_info import MLNInfo
 from src.data_sets.base_dataset import BaseDataSet
@@ -36,23 +35,19 @@ def _load_mln_info_chunk(
                 icm_p=p_value,
                 x_type=features_type,
                 y_type=labels_type,
-                sp_paths=load_sp_paths(net_type=network_type, net_name=net_name),
             )
         )
     return mlni_chunk
 
 
-# TODO: remove input_dim, output_dim from config
 def _get_dataset(
     data_name: str,
     networks_config: list[dict[str, Any]],
     labels: list[str],
     protocol: str,
     p_value: float,
-    # random_seed: int,
-    # input_dim: int,
-    # output_dim: int,
-    # dataset_type: Literal["train", "val", "test"],
+    input_dim: int,
+    output_dim: int,
 ) -> BaseDataSet:
     match data_name:
         case SuperSpreadersDataSet.__name__:
@@ -66,12 +61,7 @@ def _get_dataset(
                     p_value=p_value,
                 )
                 mlni_nets.extend(mlni_chunk)
-            return SuperSpreadersDataSet(
-                root=str(MODULE_PATH.parent / "_data_set/nsl_data_sources"),
-                networks=mlni_nets,
-                # input_dim=input_dim,
-                # output_dim=output_dim,
-            )
+            return SuperSpreadersDataSet(mlni_nets, input_dim, output_dim)
         case _:
             raise AttributeError(f"Unknown dataset: {data_name}")
 
@@ -82,32 +72,31 @@ def get_datasets(config: dict[str, Any]) -> dict[str, BaseDataSet]:
         data_name=config["data"]["name"],
         networks_config=config["data"]["train_data"],
         labels=config["data"]["output_label_name"],
-        # input_dim=config["model"]["parameters"]["input_dim"],
-        # output_dim=config["model"]["parameters"]["output_dim"],
-        protocol=config["data"]["protocol"],
-        p_value=config["data"]["p_value"],
-        # random_seed=config["base"]["random_seed"],
+        input_dim=config["model"]["parameters"]["input_dim"],
+        output_dim=config["model"]["parameters"]["output_dim"],
+        protocol=config["data"]["icm"]["protocol"],
+        p_value=config["data"]["icm"]["p"],
     )
     logging.info(f"Splitting to train/eval dataset.")
-    val_len = int(len(dataset) * config["data"]["train_data"]["val_ratio"])
+    val_len = int(len(dataset) * config["data"]["val_data"]["ratio"])
     train_len = len(dataset) - val_len
-    train_dataset, val_dataset = torch.utils.data.random_split(train_dataset, [train_len, val_len])  # TODO: check repeitiveness
+    train_dataset, val_dataset = torch.utils.data.random_split(
+        dataset=dataset,
+        lengths=[train_len, val_len],
+        generator=torch.Generator().manual_seed(config["base"]["random_seed"])
+    )
     logging.info(f"Loading test dataset.")
     test_dataset = _get_dataset(
         data_name=config["data"]["name"],
-        networks_config=config["data"]["test_dataset"],
+        networks_config=config["data"]["test_data"],
         labels=config["data"]["output_label_name"],
-        # input_dim=config["model"]["parameters"]["input_dim"],
-        # output_dim=config["model"]["parameters"]["output_dim"],
-        protocol=config["data"]["protocol"],
-        p_value=config["data"]["p_value"],
-        # random_seed=config["base"]["random_seed"],
+        input_dim=config["model"]["parameters"]["input_dim"],
+        output_dim=config["model"]["parameters"]["output_dim"],
+        protocol=config["data"]["icm"]["protocol"],
+        p_value=config["data"]["icm"]["p"],
     )
-    return {
-        "train": train_dataset,
-        "val": val_dataset,
-        "test": test_dataset
-    }
+    logging.info(f"Graphs: test-{len(train_dataset)}, eval-{len(val_dataset)}, test-{len(test_dataset)}")
+    return {"train": train_dataset, "val": val_dataset, "test": test_dataset}
 
 
 def get_datamodule(
