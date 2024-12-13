@@ -18,7 +18,7 @@ from src.data_models.mln_info import MLNInfo
 
 class MLNHeteroData(HeteroData):
     """
-    Target class to store multilayergraph data for trained GNNs.
+    Target class to store multilayer graph data for training.
 
     Attributes:
     self["actor"].x - tensor of input features for actors of the network
@@ -50,7 +50,7 @@ class MLNHeteroData(HeteroData):
         for idx, _ in enumerate(network_info.mln_torch.layers_order):
             layer_edge_idx = network_info.mln_torch.adjacency_tensor[idx, ...].coalesce().indices()
             data[ACTOR, f"l_{idx}", ACTOR].edge_index = layer_edge_idx
-
+        # object.__setattr__(self, "mln", functions.remove_selfloop_edges(self.mln))
         # tensor of labels to predict
         data[ACTOR].y = cls._prepare_labels(network_info=network_info, output_dim=output_dim)
 
