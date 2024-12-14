@@ -4,9 +4,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, TypeVar
 
+from bidict import bidict
+import pandas as pd
 import pytorch_lightning as pl
 import torch
 from _data_set.nsl_data_utils.loaders.constants import ACTOR
+from src.data_models.mln_hetero_data import MLNHeteroData
 from src.infmax_models.base.base import BaseHeteroModule
 from src.utils.wrapper import get_loss, get_optimizer, get_scheduler
 from torch.optim import Optimizer
@@ -39,6 +42,7 @@ class HetergoGNNWrapperConfig:
     #         arg.split("=")[0]: ast.literal_eval(arg.split("=")[1]) for arg in args_list
     #     }
 
+
 class HeteroGNNWrapper(pl.LightningModule):
     def __init__(self, model: BaseHeteroModule, config: HetergoGNNWrapperConfig) -> None:
         super().__init__()
@@ -53,7 +57,7 @@ class HeteroGNNWrapper(pl.LightningModule):
         #         num_bases=model.num_bases,
         #     )
         self._loss = get_loss(loss_name=config.loss_name, loss_args=config.loss_args)
-        self.test_preds = {"trues": [],"preds": []}
+        self.test_preds = {"trues": {},"preds": {}}
         self.save_hyperparameters(ignore=["model"])
 
     # def _mask_batch(  # TODO: for removal
@@ -124,7 +128,7 @@ class HeteroGNNWrapper(pl.LightningModule):
 
     def training_step(self, batch: MLNHeteroDataBatch, batch_idx: int) -> torch.Tensor:
         loss = 0
-        for graph in [batch] if len(batch) == 1 else batch:
+        for graph in [batch] if len(batch) == 1 else batch:  # TODO: consider removing this loop
             neighbours_loader = self._get_neighbour_loader(graph)
             for subgraph in neighbours_loader:
                 predictions = self.forward(
@@ -133,13 +137,13 @@ class HeteroGNNWrapper(pl.LightningModule):
                     edge_index_dict=subgraph.edge_index_dict,
                 )
                 loss += self._calculate_loss(batch=subgraph, predictions=predictions)
-        self.log(name="train_loss", value=loss, batch_size=len(batch))
+            self.log(name="train_loss", value=loss, batch_size=len(batch))
         return loss
 
     @torch.no_grad
     def validation_step(self, batch: MLNHeteroDataBatch, batch_idx: int) -> torch.Tensor:
         loss = 0
-        for graph in [batch] if len(batch) == 1 else batch:
+        for graph in [batch] if len(batch) == 1 else batch:  # TODO: consider removing this loop
             neighbours_loader = self._get_neighbour_loader(graph)
             for subgraph in neighbours_loader:
                 predictions = self.forward(
@@ -148,79 +152,63 @@ class HeteroGNNWrapper(pl.LightningModule):
                     edge_index_dict=subgraph.edge_index_dict,
                 )
                 loss += self._calculate_loss(batch=subgraph, predictions=predictions)
-        self.log(name="val_loss", value=loss, batch_size=len(batch), prog_bar=True, on_epoch=True)
+            self.log(name="val_loss", value=loss, batch_size=len(batch), prog_bar=True, on_epoch=True)
         return loss
 
     @torch.no_grad
-    def test_step(
-        self,
-        batch: MLNHeteroDataBatch,
-        batch_idx: int,
-    ) -> torch.Tensor:
-        layers = batch.x_dict.keys()
-        test_preds = {layer: batch[layer].y.tolist() for layer in layers}
-        net_name = batch.network_name[0]
-        len_batch = len(batch)
-        batch = self._get_neighbour_loader(
-            graph_sample=batch,
-            shuffle=False,
-        )
-
+    def test_step(self, batch: MLNHeteroDataBatch, batch_idx: int) -> torch.Tensor:
         loss = 0
-        for subgraf_batch in batch:
+        for graph in [batch] if len(batch) == 1 else batch:  # TODO: consider removing this loop; removed neighbourhood loader by intention
+            graph_name = f"{graph.network_type[0]}_{graph.network_name[0]}"
             predictions = self.forward(
-                x_dict=subgraf_batch.x_dict,
-                z_dict=subgraf_batch.z_dict,
-                edge_index_dict=subgraf_batch.edge_index_dict,
+                x_dict=graph.x_dict,
+                z_dict=graph.z_dict,
+                edge_index_dict=graph.edge_index_dict,
             )
-            loss += self._calculate_loss(
-                batch=subgraf_batch,
-                predictions=predictions,
-            )
-
-            for layer in layers:
-                self.test_preds["trues"] += test_preds[layer]
-                self.test_preds["preds"] += predictions[layer].tolist()
-
-        self.log(
-            name=f"test_loss_{net_name}",
-            value=loss,
-            batch_size=len_batch,
-        )
-
+            loss += self._calculate_loss(batch=graph, predictions=predictions)
+            self.log(name=f"test_loss_{graph_name}", value=loss, batch_size=len(graph))
+            self.test_preds["preds"][graph_name] = self.transform_labels(graph, predictions[ACTOR])
+            self.test_preds["trues"][graph_name] = self.transform_labels(graph, graph[ACTOR].y)
         return loss
 
-    @torch.no_grad
-    def predict_step(
-        self,
-        batch: MLNHeteroDataBatch,
-        batch_idx: int,
-    ) -> dict[str, torch.Tensor]:
-        layers = batch.x_dict.keys()
-        batch = self._get_neighbour_loader(
-            graph_sample=batch,
-            shuffle=False,
-            subgraph_type="induced",
-        )
-        result = {layer: {} for layer in layers}
+    @staticmethod
+    def transform_labels(graph: MLNHeteroData, preds: torch.Tensor) -> pd.DataFrame:
+        actors_map = bidict({a_id: int(a_idx) for a_id, a_idx in graph.actors_map.items()})
+        real_labels = [actors_map.inverse[i] for i in range(preds.shape[0])]
+        preds_np = preds.cpu().numpy() * len(graph.actors_map)
+        return pd.DataFrame(preds_np, index=real_labels).sort_index()
 
-        for subgraf_batch in batch:
-            predictions = self.forward(
-                x_dict=subgraf_batch.x_dict,
-                z_dict=subgraf_batch.z_dict,
-                edge_index_dict=subgraf_batch.edge_index_dict,
-            )
+    # @torch.no_grad
+    # def predict_step(  # TODO: refactor this; use code from test step since it's almost similar
+    #     self,
+    #     batch: MLNHeteroDataBatch,
+    #     batch_idx: int,
+    # ) -> dict[str, torch.Tensor]:
+    #     layers = batch.x_dict.keys()
+    #     batch = self._get_neighbour_loader(
+    #         graph_sample=batch,
+    #         shuffle=False,
+    #         subgraph_type="induced",
+    #     )
+    #     result = {layer: {} for layer in layers}
 
-            for layer in layers:
-                subgraf_batch_size = subgraf_batch[layer].batch_size
-                for idx, key in enumerate(
-                    subgraf_batch[layer].n_id[:subgraf_batch_size]
-                ):
-                    result[layer][key.tolist()] = predictions[layer][
-                        :subgraf_batch_size
-                    ][idx]
+    #     for subgraf_batch in batch:
+    #         predictions = self.forward(
+    #             x_dict=subgraf_batch.x_dict,
+    #             z_dict=subgraf_batch.z_dict,
+    #             edge_index_dict=subgraf_batch.edge_index_dict,
+    #         )
 
-        return result
+    #         for layer in layers:
+    #             subgraf_batch_size = subgraf_batch[layer].batch_size
+    #             for idx, key in enumerate(
+    #                 subgraf_batch[layer].n_id[:subgraf_batch_size]
+    #             ):
+    #                 result[layer][key.tolist()] = predictions[layer][
+    #                     :subgraf_batch_size
+    #                 ][idx]
+
+    #     return result
 
     def configure_optimizers(self) -> dict[str, Optimizer | dict[str, Any]]:
         configures_optimizers = {
@@ -241,12 +229,14 @@ class HeteroGNNWrapper(pl.LightningModule):
         return configures_optimizers
 
     def clear_test_results(self) -> None:
-        self.test_preds = {"trues": [], "preds": []}
+        self.test_preds = {"trues": {}, "preds": {}}
 
     def save_test_result(self, save_path: Path, test_output: list[dict[str, float]]) -> None:
         save_path = save_path / "results_test"
         save_path.mkdir(exist_ok=True, parents=True)
-        with (save_path / f"predictions.json").open(mode="w", encoding="utf-8") as file:
-            json.dump(obj=self.test_preds, fp=file, indent=2)
+        for test_name, test_pred in self.test_preds["preds"].items():
+            test_pred.to_csv(save_path / f"{test_name}_pred.csv")
+        for test_name, test_true in self.test_preds["trues"].items():
+            test_true.to_csv(save_path / f"{test_name}_true.csv")
         with (save_path / f"metrics.json").open(mode="w", encoding="utf-8") as file:
             json.dump(obj=test_output, fp=file, indent=2)
