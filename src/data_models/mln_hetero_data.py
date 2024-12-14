@@ -33,6 +33,7 @@ class MLNHeteroData(HeteroData):
     self.network_name - name of the network
     self.actors_map - map of the actors' original names to their indices in tensors
     self.layers_map - map of the layers' original names to their indices in tensors
+    self.y_names - list[str] with names of labels that are stored in `self.y` attribute
     """
 
     # TODO: In case of need use the following code as a starter for iter function
@@ -58,6 +59,7 @@ class MLNHeteroData(HeteroData):
 
         # tensor of labels to predict
         data[ACTOR].y = cls._prepare_labels(network_info, mln_torch, output_dim)
+        data.y_names = network_info.y_type
 
         # mask of nodes that were added artificially to obtain multiplicity
         data[ACTOR].z = mln_torch.nodes_mask.T

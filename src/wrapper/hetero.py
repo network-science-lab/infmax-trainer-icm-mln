@@ -175,8 +175,8 @@ class HeteroGNNWrapper(pl.LightningModule):
     def transform_labels(graph: MLNHeteroData, preds: torch.Tensor) -> pd.DataFrame:
         actors_map = bidict({a_id: int(a_idx) for a_id, a_idx in graph.actors_map.items()})
         real_labels = [actors_map.inverse[i] for i in range(preds.shape[0])]
-        preds_np = preds.cpu().numpy() * len(graph.actors_map)
-        return pd.DataFrame(preds_np, index=real_labels).sort_index()
+        preds_np = preds.cpu().numpy() * len(graph.actors_map)       
+        return pd.DataFrame(preds_np, index=real_labels, columns=graph.y_names).sort_index()
 
     # @torch.no_grad
     # def predict_step(  # TODO: refactor this; use code from test step since it's almost similar
