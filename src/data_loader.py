@@ -1,20 +1,14 @@
 import logging
-
 from typing import Any
 
 import torch
 import torch.utils
 import torch.utils.data
-
 from torch_geometric.data.lightning import LightningDataset
-from torch_geometric.typing import EdgeType, NodeType
 
 from _data_set.nsl_data_utils.loaders.net_loader import load_net_names
-from src import MODULE_PATH
 from src.data_models.mln_info import MLNInfo
-from src.data_sets.base_dataset import BaseDataSet
 from src.data_sets.super_spreaders_dataset import SuperSpreadersDataSet
-from src.utils.worker import get_num_workers
 
 
 def _load_mln_info_chunk(
@@ -48,7 +42,7 @@ def _get_dataset(
     p_value: float,
     input_dim: int,
     output_dim: int,
-) -> BaseDataSet:
+) -> SuperSpreadersDataSet:
     match data_name:
         case SuperSpreadersDataSet.__name__:
             mlni_nets = []
@@ -66,8 +60,8 @@ def _get_dataset(
             raise AttributeError(f"Unknown dataset: {data_name}")
 
 
-def get_datasets(config: dict[str, Any]) -> dict[str, BaseDataSet]:
-    logging.info(f"Loading train dataset.")
+def get_datasets(config: dict[str, Any]) -> dict[str, SuperSpreadersDataSet]:
+    logging.info(f"Loading train dataset (paths).")
     dataset = _get_dataset(
         data_name=config["data"]["name"],
         networks_config=config["data"]["train_data"],
@@ -77,7 +71,7 @@ def get_datasets(config: dict[str, Any]) -> dict[str, BaseDataSet]:
         protocol=config["data"]["icm"]["protocol"],
         p_value=config["data"]["icm"]["p"],
     )
-    logging.info(f"Splitting to train/eval dataset.")
+    logging.info(f"Splitting to train/eval dataset (paths).")
     val_len = int(len(dataset) * config["data"]["val_data"]["ratio"])
     train_len = len(dataset) - val_len
     train_dataset, val_dataset = torch.utils.data.random_split(
@@ -85,7 +79,7 @@ def get_datasets(config: dict[str, Any]) -> dict[str, BaseDataSet]:
         lengths=[train_len, val_len],
         generator=torch.Generator().manual_seed(config["base"]["random_seed"])
     )
-    logging.info(f"Loading test dataset.")
+    logging.info(f"Loading test dataset (paths).")
     test_dataset = _get_dataset(
         data_name=config["data"]["name"],
         networks_config=config["data"]["test_data"],
@@ -99,34 +93,37 @@ def get_datasets(config: dict[str, Any]) -> dict[str, BaseDataSet]:
     return {"train": train_dataset, "val": val_dataset, "test": test_dataset}
 
 
-def get_datamodule(
-    datasets: dict[str, BaseDataSet], config: dict[str, Any]
-) -> LightningDataset:
+# TODO AFAIK - it has internal loaders, right? 
+def get_datamodule(datasets: dict[str, SuperSpreadersDataSet], config: dict[str, Any]) -> LightningDataset:
     return LightningDataset(
-        train_dataset=datasets["train"].data_list,
-        val_dataset=datasets["val"].data_list,
-        test_dataset=datasets["test"].data_list,
-        batch_size=config["data"]["batch"]["gradient_accumulation_step"],
-        num_workers=get_num_workers(config),
-        # pin_memory=False,
+        train_dataset=datasets["train"],
+        val_dataset=datasets["val"],
+        test_dataset=datasets["test"],
+        # train_dataset=DataLoader(datasets["train"]),
+        # val_dataset=DataLoader(datasets["val"]),
+        # test_dataset=DataLoader(datasets["test"]),
+        batch_size=1, # config["data"]["batch"]["gradient_accumulation_step"],
+        # num_workers=get_num_workers(config),
+        pin_memory=False,
     )
 
 
-def get_metadata(datasets: list[BaseDataSet]) -> tuple[list[NodeType], list[EdgeType]]:
-    """
-    Here, we treat as metadata types of relations and types of agents.
+# TODO: a leftover - we have to figure out how to apply it to topheteronetwork
+# def get_metadata(datasets: list[BaseDataSet]) -> tuple[list[NodeType], list[EdgeType]]:
+#     """
+#     Here, we treat as metadata types of relations and types of agents.
 
-    In current approach it's just "actors" for agents and a union of layer names available in the 
-    dataset. This function is used only in autoconverters from base torch_geometric models
-    to heterogeneous ones.
-    """
-    nodes_data = set()
-    edges_data = set()
+#     In current approach it's just "actors" for agents and a union of layer names available in the 
+#     dataset. This function is used only in autoconverters from base torch_geometric models
+#     to heterogeneous ones.
+#     """
+#     nodes_data = set()
+#     edges_data = set()
 
-    for dataset in datasets:
-        node_data, edge_data = dataset.get_metadata()
+#     for dataset in datasets:
+#         node_data, edge_data = dataset.get_metadata()
 
-        nodes_data = nodes_data.union(node_data)
-        edges_data = edges_data.union(edge_data)
+#         nodes_data = nodes_data.union(node_data)
+#         edges_data = edges_data.union(edge_data)
 
-    return list(nodes_data), list(edges_data)
+#     return list(nodes_data), list(edges_data)

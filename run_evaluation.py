@@ -20,7 +20,7 @@ from src.data_models.mln_info import MLNInfo
 from src.infmax_models.loader import load_model
 from src.utils.config import load_config
 from src.utils.misc import set_seed
-from src.wrapper.hetero import HetergoGNN_WrapperConfig, HeteroGNN_Wrapper
+from src.wrapper.hetero import HetergoGNNWrapperConfig, HeteroGNNWrapper
 
 load_dotenv(
     dotenv_path=Path(__file__).parent / ".env",
@@ -72,7 +72,7 @@ class HeteroGNN_Evaluator:
                 )
 
     @staticmethod
-    def from_neptune(config: dict[str, Any]) -> HeteroGNN_Wrapper:
+    def from_neptune(config: dict[str, Any]) -> HeteroGNNWrapper:
         run = neptune.init_run(
             api_token=os.getenv(
                 key="NEPTUNE_API_KEY",
@@ -98,10 +98,10 @@ class HeteroGNN_Evaluator:
         }
         model = load_model(model_config)
 
-        wrapper_config = HetergoGNN_WrapperConfig.from_str(
+        wrapper_config = HetergoGNNWrapperConfig.from_str(
             run["training/hyperparams/config"].fetch()
         )
-        wrapper = HeteroGNN_Wrapper.load_from_checkpoint(
+        wrapper = HeteroGNNWrapper.load_from_checkpoint(
             checkpoint_path=local_best_ckpt_path,
             model=model,
             config=wrapper_config,

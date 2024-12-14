@@ -5,14 +5,20 @@ from typing import Any
 
 import pytorch_lightning as pl
 from tqdm import tqdm
-from src.data_loader import get_datamodule, get_datasets, get_metadata
+from src.data_loader import get_datamodule, get_datasets
 from src.infmax_models.loader import load_model
 from src.training.callbacks import get_callbacks
 from src.training.loggers import get_loggers
 from src.utils.config import validate_config
 from src.utils.misc import general_test_result
+from src.utils.worker import get_num_workers
 from src.utils.wrapper import get_accelerator
-from src.wrapper.hetero import HetergoGNN_WrapperConfig, HeteroGNN_Wrapper
+from src.wrapper.hetero import HetergoGNNWrapperConfig, HeteroGNNWrapper
+
+
+# from torch.utils.data import DataLoader
+from torch_geometric.loader import NeighborLoader, DataLoader
+from torch_geometric.datasets import OGB_MAG
 
 
 
@@ -20,20 +26,21 @@ from src.wrapper.hetero import HetergoGNN_WrapperConfig, HeteroGNN_Wrapper
 def train(args: dict[str, Any]) -> None:
     """Main training loop with args provided by YAML config.."""
     validate_config(args)
+    
     datasets = get_datasets(args)
     # for sample in tqdm(range(len(datasets["train"]))):
     #     datasets["train"][sample]
-    for sample in tqdm(range(len(datasets["val"]))):
-        datasets["val"][sample]
-    for sample in tqdm(range(len(datasets["test"]))):
-        datasets["test"][sample]
-    return
+    # for sample in tqdm(range(len(datasets["val"]))):
+    #     datasets["val"][sample]
+    # for sample in tqdm(range(len(datasets["test"]))):
+    #     datasets["test"][sample]
+
     datamodule = get_datamodule(datasets=datasets, config=args)
     scheduler = args["training"].get("scheduler")
     device = args["training"].get("devices")
-    wrapper = HeteroGNN_Wrapper(
+    wrapper = HeteroGNNWrapper(
         model=load_model(config=args),
-        config=HetergoGNN_WrapperConfig(
+        config=HetergoGNNWrapperConfig(
             loss_name=args["training"]["loss"]["name"],
             loss_args=args["training"]["loss"]["args"],
             optimizer_name=args["training"]["optimizer"]["name"],
@@ -41,11 +48,10 @@ def train(args: dict[str, Any]) -> None:
             scheduler_name=scheduler.get("name") if scheduler else None,
             scheduler_args=scheduler.get("args") if scheduler else None,
             scheduler_config=scheduler.get("config") if scheduler else None,
-            aggr=args["model"].get("aggr"),
-            metadata=get_metadata(list(datasets.values())),
             batch_size=args["data"]["batch"]["size"],
             batch_neighbours=args["data"]["batch"]["neighbours_sampling"],
             batch_subraph_type=args["data"]["batch"]["subgraph_type"],
+            num_workers=get_num_workers(config=args),
         ),
     )
     logger = get_loggers(config=args, model=wrapper)
@@ -60,6 +66,4 @@ def train(args: dict[str, Any]) -> None:
     trainer.fit(model=wrapper, datamodule=datamodule)
     test_output = trainer.test(model=wrapper, datamodule=datamodule)
     logger[0].log_metrics(general_test_result(test_output))
-    wrapper.save_test_result(
-        save_path=Path(args["hydra"]["run"]["dir"]), test_output=test_output
-    )
+    wrapper.save_test_result(save_path=Path(args["hydra"]["run"]["dir"]), test_output=test_output)

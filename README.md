@@ -12,6 +12,7 @@ First, initialise the environment:
 ```bash
 conda env create -f env/conda.yaml
 conda activate infmax-trainer-icm-mln
+pip install pyg-lib -f https://data.pyg.org/whl/torch-2.3.1+cu121.html
 ```
 
 then, the submodule with utilities:
