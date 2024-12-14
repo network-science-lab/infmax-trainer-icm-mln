@@ -3,7 +3,7 @@ base:
 
 data:
   name: SuperSpreadersDataSet
-  num_workers: 5
+  num_workers: 15
   batch:
     size: 32
     neighbours_sampling: [8, 4, 2]
