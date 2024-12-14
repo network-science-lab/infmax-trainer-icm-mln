@@ -35,11 +35,11 @@ def validate_config(args: dict[str, Any]) -> None:
     """Check whether input and output dimensions for model match the dataset."""
     model_params = args["model"]["parameters"]
     data_params = args["data"]
-    for train_data in data_params["train_data"].items():
+    for train_data in data_params["train_data"]:
         if train_data["features_type"] == "centralities":
             assert model_params["input_dim"] <= len(CENTRALITY_FUNCTIONS)
             continue
-    for train_data in data_params["test_data"].items():
+    for train_data in data_params["test_data"]:
         if train_data["features_type"] == "centralities":
             assert model_params["input_dim"] <= len(CENTRALITY_FUNCTIONS)
             continue
