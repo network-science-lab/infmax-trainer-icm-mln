@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Any
 
 import pytorch_lightning as pl
-from tqdm import tqdm
 from src.data_loader import get_datamodule, get_datasets
 from src.infmax_models.loader import load_model
 from src.training.callbacks import get_callbacks
@@ -16,18 +15,12 @@ from src.utils.wrapper import get_accelerator
 from src.wrapper.hetero import HetergoGNNWrapperConfig, HeteroGNNWrapper
 
 
-# from torch.utils.data import DataLoader
-from torch_geometric.loader import NeighborLoader, DataLoader
-from torch_geometric.datasets import OGB_MAG
-
-
-
-
 def train(args: dict[str, Any]) -> None:
     """Main training loop with args provided by YAML config.."""
     validate_config(args)
     
     datasets = get_datasets(args)
+    # from tqdm import tqdm
     # for sample in tqdm(range(len(datasets["train"]))):
     #     datasets["train"][sample]
     # for sample in tqdm(range(len(datasets["val"]))):
@@ -65,5 +58,6 @@ def train(args: dict[str, Any]) -> None:
     )
     trainer.fit(model=wrapper, datamodule=datamodule)
     test_output = trainer.test(model=wrapper, datamodule=datamodule)
-    logger[0].log_metrics(general_test_result(test_output))
+    test_output.append(general_test_result(test_output))
+    logger[0].log_metrics(test_output[-1])
     wrapper.save_test_result(save_path=Path(args["hydra"]["run"]["dir"]), test_output=test_output)
