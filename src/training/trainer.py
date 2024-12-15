@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any
 
 import pytorch_lightning as pl
+from lightning.pytorch.loggers import NeptuneLogger
 from src.data_loader import get_datamodule, get_datasets
 from src.infmax_models.loader import load_model
 from src.training.callbacks import get_callbacks
@@ -18,7 +19,9 @@ from src.wrapper.hetero import HetergoGNNWrapperConfig, HeteroGNNWrapper
 def train(args: dict[str, Any]) -> None:
     """Main training loop with args provided by YAML config.."""
     validate_config(args)
-    
+    logger = get_loggers(config=args)
+    logger.log_hyperparams({key: value for key, value in args.items() if key != "hydra"})
+
     datasets = get_datasets(args)
     # from tqdm import tqdm
     # for sample in tqdm(range(len(datasets["train"]))):
@@ -27,7 +30,6 @@ def train(args: dict[str, Any]) -> None:
     #     datasets["val"][sample]
     # for sample in tqdm(range(len(datasets["test"]))):
     #     datasets["test"][sample]
-
     datamodule = get_datamodule(datasets=datasets, config=args)
     scheduler = args["training"].get("scheduler")
     device = args["training"].get("devices")
@@ -47,17 +49,23 @@ def train(args: dict[str, Any]) -> None:
             num_workers=get_num_workers(config=args),
         ),
     )
-    logger = get_loggers(config=args, model=wrapper)
+    if isinstance(logger, NeptuneLogger):
+        logger.log_model_summary(
+            model=wrapper,
+            max_depth=args["training"]["logger"]["model_summary_max_depth"],
+        )
+
     trainer = pl.Trainer(
         max_epochs=args["training"]["max_epochs"],
         accelerator=get_accelerator(args["training"].get("accelerator")),
         devices=device if device else "auto",
         log_every_n_steps=1,
         callbacks=get_callbacks(args),
-        logger=logger,
+        logger=[logger],
     )
     trainer.fit(model=wrapper, datamodule=datamodule)
+
     test_output = trainer.test(model=wrapper, datamodule=datamodule)
     test_output.append(general_test_result(test_output))
-    logger[0].log_metrics(test_output[-1])
+    logger.log_metrics(test_output[-1])
     wrapper.save_test_result(save_path=Path(args["hydra"]["run"]["dir"]), test_output=test_output)

@@ -100,7 +100,7 @@ def get_datamodule(datasets: dict[str, SuperSpreadersDataSet], config: dict[str,
         batch_size=1,
         num_workers=get_num_workers(config),
         # num_workers=1,
-        pin_memory=True,
+        # pin_memory=False,
     )
 
 
