@@ -61,7 +61,7 @@ def get_scheduler(
     )
     return scheduler_config
 
-def get_accelerator(accelerator: str | None) -> str:
+def get_accelerator(accelerator: str | None = None) -> str:
     if not accelerator:
         return "gpu" if cuda.is_available() else "cpu"
     return accelerator
