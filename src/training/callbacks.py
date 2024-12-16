@@ -5,7 +5,7 @@ from typing import Any
 import torch
 from pytorch_lightning import callbacks, Callback, LightningModule
 
-# I've tried this, but it doesn't work
+# TODO: I've tried this, but it doesn't work
 # class MemoryReleaserCallback(Callback):
 
 #     def _clear_memory(self) -> None:
@@ -66,6 +66,6 @@ def get_callbacks(config: dict[str, Any]) -> list[callbacks.Callback]:
                 )
             case _:
                 logging.warning(f"{callback_config['name']} is not supported")
-        # result.append(MemoryReleaserCallback())
+        # TODO: result.append(MemoryReleaserCallback())
 
     return result

@@ -8,6 +8,27 @@ from lightning.pytorch import loggers
 from lightning.pytorch.loggers.logger import Logger
 
 
+def get_lightning_neptune(config: dict[str, Any]) -> loggers.NeptuneLogger | MagicMock:
+    """Initialise neptune logger integrated with Lightning or return MagicMock."""
+    logging.getLogger("neptune").setLevel(logging.CRITICAL)
+    try:
+        logger = loggers.NeptuneLogger(
+            api_key=os.getenv(
+                key="NEPTUNE_API_KEY",
+                default=neptune.ANONYMOUS_API_TOKEN,
+            ),
+            project="infmax/infmax-gnn",
+            tags=[tag_config["name"] for tag_config in config["training"]["logger"]["tags"]],
+            description=config["model"]["name"],
+            name=config["model"]["name"],
+        )
+    except Exception as e:
+        logging.info(e)
+        logging.info("Neptune not initialised - using mocked logger!")
+        logger = MagicMock()
+    return logger
+
+
 def get_loggers(config: dict[str, Any]) -> Logger:
     match config["training"]["logger"]["name"]:
         case "tensor_board":
@@ -16,23 +37,6 @@ def get_loggers(config: dict[str, Any]) -> Logger:
                 name="tensorboard",
             )
         case "neptune":
-            logging.getLogger("neptune").setLevel(logging.CRITICAL)
-            try:
-                raise Exception("aaa")
-                logger = loggers.NeptuneLogger(
-                    api_key=os.getenv(
-                        key="NEPTUNE_API_KEY",
-                        default=neptune.ANONYMOUS_API_TOKEN,
-                    ),
-                    project="infmax/infmax-gnn",
-                    tags=[tag_config["name"] for tag_config in config["training"]["logger"]["tags"]],
-                    description=config["model"]["name"],
-                    name=config["model"]["name"],
-                )
-            except Exception as e:
-                logging.info(e)
-                logging.info("Neptune not initialized - using mocked logger!")
-                logger = MagicMock()
-            return logger
+            return get_lightning_neptune(config)
         case _:
             logging.warning(f"{config['training']['loggers']['name']} is not supported")

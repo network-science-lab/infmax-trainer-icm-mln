@@ -96,11 +96,10 @@ def get_datamodule(datasets: dict[str, SuperSpreadersDataSet], config: dict[str,
         train_dataset=datasets["train"],
         val_dataset=datasets["val"],
         test_dataset=datasets["test"],
-        # batch_size=config["data"]["batch"]["gradient_accumulation_step"],
+        # batch_size=config["data"]["batch"]["gradient_accumulation_step"],  # TODO: consider removing this param
         batch_size=1,
         num_workers=get_num_workers(config),
-        # num_workers=1,
-        # pin_memory=False,
+        pin_memory=True,
     )
 
 
