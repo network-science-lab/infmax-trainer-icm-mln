@@ -1,6 +1,7 @@
 """Bare torch trainer - only for debugging purposes."""
 
 import logging
+import os
 from typing import Any, Dict, Union
 from unittest.mock import MagicMock
 
@@ -15,7 +16,7 @@ from src.training.loggers import init_neptune
 from src.utils.config import validate_config
 from src.utils.worker import get_num_workers
 from src.utils.wrapper import get_loss, get_optimizer
-from src.wrapper.bare_torch_wrapper import BareTorchWrapper, NeighbourhoodLoaderWrapper, DataLoader
+from src.training.debug.bare_torch_wrapper import BareTorchWrapper, NeighbourhoodLoaderWrapper, DataLoader
 
 
 def init_neptune(config: Dict) -> Union[MagicMock, neptune.Run]:

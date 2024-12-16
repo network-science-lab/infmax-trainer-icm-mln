@@ -109,8 +109,7 @@ class HeteroGNNWrapper(pl.LightningModule):
         return self.student.forward(x_dict, z_dict, edge_index_dict)
 
     def _calculate_loss(
-        self, batch: MLNHeteroDataBatch,
-        predictions: dict[str, torch.Tensor],
+        self, batch: MLNHeteroDataBatch, predictions: dict[str, torch.Tensor]
     ) -> torch.Tensor:
         return self._loss(predictions[ACTOR], batch[ACTOR].y)
 
@@ -122,7 +121,7 @@ class HeteroGNNWrapper(pl.LightningModule):
             batch_size=self._config.batch_size, 
             shuffle=True,
             subgraph_type=self._config.batch_subraph_type,
-            num_workers=min(len(graph_sample.actors_map) // 100, self._config.num_workers),
+            num_workers=min(len(graph_sample.actors_map) // 100, self._config.num_workers),  # TODO: for discussion
             pin_memory=True,
         )
 
