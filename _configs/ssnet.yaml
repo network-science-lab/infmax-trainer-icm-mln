@@ -3,11 +3,11 @@ base:
 
 data:
   name: SuperSpreadersDataSet
-  num_workers: 15
+  num_workers: -1
   batch:
     size: 32
     neighbours_sampling: [8, 4, 2]
-    subgraph_type: "bidirectional" # TODO: test with "induced"
+    subgraph_type: "induced" # TODO: test with "induced"
     # gradient_accumulation_step: 1 # TODO: nothing works except 1
   icm:
     protocol: OR
@@ -18,14 +18,14 @@ data:
     - peak_iteration
     - peak_infected
   train_data:
-    - name: artificial_er
-      features_type: centralities
-    - name: artificial_pa
-      features_type: zeros
+    # - name: artificial_er
+    #   features_type: centralities
+    # - name: artificial_pa
+    #   features_type: centralities
     - name: artificial_small
       features_type: centralities
   val_data:
-    ratio: 0.1
+    ratio: 0.2
   test_data:
     - name: arxiv_netscience_coauthorship
       features_type: centralities
@@ -33,14 +33,14 @@ data:
       features_type: centralities
     - name: ckm_physicians
       features_type: centralities
-    - name: eu_transportation
-      features_type: centralities
-    - name: l2_course
-      features_type: centralities
-    - name: lazega
-      features_type: centralities
-    - name: timik1q2009
-      features_type: centralities
+    # - name: eu_transportation
+    #   features_type: centralities
+    # - name: l2_course
+    #   features_type: centralities
+    # - name: lazega
+    #   features_type: centralities
+    # - name: timik1q2009
+    #   features_type: centralities
     # ##### ##### ##### ##### ##### ##### ##### ##### other available networks
     # - name: cannes
     #   features_type: centralities
@@ -82,17 +82,18 @@ training:
       monitor: val_loss
       interval: epoch
       frequency: 1
-  loggers:
-    - name: neptune
-      model_summary_max_depth: -1
-      tags:
-        - name: net-ssnet
-        - name: data-full
-        - name: features-centralities
-        - name: loss-mrtwse
-        - name: icm_proto-or
-        - name: icm_p-average
-        - name: batch_level-actor
+  logger:
+    name: neptune
+    model_summary_max_depth: -1
+    tags:
+      - name: TEST-LOADERS
+      - name: net-ssnet
+      - name: data-full
+      - name: features-centralities
+      - name: loss-mrtwse
+      - name: icm_proto-or
+      - name: icm_p-average
+      - name: batch_level-actor
   callbacks:
     - name: model_summary
       max_depth: -1
