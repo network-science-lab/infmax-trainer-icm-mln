@@ -5,7 +5,7 @@ from typing import Any
 
 import pytorch_lightning as pl
 from lightning.pytorch.loggers import NeptuneLogger
-from src.data_loader import get_datamodule, get_datasets
+from src.data_module import get_datamodule, get_datasets
 from src.infmax_models.loader import load_model
 from src.training.callbacks import get_callbacks
 from src.training.loggers import get_loggers
@@ -23,15 +23,26 @@ def train(args: dict[str, Any]) -> None:
     logger.log_hyperparams({key: value for key, value in args.items() if key != "hydra"})
 
     datasets = get_datasets(args)
+
+
     # from tqdm import tqdm
+    # Path("dupa").mkdir(exist_ok=True)
     # for sample in tqdm(range(len(datasets["train"]))):
-    #     datasets["train"][sample]
+    #     sample_graph = datasets["train"][sample]
+    #     y_df = HeteroGNNWrapper.transform_labels(sample_graph, sample_graph["actor"].x)
+    #     y_df.to_csv(f"dupa/{sample_graph.network_type}_{sample_graph.network_name}_dataset.csv")
     # for sample in tqdm(range(len(datasets["val"]))):
     #     datasets["val"][sample]
     # for sample in tqdm(range(len(datasets["test"]))):
     #     datasets["test"][sample]
     datamodule = get_datamodule(datasets=datasets, config=args)
     scheduler = args["training"].get("scheduler")
+
+    # for sample_graph in datamodule.train_dataloader():
+    #     y_df = HeteroGNNWrapper.transform_labels(sample_graph, sample_graph["actor"].x)
+    #     y_df.to_csv(f"dupa/{sample_graph.network_type}_{sample_graph.network_name}_dataset.csv")
+    # return
+
     device = args["training"].get("devices")
     wrapper = HeteroGNNWrapper(
         model=load_model(config=args),

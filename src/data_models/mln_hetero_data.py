@@ -139,6 +139,6 @@ class MLNHeteroData(HeteroData):
         # this is for regression task
         else:
             labels = torch.tensor(Y_raw[network_info.y_type].values, dtype=torch.float32)
-            labels = labels / len(sp_df[ACTOR])
+            labels = labels / len(network_torch.actors_map)
 
         return labels
