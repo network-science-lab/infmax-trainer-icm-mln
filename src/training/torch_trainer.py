@@ -1,16 +1,45 @@
+"""Bare torch trainer - only for debugging purposes."""
+
 import logging
-from typing import Any
+from typing import Any, Dict, Union
+from unittest.mock import MagicMock
 
 import torch
-from neptune.utils import stringify_unsupported
+import neptune.new
+import neptune
 
-from src.data_loader import get_datasets
+from neptune.utils import stringify_unsupported
+from src.data_module import get_datasets
 from src.infmax_models.loader import load_model
 from src.training.loggers import init_neptune
 from src.utils.config import validate_config
 from src.utils.worker import get_num_workers
 from src.utils.wrapper import get_loss, get_optimizer
 from src.wrapper.bare_torch_wrapper import BareTorchWrapper, NeighbourhoodLoaderWrapper, DataLoader
+
+
+def init_neptune(config: Dict) -> Union[MagicMock, neptune.Run]:
+    try:
+        logging.getLogger("neptune").setLevel(logging.CRITICAL)
+        neptune_instance = create_neptune_instance(config)
+    except Exception as e:
+        logging.info(e)
+        logging.info("Neptune not initialized - using mocked logger!")
+        neptune_instance = MagicMock()
+    return neptune_instance
+
+
+def create_neptune_instance(config: dict[str, Any]):
+    neptune_instance = neptune.init_run(
+        project="infmax/infmax-gnn",
+        api_token=os.getenv(
+            key="NEPTUNE_API_KEY",
+            default=neptune.ANONYMOUS_API_TOKEN,
+        ),
+        name=config["model"]["name"],
+        tags=[tag_config["name"] for tag_config in config["training"]["logger"]["tags"]],
+    )
+    return neptune_instance
 
 
 def log_geometric_model_summary(logger, model):

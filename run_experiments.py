@@ -10,8 +10,7 @@ from dotenv import load_dotenv
 from omegaconf import DictConfig
 
 from src import CONFIGS_PATH
-# from src.training.trainer import train
-from src.training import torch_trainer
+from src.training.trainer import train
 from src.utils.config import get_available_configs, load_config
 from src.utils.misc import set_seed
 
@@ -39,7 +38,7 @@ def main(cfg: DictConfig) -> None:
         set_seed(config["base"]["random_seed"])
 
     logging.info(f"Loaded config: {config}")
-    torch_trainer.train(config)
+    train(config)
 
 
 if __name__ == "__main__":

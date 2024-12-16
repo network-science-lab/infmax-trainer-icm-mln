@@ -139,8 +139,8 @@ class BareTorchWrapper:
             batch_loss = loss_func(batch["actor"].y, predictions["actor"])
             logger[f"test/{graph_name}"].append(batch_loss)
             graph_loss.append(batch_loss)
-            self.transform_labels(graph, graph["actor"].y).to_csv(out_dir / f"{graph_name}_{idx}_y.csv")
-            self.transform_labels(graph, predictions["actor"]).to_csv(out_dir / f"{graph_name}_{idx}_yhat.csv")
+            # self.transform_labels(graph, graph["actor"].y).to_csv(out_dir / f"{graph_name}_{idx}_y.csv")
+            # self.transform_labels(graph, predictions["actor"]).to_csv(out_dir / f"{graph_name}_{idx}_yhat.csv")
         logger[f"test/{graph_name}_avg"].append(sum(graph_loss) / len(graph_loss))
         return graph_loss
 
