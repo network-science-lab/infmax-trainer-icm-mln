@@ -2,6 +2,7 @@
 
 import logging
 import os
+from pathlib import Path
 from typing import Any, Dict, Union
 from unittest.mock import MagicMock
 
@@ -12,7 +13,6 @@ import neptune
 from neptune.utils import stringify_unsupported
 from src.data_module import get_datasets
 from src.infmax_models.loader import load_model
-from src.training.loggers import init_neptune
 from src.utils.config import validate_config
 from src.utils.worker import get_num_workers
 from src.utils.wrapper import get_loss, get_optimizer
@@ -104,7 +104,7 @@ def train(args: dict[str, Any]) -> None:
         num_epochs=args["training"]["max_epochs"],
         device="cuda" if torch.cuda.is_available() else "cpu",
         logger=logger,
-        out_dir="./dupa",
+        out_dir=Path(args["hydra"]["run"]["dir"]),
     )
     trainer.test_model(
         model=model,
@@ -113,6 +113,6 @@ def train(args: dict[str, Any]) -> None:
         loss_func=loss_func,
         device="cuda" if torch.cuda.is_available() else "cpu",
         logger=logger,
-        out_dir="./dupa",
+        out_dir=Path(args["hydra"]["run"]["dir"]),
     )
     logger.stop()

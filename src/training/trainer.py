@@ -14,7 +14,7 @@ from src.utils.config import validate_config
 from src.utils.misc import general_test_result
 from src.utils.worker import get_num_workers
 from src.utils.wrapper import get_accelerator
-from src.wrapper.hetero import HetergoGNNWrapperConfig, HeteroGNNWrapper
+from src.hetero_wrapper import HetergoGNNWrapperConfig, HeteroGNNWrapper
 
 
 def train(args: dict[str, Any]) -> None:
