@@ -113,7 +113,7 @@ class HeteroGNN_Evaluator:
             checkpoint_path=local_best_ckpt_path,
             model=model,
             config=wrapper_config,
-        ).to("cpu")
+        ).to(config["base"]["device"])
 
         config["model_config"] = model_config["model"]
 
@@ -131,7 +131,7 @@ class HeteroGNN_Evaluator:
                 self._config["data"]["output_weights"]["w_pit"],
                 self._config["data"]["output_weights"]["w_pin"],
             ]
-        )
+        ).to(self._config["base"]["device"])
 
         mln_info = MLNInfo.from_config(
             mln_type=network_type,
@@ -151,8 +151,9 @@ class HeteroGNN_Evaluator:
         top_spreader = None
         result = []
         for _ in range(self._config["base"]["nb_seeds"]):
+            ts_actor = top_spreader[0] if top_spreader != None else top_spreader
             not_ts_actors = [
-                actor for actor in net.get_actors() if actor.actor_id != top_spreader
+                actor for actor in net.get_actors() if str(actor.actor_id) != ts_actor
             ]
             net = net.subgraph(not_ts_actors)
             sp_df = sp_df[sp_df["actor"] != str(top_spreader)]
@@ -163,7 +164,7 @@ class HeteroGNN_Evaluator:
                 network_info=mln_info,
                 output_dim=self._config["model_config"]["parameters"]["output_dim"],
                 input_dim=self._config["model_config"]["parameters"]["input_dim"],
-            )
+            ).to(self._config["base"]["device"])
 
             data = self._wrapper.predict_step(
                 batch=network,
@@ -181,7 +182,12 @@ class HeteroGNN_Evaluator:
 
             top_spreader = self.convert_seed_set(
                 seeds=[max_key],
-                actors_map=network.actors_map,
+                actors_map= bidict(
+                    {
+                        str(actor): actors_map
+                        for actor, actors_map in network.actors_map.items()
+                    }
+                ),
             )
             result.extend(top_spreader)
 
@@ -199,7 +205,7 @@ class HeteroGNN_Evaluator:
                 self._config["data"]["output_weights"]["w_pit"],
                 self._config["data"]["output_weights"]["w_pin"],
             ]
-        )
+        ).to(self._config["base"]["device"])
 
         mln_info = MLNInfo.from_config(
             mln_type=network_type,
@@ -213,7 +219,7 @@ class HeteroGNN_Evaluator:
             network_info=mln_info,
             output_dim=self._config["model_config"]["parameters"]["output_dim"],
             input_dim=self._config["model_config"]["parameters"]["input_dim"],
-        )
+        ).to(self._config["base"]["device"])
 
         data = self._wrapper.predict_step(
             batch=network,
@@ -235,7 +241,12 @@ class HeteroGNN_Evaluator:
         sorted_actors = sorted_actors[: self._config["base"]["nb_seeds"]]
         top_spreaders = self.convert_seed_set(
             seeds=sorted_actors,
-            actors_map=network.actors_map,
+            actors_map= bidict(
+                {
+                    str(actor): actors_map
+                    for actor, actors_map in network.actors_map.items()
+                }
+            ),
         )
 
         return np.asarray(top_spreaders)
