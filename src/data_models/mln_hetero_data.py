@@ -63,7 +63,7 @@ class MLNHeteroData(HeteroData):
     @classmethod
     def from_mln_network(
         cls,
-        mln_torch: nd.MultilayerNetwork,
+        mln_torch: nd.MultilayerNetworkTorch,
         network_info: MLNInfo,
         input_dim: int,
         output_dim: int,
