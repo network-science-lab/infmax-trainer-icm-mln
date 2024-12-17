@@ -18,7 +18,10 @@ def get_lightning_neptune(config: dict[str, Any]) -> loggers.NeptuneLogger | Mag
                 default=neptune.ANONYMOUS_API_TOKEN,
             ),
             project="infmax/infmax-gnn",
-            tags=[tag_config["name"] for tag_config in config["training"]["logger"]["tags"]],
+            tags=[
+                tag_config["name"]
+                for tag_config in config["training"]["logger"]["tags"]
+            ],
             description=config["model"]["name"],
             name=config["model"]["name"],
         )
@@ -26,6 +29,7 @@ def get_lightning_neptune(config: dict[str, Any]) -> loggers.NeptuneLogger | Mag
         logging.info(e)
         logging.info("Neptune not initialised - using mocked logger!")
         logger = MagicMock()
+
     return logger
 
 

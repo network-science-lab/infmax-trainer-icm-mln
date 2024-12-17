@@ -1,13 +1,13 @@
 base:
   random_seed: 43
   project: infmax/infmax-gnn
-  run_id: IN-200
+  run_id: IN-374
   nb_seeds: 2
   selection_function: elimination_approach # elimination_approach or top_k_approach
   icm_p: -1
 
 data:
-  features_type: zeros # zeros | centralities
+  features_type: centralities # zeros | centralities
   protocol: OR # OR | AND
   output_label_name:
     - exposed
@@ -22,10 +22,26 @@ data:
 
 run:
   networks:
-    - name: arxiv_netscience_coauthorship
-    - name: aucs
-    - name: ckm_physicians
-    - name: eu_transportation
-    - name: l2_course_net_1
+    # - name: arxiv_netscience_coauthorship
+    #   type: arxiv_netscience_coauthorship
+    # - name: aucs
+    #   type: aucs
+    # - name: ckm_physicians
+    #   type: ckm_physicians
+    # - name: eu_transportation
+    #   type: eu_transportation
+    # - name: l2_course_net_1
+    #   type: l2_course
+    # - name: lazega
+    #   type: lazega
+    # - name: timik1q2009
+    #   type: timik1q2009
+
     - name: lazega
-    - name: timik1q2009
+      type: lazega
+    - name: lazega
+      type: lazega
+    - name: aucs
+      type: aucs
+    - name: lazega
+      type: lazega
