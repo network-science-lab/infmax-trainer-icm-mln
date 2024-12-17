@@ -2,9 +2,9 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-
 from hydra.core.hydra_config import HydraConfig
 from omegaconf import DictConfig
+
 from _data_set.nsl_data_utils.loaders.constants import CENTRALITY_FUNCTIONS
 from src import CONFIGS_PATH
 

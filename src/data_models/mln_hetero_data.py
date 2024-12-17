@@ -1,12 +1,11 @@
 """A script where main data model is implemented."""
 
 import logging
-
 from typing import Iterable
 
 import network_diffusion as nd
+import pandas as pd
 import torch
-
 from bidict import bidict
 from sklearn.preprocessing import KBinsDiscretizer
 from torch_geometric.data import HeteroData
@@ -26,7 +25,7 @@ class MLNHeteroData(HeteroData):
     Attributes:
     self["actor"].x - tensor of input features for actors of the network
     self["actor"].y - tensor of output labels denoting spreading potential for each actor
-    self["actor"].z - tensor of mask with "1"s denoting nodes artificially added on each layer to 
+    self["actor"].z - tensor of mask with "1"s denoting nodes artificially added on each layer to
         make the netwrork multiplex
     self["actor", "l_<idx>", "actor"] - tensor edges in layer named "l_<idx"
     self.network_type - type of the network
@@ -36,18 +35,42 @@ class MLNHeteroData(HeteroData):
     self.y_names - list[str] with names of labels that are stored in `self.y` attribute
     """
 
-    # TODO: In case of need use the following code as a starter for iter function
     def __iter__(self) -> Iterable:
         for key in self.stores:
             yield key
 
     @classmethod
-    def from_network_info(cls, network_info: MLNInfo, input_dim: int, output_dim: int) -> Self:
+    def from_network_info(
+        cls,
+        network_info: MLNInfo,
+        input_dim: int,
+        output_dim: int,
+    ) -> Self:
+        # read the network itself
+        mln_torch = load_network(
+            network_info.mln_type,
+            network_info.mln_name,
+            as_tensor=True,
+        )
+
+        return cls.from_mln_network(
+            mln_torch=mln_torch,
+            network_info=network_info,
+            input_dim=input_dim,
+            output_dim=output_dim,
+        )
+
+    @classmethod
+    def from_mln_network(
+        cls,
+        mln_torch: nd.MultilayerNetwork,
+        network_info: MLNInfo,
+        input_dim: int,
+        output_dim: int,
+        sp_df: pd.DataFrame | None = None,
+    ) -> Self:
         """Default constructor for this class."""
         data = cls()
-
-        # read the network itself
-        mln_torch = load_network(network_info.mln_type, network_info.mln_name, as_tensor=True)
 
         # tensor of input features
         data[ACTOR].x = cls._prepare_features(network_info, mln_torch, input_dim)
@@ -58,7 +81,12 @@ class MLNHeteroData(HeteroData):
             data[ACTOR, f"l_{idx}", ACTOR].edge_index = layer_edge_idx
 
         # tensor of labels to predict
-        data[ACTOR].y = cls._prepare_labels(network_info, mln_torch, output_dim)
+        data[ACTOR].y = cls._prepare_labels(
+            network_info=network_info,
+            network_torch=mln_torch,
+            output_dim=output_dim,
+            sp_df=sp_df,
+        )
         data.y_names = network_info.y_type
 
         # mask of nodes that were added artificially to obtain multiplicity
@@ -69,14 +97,14 @@ class MLNHeteroData(HeteroData):
         data.network_name = network_info.mln_name
         data.actors_map = bidict(
             {
-                str(actor): actors_map for
-                actor, actors_map in mln_torch.actors_map.items()
+                str(actor): actors_map
+                for actor, actors_map in mln_torch.actors_map.items()
             }
         )
         data.layers_map = bidict(
             {
-                l_name: f"l_{l_idx}" for
-                l_idx, l_name in enumerate(mln_torch.layers_order)
+                l_name: f"l_{l_idx}"
+                for l_idx, l_name in enumerate(mln_torch.layers_order)
             }
         )
 
@@ -84,14 +112,16 @@ class MLNHeteroData(HeteroData):
 
     @staticmethod
     def _prepare_features(
-        network_info: MLNInfo, network_torch: nd.MultilayerNetworkTorch, input_dim: int
+        network_info: MLNInfo,
+        network_torch: nd.MultilayerNetworkTorch,
+        input_dim: int,
     ) -> torch.Tensor:
         logging.debug(f"Preparing features: {network_info.name}")
 
         if network_info.x_type == "zeros":
-                return torch.zeros((len(network_torch.actors_map), input_dim))
-    
-        elif  network_info.x_type == "centralities":
+            return torch.zeros((len(network_torch.actors_map), input_dim))
+
+        elif network_info.x_type == "centralities":
             if input_dim > len(CENTRALITY_FUNCTIONS) or input_dim <= 0:
                 raise ValueError(
                     f"Input dim({input_dim}) must be > 0 and <= number of implemented centralities "
@@ -99,7 +129,8 @@ class MLNHeteroData(HeteroData):
                 )
             features_df = load_centralities(network_info.ft_path)
             actors_order = [
-                str(actor_id) for actor_id, actor_idx in sorted(
+                str(actor_id)
+                for actor_id, actor_idx in sorted(
                     network_torch.actors_map.items(), key=lambda id_idx: id_idx[1]
                 )
             ]
@@ -110,19 +141,25 @@ class MLNHeteroData(HeteroData):
             return features_norm_pt[:, :input_dim]
 
         elif network_info.x_type == "scrapped":
-            raise NotImplementedError(f"{network_info.x_type} has not been implemented yet")
-    
+            raise NotImplementedError(
+                f"{network_info.x_type} has not been implemented yet"
+            )
+
         else:
             raise ValueError("Unknown x_type!")
 
     @staticmethod
     def _prepare_labels(
-        network_info: MLNInfo, network_torch: nd.MultilayerNetworkTorch, output_dim: int
+        network_info: MLNInfo,
+        network_torch: nd.MultilayerNetworkTorch,
+        output_dim: int,
+        sp_df: pd.DataFrame | None = None,
     ) -> torch.Tensor:
         logging.debug(f"Preparing labels: {network_info.name}")
 
         # obtain a dataframe from valid paths following the training setting
-        sp_df = load_sp(network_info.sp_paths)
+        if sp_df is None:
+            sp_df = load_sp(network_info.sp_paths)
 
         # aggregate values over actors
         Y_raw = sp_df[[ACTOR, *network_info.y_type]]
@@ -132,13 +169,18 @@ class MLNHeteroData(HeteroData):
 
         # this is for classification task
         if len(network_info.y_type) == 1:
-            est = KBinsDiscretizer(n_bins=output_dim, encode="ordinal", strategy="kmeans")
+            est = KBinsDiscretizer(
+                n_bins=output_dim, encode="ordinal", strategy="kmeans"
+            )
             labels = est.fit_transform(Y_raw[network_info.y_type].values.reshape(-1, 1))
             labels = torch.tensor(labels.squeeze(), dtype=torch.long)
-        
+
         # this is for regression task
         else:
-            labels = torch.tensor(Y_raw[network_info.y_type].values, dtype=torch.float32)
+            labels = torch.tensor(
+                Y_raw[network_info.y_type].values,
+                dtype=torch.float32,
+            )
             labels = labels / len(network_torch.actors_map)
 
         return labels

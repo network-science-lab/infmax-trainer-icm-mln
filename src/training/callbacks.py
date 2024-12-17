@@ -1,29 +1,7 @@
-import gc
 import logging
 from typing import Any
 
-import torch
-from pytorch_lightning import callbacks, Callback, LightningModule
-
-# TODO: I've tried this, but it doesn't work
-# class MemoryReleaserCallback(Callback):
-
-#     def _clear_memory(self) -> None:
-#         torch.cuda.empty_cache()
-#         gc.collect()
-
-#     def on_train_epoch_end(self, trainer, pl_module: LightningModule):
-#         pl_module.log(f"{self.__class__.__name__}: releasing memory [train]!", 0)
-#         logging.critical(f"{self.__class__.__name__}: releasing memory [train]!")
-#         self._clear_memory()
-
-#     def on_validation_epoch_end(self, trainer, pl_module):
-#         logging.critical(f"{self.__class__.__name__}: releasing memory [val]!")
-#         self._clear_memory()
-
-#     def on_test_epoch_end(self, trainer, pl_module):
-#         logging.critical(f"{self.__class__.__name__}: releasing memory [test]!")
-#         self._clear_memory()
+from pytorch_lightning import callbacks
 
 
 def get_callbacks(config: dict[str, Any]) -> list[callbacks.Callback]:
@@ -66,6 +44,5 @@ def get_callbacks(config: dict[str, Any]) -> list[callbacks.Callback]:
                 )
             case _:
                 logging.warning(f"{callback_config['name']} is not supported")
-        # TODO: result.append(MemoryReleaserCallback())
 
     return result
