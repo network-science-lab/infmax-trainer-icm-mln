@@ -1,8 +1,9 @@
 import torch
 from torch.fx import Proxy
 from torch.nn import ModuleList
-from torch_geometric.nn import GraphNorm,  SAGEConv, Sequential
+from torch_geometric.nn import GraphNorm, SAGEConv, Sequential
 from torch_geometric.nn.conv import GATConv
+
 from src.infmax_models.base.base import BaseHeteroModule
 
 
@@ -67,7 +68,7 @@ class HeteroTopSpreaderNetwork(BaseHeteroModule):
                 ],
             )
         )
-        
+
         self.head = SAGEConv(
             in_channels=hidden_channels * heads,
             out_channels=output_dim,

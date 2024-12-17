@@ -1,43 +1,30 @@
-# TODO: this needs to be refactored according to new code
 base:
   random_seed: 43
 
 data:
-  name: SuperSpreadersDataSet
-  num_workers: 32
+  name: SuperSpreadersDataset
+  num_workers: 0
   batch:
-    size: 64
+    size: 32
     neighbours_sampling: [8, 4, 2]
-    subgraph_type: "bidirectional" # TODO: test with "induced"
-    gradient_accumulation_step: 1
-  protocol: OR
-  p_value: -1 # AND: {0.80, 0.85, 0.90, 0.95}, OR: {0.05, 0.10, 0.15, 0.20}, -1 to avg SP in protocol
+    subgraph_type: "induced"
+  icm:
+    protocol: OR
+    p: -1 # AND: {0.80, 0.85, 0.90, 0.95}, OR: {0.05, 0.10, 0.15, 0.20}, -1 to avg SP in protocol
   output_label_name:
     - exposed
     - simulation_length
     - peak_iteration
     - peak_infected
-  train_networks:
+  val_data_ratio: 0.2
+  train_data:
     - name: artificial_er
       features_type: centralities
-      val_split: True
-    - name: artificial_pa
-      features_type: zeros
-      val_split: True
-    - name: artificial_small
-      features_type: centralities
-      val_split: True
-  val_dataset:
-    - name: artificial_er
-      features_type: centralities
-      val_split: True
-    - name: artificial_pa
-      features_type: centralities
-      val_split: True
-    - name: artificial_small
-      features_type: centralities
-      val_split: True
-  test_dataset:
+    # - name: artificial_pa
+    #   features_type: centralities
+    # - name: artificial_small
+    #   features_type: centralities
+  test_data:
     - name: arxiv_netscience_coauthorship
       features_type: centralities
     - name: aucs
@@ -46,12 +33,12 @@ data:
       features_type: centralities
     - name: eu_transportation
       features_type: centralities
-    - name: l2_course_net_1
+    - name: l2_course
       features_type: centralities
     - name: lazega
       features_type: centralities
-    - name: timik1q2009
-      features_type: centralities
+    # - name: timik1q2009
+    #   features_type: centralities
 
 model:
   name: HeteroTopSpreaderNetwork
@@ -62,9 +49,9 @@ model:
     hidden_channels: 100
 
 training:
-  accelerator: cpu # cpu or gpu
-  devices: auto # list[int] | int | str; default=auto
-  max_epochs: 200
+  accelerator: gpu # cpu or gpu
+  devices: [0] # list[int] | int | str; default=auto
+  max_epochs: 5
   loss:
     name: MRTWSE # Depends on output_dim
     # name: WeightedMSE # Depends on output_dim
@@ -88,18 +75,18 @@ training:
       monitor: val_loss
       interval: epoch
       frequency: 1
-  loggers:
-    - name: tensor_board
-    - name: neptune
-      model_summary_max_depth: -1
-      tags:
-        - name: net-hetero_with_bases
-        - name: data-full
-        - name: features-centralities
-        - name: loss-mrtwse
-        - name: icm_proto-or
-        - name: icm_p-average
-        - name: batch_level-actor
+  logger:
+    name: neptune
+    model_summary_max_depth: -1
+    tags:
+      - name: TEST-LOADERS
+      - name: net-ssnet
+      - name: data-full
+      - name: features-centralities
+      - name: loss-mrtwse
+      - name: icm_proto-or
+      - name: icm_p-average
+      - name: batch_level-actor
   callbacks:
     - name: model_summary
       max_depth: -1

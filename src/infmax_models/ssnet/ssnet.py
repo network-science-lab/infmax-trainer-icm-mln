@@ -108,7 +108,9 @@ class SSNet(BaseHeteroModule):
 
         # embed actors on each mln layer separately
         for layer_idx, layer_edges in enumerate(edge_index_dict.values()):
-            layer_x = x_dict[ACTOR] * z_mask[:, layer_idx].unsqueeze(dim=1).expand_as(x_dict[ACTOR])
+            layer_x = x_dict[ACTOR] * z_mask[:, layer_idx].unsqueeze(dim=1).expand_as(
+                x_dict[ACTOR]
+            )
             y_relation = self.layerwise_encoder(layer_x, layer_edges)
             y_relations.append(y_relation)
         y_relations = torch.stack(y_relations)

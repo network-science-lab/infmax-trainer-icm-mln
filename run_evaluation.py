@@ -1,5 +1,3 @@
-# TODO: refactor this sctipr due to changes in loaders!
-
 import logging
 import os
 from pathlib import Path
@@ -10,6 +8,7 @@ import neptune
 import network_diffusion as nd
 import numpy as np
 import torch
+from bidict import bidict
 from dotenv import load_dotenv
 from omegaconf import DictConfig
 from tqdm import tqdm
@@ -22,8 +21,9 @@ from src.data_models.mln_info import MLNInfo
 from src.infmax_models.loader import load_model
 from src.utils.config import load_config
 from src.utils.misc import set_seed
-from src.wrapper.hetero import HetergoGNNWrapperConfig, HeteroGNNWrapper
+from src.wrapper.mln_hetero import HetergoGNNWrapperConfig, HeteroGNNWrapper
 
+# TODO: CONSIDER HANDLING DEVICE
 load_dotenv(
     dotenv_path=Path(__file__).parent / ".env",
     override=True,
@@ -60,14 +60,20 @@ class HeteroGNN_Evaluator:
     def __call__(
         self,
         network_type: str,
-        network: nd.MultilayerNetworkTorch | None = None,
+        network_name: str,
         **kwargs,
     ) -> np.ndarray:
         match self._config["base"]["selection_function"]:
             case "elimination_approach":
-                return self.elimination_approach(network_type=network_type)
+                return self.elimination_approach(
+                    network_name=network_name,
+                    network_type=network_type,
+                )
             case "top_k_approach":
-                return self.top_k_approach(network_type=network_type)
+                return self.top_k_approach(
+                    network_name=network_name,
+                    network_type=network_type,
+                )
             case _:
                 raise AttributeError(
                     f"Unknown selecton function: {self._config['base']['selection_function']}"
@@ -107,13 +113,17 @@ class HeteroGNN_Evaluator:
             checkpoint_path=local_best_ckpt_path,
             model=model,
             config=wrapper_config,
-        )
+        ).to("cpu")
 
         config["model_config"] = model_config["model"]
 
         return wrapper
 
-    def elimination_approach(self, network_type: str) -> np.ndarray:
+    def elimination_approach(
+        self,
+        network_type: str,
+        network_name: str,
+    ) -> np.ndarray:
         ow = torch.Tensor(
             [
                 self._config["data"]["output_weights"]["w_e"],
@@ -123,8 +133,20 @@ class HeteroGNN_Evaluator:
             ]
         )
 
-        net = load_network(net_name=network_type, as_tensor=False)[network_type]
-        sp_df = load_sp(net_name=network_type)[network_type]
+        mln_info = MLNInfo.from_config(
+            mln_type=network_type,
+            mln_name=network_name,
+            icm_protocol=self._config["data"]["protocol"],
+            icm_p=self._config["base"]["icm_p"],
+            x_type=self._config["data"]["features_type"],
+            y_type=self._config["data"]["output_label_name"],
+        )
+        net = load_network(
+            net_type=network_type,
+            net_name=network_name,
+            as_tensor=False,
+        )
+        sp_df = load_sp(mln_info.sp_paths)
 
         top_spreader = None
         result = []
@@ -135,17 +157,9 @@ class HeteroGNN_Evaluator:
             net = net.subgraph(not_ts_actors)
             sp_df = sp_df[sp_df["actor"] != str(top_spreader)]
 
-            mln_info = MLNInfo(
-                mln_type=network_type,
-                mln_name=network_type,
-                mln=net,
-                icm_protocol=self._config["data"]["protocol"],
-                x_type=self._config["data"]["features_type"],
-                y_type=self._config["data"]["output_label_name"],
-                sp_raw=sp_df,
-                icm_p=self._config["base"]["icm_p"],
-            )
-            network = MLNHeteroData.from_network_info(
+            network = MLNHeteroData.from_mln_network(
+                mln_torch=nd.MultilayerNetworkTorch.from_mln(net),
+                sp_df=sp_df,
                 network_info=mln_info,
                 output_dim=self._config["model_config"]["parameters"]["output_dim"],
                 input_dim=self._config["model_config"]["parameters"]["input_dim"],
@@ -165,15 +179,19 @@ class HeteroGNN_Evaluator:
             }
             max_key = max(weighted_sums, key=weighted_sums.get)
 
-            top_spreader = next(
-                (k for k, v in mln_info.mln_torch.actors_map.items() if v == max_key),
-                None,
+            top_spreader = self.convert_seed_set(
+                seeds=[max_key],
+                actors_map=network.actors_map,
             )
-            result.append(top_spreader)
+            result.extend(top_spreader)
 
         return np.asarray(result)
 
-    def top_k_approach(self, network_type: str) -> np.ndarray:
+    def top_k_approach(
+        self,
+        network_type: str,
+        network_name: str,
+    ) -> np.ndarray:
         ow = torch.Tensor(
             [
                 self._config["data"]["output_weights"]["w_e"],
@@ -183,18 +201,13 @@ class HeteroGNN_Evaluator:
             ]
         )
 
-        net = load_network(net_name=network_type, as_tensor=False)[network_type]
-        sp_df = load_sp(net_name=network_type)[network_type]
-
-        mln_info = MLNInfo(
+        mln_info = MLNInfo.from_config(
             mln_type=network_type,
-            mln_name=network_type,
-            mln=net,
+            mln_name=network_name,
             icm_protocol=self._config["data"]["protocol"],
+            icm_p=self._config["base"]["icm_p"],
             x_type=self._config["data"]["features_type"],
             y_type=self._config["data"]["output_label_name"],
-            sp_raw=sp_df,
-            icm_p=self._config["base"]["icm_p"],
         )
         network = MLNHeteroData.from_network_info(
             network_info=mln_info,
@@ -220,11 +233,20 @@ class HeteroGNN_Evaluator:
             reverse=True,
         )
         sorted_actors = sorted_actors[: self._config["base"]["nb_seeds"]]
-        top_spreaders = [
-            k for k, v in mln_info.mln_torch.actors_map.items() if v in sorted_actors
-        ]
+        top_spreaders = self.convert_seed_set(
+            seeds=sorted_actors,
+            actors_map=network.actors_map,
+        )
 
         return np.asarray(top_spreaders)
+
+    @staticmethod
+    def convert_seed_set(
+        seeds: list,
+        actors_map: bidict,
+    ) -> list[str]:
+        """Convert indices of the actors_map into real names of actors from the network."""
+        return [actors_map.inverse[seed] for seed in seeds]
 
 
 @hydra.main(
@@ -243,8 +265,10 @@ def main(cfg: DictConfig) -> None:
 
     evaluation_results = {}
     for idx, network in tqdm(enumerate(config["run"]["networks"])):
+        logging.info(f'Processing: {network["name"]}')
         network_ts = evaluator(
-            network_type=network["name"],
+            network_name=network["name"],
+            network_type=network["type"],
         )
 
         evaluation_results[network["name"] + str(idx)] = {

@@ -6,7 +6,7 @@ from typing import Any
 import pytorch_lightning as pl
 from lightning.pytorch.loggers import NeptuneLogger
 
-from src.data_module import get_datamodule, get_datasets
+from src.datamodule.loader import get_datamodule, get_datasets, get_metadata
 from src.infmax_models.loader import load_model
 from src.training.callbacks import get_callbacks
 from src.training.loggers import get_loggers
@@ -14,17 +14,22 @@ from src.utils.config import validate_config
 from src.utils.misc import general_test_result
 from src.utils.worker import get_num_workers
 from src.utils.wrapper import get_accelerator
-from src.hetero_wrapper import HetergoGNNWrapperConfig, HeteroGNNWrapper
+from src.wrapper.mln_hetero import HetergoGNNWrapperConfig, HeteroGNNWrapper
 
 
 def train(args: dict[str, Any]) -> None:
     """Main training loop with args provided by YAML config.."""
     validate_config(args)
     logger = get_loggers(config=args)
-    logger.log_hyperparams({key: value for key, value in args.items() if key != "hydra"})
+    logger.log_hyperparams(
+        {key: value for key, value in args.items() if key != "hydra"}
+    )
 
     datasets = get_datasets(args)
-    datamodule = get_datamodule(datasets=datasets, config=args)
+    datamodule = get_datamodule(
+        datasets=datasets,
+        config=args,
+    )
 
     scheduler = args["training"].get("scheduler")
     device = args["training"].get("devices")
@@ -42,6 +47,9 @@ def train(args: dict[str, Any]) -> None:
             batch_neighbours=args["data"]["batch"]["neighbours_sampling"],
             batch_subraph_type=args["data"]["batch"]["subgraph_type"],
             num_workers=get_num_workers(config=args),
+            metadata=get_metadata(
+                [datasets["train"].dataset, datasets["val"].dataset, datasets["test"]]
+            ),
         ),
     )
     if isinstance(logger, NeptuneLogger):
@@ -58,9 +66,18 @@ def train(args: dict[str, Any]) -> None:
         callbacks=get_callbacks(args),
         logger=[logger],
     )
-    trainer.fit(model=wrapper, datamodule=datamodule)
+    trainer.fit(
+        model=wrapper,
+        datamodule=datamodule,
+    )
 
-    test_output = trainer.test(model=wrapper, datamodule=datamodule)
+    test_output = trainer.test(
+        model=wrapper,
+        datamodule=datamodule,
+    )
     test_output.append(general_test_result(test_output))
     logger.log_metrics(test_output[-1])
-    wrapper.save_test_result(save_path=Path(args["hydra"]["run"]["dir"]), test_output=test_output)
+    wrapper.save_test_result(
+        save_path=Path(args["hydra"]["run"]["dir"]),
+        test_output=test_output,
+    )
