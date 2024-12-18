@@ -15,7 +15,6 @@ from torch_geometric.loader.neighbor_loader import NeighborLoader
 from torch_geometric.nn import to_hetero_with_bases
 
 from _data_set.nsl_data_utils.loaders.constants import ACTOR
-from src.data_models.mln_hetero_data import MLNHeteroData
 from src.infmax_models.base.base import BaseHeteroModule
 from src.utils.wrapper import get_loss, get_optimizer, get_scheduler
 

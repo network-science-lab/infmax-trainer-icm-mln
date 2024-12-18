@@ -10,7 +10,6 @@ from torch_geometric.typing import EdgeType, NodeType
 from _data_set.nsl_data_utils.loaders.net_loader import load_net_names
 from src.data_models.mln_info import MLNInfo
 from src.dataset.super_spreaders_dataset import SuperSpreadersDataset
-from src.utils.worker import get_num_workers
 
 
 def _load_mln_info_chunk(
@@ -113,7 +112,7 @@ def get_datamodule(
         val_dataset=datasets["val"],
         test_dataset=datasets["test"],
         batch_size=1,
-        num_workers=get_num_workers(config),
+        num_workers=0,
         pin_memory=True,
     )
 
