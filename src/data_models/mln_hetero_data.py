@@ -7,7 +7,6 @@ import network_diffusion as nd
 import pandas as pd
 import torch
 from bidict import bidict
-from sklearn.preprocessing import KBinsDiscretizer
 from torch_geometric.data import HeteroData
 from typing_extensions import Self
 
@@ -167,20 +166,9 @@ class MLNHeteroData(HeteroData):
         Y_raw["actor_idx"] = Y_raw[ACTOR].map(network_torch.actors_map)
         Y_raw = Y_raw.set_index("actor_idx").sort_index()
 
-        # this is for classification task
-        if len(network_info.y_type) == 1:
-            est = KBinsDiscretizer(
-                n_bins=output_dim, encode="ordinal", strategy="kmeans"
-            )
-            labels = est.fit_transform(Y_raw[network_info.y_type].values.reshape(-1, 1))
-            labels = torch.tensor(labels.squeeze(), dtype=torch.long)
-
-        # this is for regression task
-        else:
-            labels = torch.tensor(
+        labels = torch.tensor(
                 Y_raw[network_info.y_type].values,
                 dtype=torch.float32,
             )
-            labels = labels / len(network_torch.actors_map)
-
+        labels = labels / len(network_torch.actors_map)
         return labels

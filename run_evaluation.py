@@ -23,7 +23,6 @@ from src.utils.config import load_config
 from src.utils.misc import set_seed
 from src.wrapper.mln_hetero import HetergoGNNWrapperConfig, HeteroGNNWrapper
 
-# TODO: CONSIDER HANDLING DEVICE
 load_dotenv(
     dotenv_path=Path(__file__).parent / ".env",
     override=True,
