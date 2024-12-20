@@ -1,7 +1,7 @@
 from typing import Any, Iterator
 
 from torch import cuda, optim
-from torch.nn import CrossEntropyLoss, MSELoss
+from torch.nn import MSELoss
 from torch.nn.modules.loss import _Loss
 from torch.nn.parameter import Parameter
 from torch.optim import Optimizer, lr_scheduler
@@ -15,9 +15,6 @@ def get_loss(
     loss_args: dict[str, Any],
 ) -> _Loss:
     match loss_name:
-        case CrossEntropyLoss.__name__:
-            return CrossEntropyLoss(**loss_args)
-
         case MSELoss.__name__:
             return MSELoss(**loss_args)
 

@@ -7,6 +7,7 @@ import hydra
 import neptune
 import network_diffusion as nd
 import numpy as np
+import pandas as pd
 import torch
 from bidict import bidict
 from dotenv import load_dotenv
@@ -36,7 +37,7 @@ def weighted_sum(
     return torch.sum(score * weights)
 
 
-class HeteroGNN_Evaluator:
+class HeteroGNN_Predictor:
     def __init__(
         self,
         config: dict[str, Any],
@@ -61,7 +62,7 @@ class HeteroGNN_Evaluator:
         network_type: str,
         network_name: str,
         **kwargs,
-    ) -> np.ndarray:
+    ) -> pd.DataFrame:
         match self._config["base"]["selection_function"]:
             case "elimination_approach":
                 return self.elimination_approach(
@@ -122,7 +123,7 @@ class HeteroGNN_Evaluator:
         self,
         network_type: str,
         network_name: str,
-    ) -> np.ndarray:
+    ) -> pd.DataFrame:
         ow = torch.Tensor(
             [
                 self._config["data"]["output_weights"]["w_e"],
@@ -148,7 +149,8 @@ class HeteroGNN_Evaluator:
         sp_df = load_sp(mln_info.sp_paths)
 
         top_spreader = None
-        result = []
+        top_spreaders = []
+        top_spreader_potentials = []
         for _ in range(self._config["base"]["nb_seeds"]):
             ts_actor = top_spreader[0] if top_spreader != None else top_spreader
             not_ts_actors = [
@@ -179,24 +181,33 @@ class HeteroGNN_Evaluator:
             }
             max_key = max(weighted_sums, key=weighted_sums.get)
 
+            top_spreader_potential = data["actor"][max_key].numpy() * len(
+                network.actors_map
+            )
+            top_spreader_potentials.append(top_spreader_potential)
             top_spreader = self.convert_seed_set(
                 seeds=[max_key],
-                actors_map= bidict(
+                actors_map=bidict(
                     {
                         str(actor): actors_map
                         for actor, actors_map in network.actors_map.items()
                     }
                 ),
             )
-            result.extend(top_spreader)
+            top_spreaders.extend(top_spreader)
 
-        return np.asarray(result)
+        df = pd.DataFrame(
+            data=top_spreader_potentials,
+            index=top_spreaders,
+            columns=network.y_names,
+        ).sort_index()
+        return df
 
     def top_k_approach(
         self,
         network_type: str,
         network_name: str,
-    ) -> np.ndarray:
+    ) -> pd.DataFrame:
         ow = torch.Tensor(
             [
                 self._config["data"]["output_weights"]["w_e"],
@@ -238,9 +249,12 @@ class HeteroGNN_Evaluator:
             reverse=True,
         )
         sorted_actors = sorted_actors[: self._config["base"]["nb_seeds"]]
+        top_spreader_potentials = np.array(
+            [data["actor"][sorted_actor].tolist() for sorted_actor in sorted_actors]
+        ) * len(network.actors_map)
         top_spreaders = self.convert_seed_set(
             seeds=sorted_actors,
-            actors_map= bidict(
+            actors_map=bidict(
                 {
                     str(actor): actors_map
                     for actor, actors_map in network.actors_map.items()
@@ -248,7 +262,12 @@ class HeteroGNN_Evaluator:
             ),
         )
 
-        return np.asarray(top_spreaders)
+        df = pd.DataFrame(
+            data=top_spreader_potentials,
+            index=top_spreaders,
+            columns=network.y_names,
+        ).sort_index()
+        return df
 
     @staticmethod
     def convert_seed_set(
@@ -271,7 +290,7 @@ def main(cfg: DictConfig) -> None:
     )
     logging.info(f"Loaded config: {config}")
 
-    evaluator = HeteroGNN_Evaluator(config)
+    evaluator = HeteroGNN_Predictor(config)
 
     evaluation_results = {}
     for idx, network in tqdm(enumerate(config["run"]["networks"])):
