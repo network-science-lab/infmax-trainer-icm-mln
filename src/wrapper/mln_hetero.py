@@ -21,7 +21,7 @@ from src.utils.wrapper import get_loss, get_optimizer, get_scheduler
 MLNHeteroDataBatch = TypeVar("T")
 
 
-@dataclass(frozen=True)
+@dataclass
 class HetergoGNNWrapperConfig:
     loss_name: str
     loss_args: dict[str, Any]
