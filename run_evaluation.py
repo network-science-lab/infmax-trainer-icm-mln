@@ -63,21 +63,20 @@ class HeteroGNN_Predictor:
         network_name: str,
         **kwargs,
     ) -> pd.DataFrame:
-        match self._config["base"]["selection_function"]:
-            case "elimination_approach":
-                return self.elimination_approach(
-                    network_name=network_name,
-                    network_type=network_type,
-                )
-            case "top_k_approach":
-                return self.top_k_approach(
-                    network_name=network_name,
-                    network_type=network_type,
-                )
-            case _:
-                raise AttributeError(
-                    f"Unknown selecton function: {self._config['base']['selection_function']}"
-                )
+        if self._config["base"]["selection_function"] == "elimination_approach":
+            return self.elimination_approach(
+                network_name=network_name,
+                network_type=network_type,
+            )
+        elif self._config["base"]["selection_function"] == "top_k_approach":
+            return self.top_k_approach(
+                network_name=network_name,
+                network_type=network_type,
+            )
+        else:
+            raise AttributeError(
+                f"Unknown selecton function: {self._config['base']['selection_function']}"
+            )
 
     @staticmethod
     def from_neptune(config: dict[str, Any]) -> HeteroGNNWrapper:
@@ -124,7 +123,7 @@ class HeteroGNN_Predictor:
         network_type: str,
         network_name: str,
     ) -> pd.DataFrame:
-        ow = torch.Tensor(
+        output_weights = torch.Tensor(
             [
                 self._config["data"]["output_weights"]["w_e"],
                 self._config["data"]["output_weights"]["w_sl"],
@@ -173,11 +172,11 @@ class HeteroGNN_Predictor:
             )
 
             weighted_sums = {
-                k: weighted_sum(
-                    score=v,
-                    weights=ow,
+                actor: weighted_sum(
+                    score=spreading_potential,
+                    weights=output_weights,
                 )
-                for k, v in data["actor"].items()
+                for actor, spreading_potential in data["actor"].items()
             }
             max_key = max(weighted_sums, key=weighted_sums.get)
 
@@ -208,7 +207,7 @@ class HeteroGNN_Predictor:
         network_type: str,
         network_name: str,
     ) -> pd.DataFrame:
-        ow = torch.Tensor(
+        output_weights = torch.Tensor(
             [
                 self._config["data"]["output_weights"]["w_e"],
                 self._config["data"]["output_weights"]["w_sl"],
@@ -237,11 +236,11 @@ class HeteroGNN_Predictor:
         )
 
         weighted_sums = {
-            k: weighted_sum(
-                score=v,
-                weights=ow,
+            actor: weighted_sum(
+                score=spreading_potential,
+                weights=output_weights,
             )
-            for k, v in data["actor"].items()
+            for actor, spreading_potential in data["actor"].items()
         }
         sorted_actors = sorted(
             weighted_sums,
@@ -304,7 +303,6 @@ def main(cfg: DictConfig) -> None:
             "features_type": config["data"]["features_type"],
             "network_ts": network_ts,
         }
-        idx += 1
 
     logging.info(evaluation_results)
 

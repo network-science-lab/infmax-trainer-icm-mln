@@ -1,6 +1,7 @@
 import ast
 import json
 import re
+from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Self, TypeVar
@@ -35,12 +36,16 @@ class HetergoGNNWrapperConfig:
     batch_subraph_type: str
     num_workers: int
     metadata: tuple
+    CONFIG_ARGS_PATTERN: re.Pattern = re.compile(r"(\w+)\((.*)\)")
+    CONFIG_ARGS_SPLIT_PATTERN: re.Pattern = re.compile(r",\s\b(?=\D)")
 
     @classmethod
     def from_str(cls, obj: str) -> Self:
-        match = re.match(r"(\w+)\((.*)\)", obj)
-        args_str = match.group(2)
-        args_list = [arg.strip() for arg in re.split(r",\s\b(?=\D)", args_str)]
+        config_args_match = re.match(cls.CONFIG_ARGS_PATTERN, obj)
+        args_str = config_args_match.group(2)
+        args_list = [
+            arg.strip() for arg in re.split(cls.CONFIG_ARGS_SPLIT_PATTERN, args_str)
+        ]
         kwargs = {
             arg.split("=")[0]: ast.literal_eval(arg.split("=")[1]) for arg in args_list
         }
@@ -260,7 +265,7 @@ class HeteroGNNWrapper(pl.LightningModule):
         batch_idx: int,
     ) -> dict[str, torch.Tensor]:
         layers = batch.x_dict.keys()
-        result = {layer: {} for layer in layers}
+        result = defaultdict(dict)
         batch = self._get_neighbour_loader(
             graph_sample=batch,
             shuffle=False,
