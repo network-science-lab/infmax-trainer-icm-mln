@@ -1,0 +1,39 @@
+base:
+  random_seed: 43
+  project: infmax/infmax-gnn
+  run_id: IN-374
+  nb_seeds: 2
+  selection_function: elimination_approach # elimination_approach or top_k_approach
+  icm_p: -1
+  device: "cuda:0"
+
+data:
+  features_type: centralities # zeros | centralities
+  protocol: OR # OR | AND
+  output_label_name:
+    - exposed
+    - simulation_length
+    - peak_iteration
+    - peak_infected
+  output_weights:
+    w_e: 4
+    w_sl: 1
+    w_pit: 1
+    w_pin: 1
+
+run:
+  networks:
+    - name: arxiv_netscience_coauthorship
+      type: arxiv_netscience_coauthorship
+    - name: aucs
+      type: aucs
+    - name: ckm_physicians
+      type: ckm_physicians
+    - name: eu_transportation
+      type: eu_transportation
+    - name: l2_course_net_1
+      type: l2_course
+    - name: lazega
+      type: lazega
+    - name: timik1q2009
+      type: timik1q2009

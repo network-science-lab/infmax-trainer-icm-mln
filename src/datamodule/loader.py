@@ -1,17 +1,15 @@
 import logging
+from typing import Any
 
-from typing import Any, Literal
-
-from _data_set.nsl_data_utils.loaders.net_loader import load_network
-from _data_set.nsl_data_utils.loaders.sp_loader import load_sp
-from sklearn.model_selection import train_test_split
-from src import MODULE_PATH
-from src.dataset.base_hetero_dataset import BaseHeteroDataset
-from src.dataset.data_frame_hetero_dataset import DataFrameHeteroDataset
-from src.data_models.mln_info import MLNInfo
-from src.utils.worker import get_num_workers
+import torch
+import torch.utils
+import torch.utils.data
 from torch_geometric.data.lightning import LightningDataset
 from torch_geometric.typing import EdgeType, NodeType
+
+from _data_set.nsl_data_utils.loaders.net_loader import load_net_names
+from src.data_models.mln_info import MLNInfo
+from src.dataset.super_spreaders_dataset import SuperSpreadersDataset
 
 
 def _load_mln_info_chunk(
@@ -20,43 +18,21 @@ def _load_mln_info_chunk(
     features_type: str,
     protocol: str,
     p_value: float,
-    random_seed: int,
-    dataset_type: Literal["train", "val", "test"],
-    validation_split: bool,
 ) -> list[MLNInfo]:
     """Load raw networks and target labels for given network type and spreading params."""
-
-    nets_dict = load_network(net_name=network_type, as_tensor=False)
-    sps_dict = load_sp(net_name=network_type)
-    nets_to_use = list(nets_dict.keys())
-    assert len(nets_dict) == len(sps_dict)
-
-    if validation_split: # if we make a split here, loading is speeded up
-        train_nets, val_nets = train_test_split(
-            nets_to_use, test_size=0.2, random_state=random_seed
-        )
-        if dataset_type == "train":
-            nets_to_use = train_nets
-        elif dataset_type == "val":
-            nets_to_use = val_nets
-        else:
-            raise ValueError(f"Invalid option: val_split for the test network!")
-
-    mln_info = [  # for the reduced size of data, we create shorter list of MNI objects
-        MLNInfo(
+    mlni_chunk = [
+        MLNInfo.from_config(
             mln_type=network_type,
             mln_name=net_name,
-            mln=nets_dict[net_name],
             icm_protocol=protocol,
             icm_p=p_value,
             x_type=features_type,
             y_type=labels_type,
-            sp_raw=sps_dict[net_name],
         )
-        for net_name in nets_to_use
+        for net_name in load_net_names(net_type=network_type)
     ]
 
-    return mln_info
+    return mlni_chunk
 
 
 def _get_dataset(
@@ -65,95 +41,87 @@ def _get_dataset(
     labels: list[str],
     protocol: str,
     p_value: float,
-    random_seed: int,
     input_dim: int,
     output_dim: int,
-    dataset_type: Literal["train", "val", "test"],
-) -> BaseHeteroDataset:
-    logging.info(f"Loading {dataset_type} dataset.")
-    match data_name:
-        case DataFrameHeteroDataset.__name__:
-            mlni_nets = []
-            for network_config in networks_config:
-                mlni_chunk = _load_mln_info_chunk(
-                    network_type=network_config["name"],
-                    labels_type=labels,
-                    features_type=network_config["features_type"],
-                    protocol=protocol,
-                    p_value=p_value,
-                    random_seed=random_seed,
-                    dataset_type=dataset_type,
-                    validation_split=bool(network_config.get("val_split")),
-                )
-                mlni_nets.extend(mlni_chunk)
-            return DataFrameHeteroDataset(
-                root=str(MODULE_PATH.parent / "data"),  # TODO: this path doesn't exist
-                networks=mlni_nets,
-                input_dim=input_dim,
-                output_dim=output_dim,
+) -> SuperSpreadersDataset:
+    if data_name == SuperSpreadersDataset.__name__:
+        mlni_nets = []
+        for network_config in networks_config:
+            mlni_chunk = _load_mln_info_chunk(
+                network_type=network_config["name"],
+                labels_type=labels,
+                features_type=network_config["features_type"],
+                protocol=protocol,
+                p_value=p_value,
             )
-        case _:
-            raise AttributeError(f"Unknown dataset: {data_name}")
+            mlni_nets.extend(mlni_chunk)
+        return SuperSpreadersDataset(
+            networks=mlni_nets,
+            input_dim=input_dim,
+            output_dim=output_dim,
+        )
+    raise AttributeError(f"Unknown dataset: {data_name}")
 
 
-def get_datasets(config: dict[str, Any]) -> dict[str, BaseHeteroDataset]:
-    train_dataset = _get_dataset(
+def get_datasets(config: dict[str, Any]) -> dict[str, SuperSpreadersDataset]:
+    logging.info(f"Loading train dataset (paths).")
+    dataset = _get_dataset(
         data_name=config["data"]["name"],
-        networks_config=config["data"]["train_networks"],
+        networks_config=config["data"]["train_data"],
         labels=config["data"]["output_label_name"],
         input_dim=config["model"]["parameters"]["input_dim"],
         output_dim=config["model"]["parameters"]["output_dim"],
-        protocol=config["data"]["protocol"],
-        p_value=config["data"]["p_value"],
-        random_seed=config["base"]["random_seed"],
-        dataset_type="train",
+        protocol=config["data"]["icm"]["protocol"],
+        p_value=config["data"]["icm"]["p"],
     )
-    val_dataset = _get_dataset(
-        data_name=config["data"]["name"],
-        networks_config=config["data"]["val_dataset"],
-        labels=config["data"]["output_label_name"],
-        input_dim=config["model"]["parameters"]["input_dim"],
-        output_dim=config["model"]["parameters"]["output_dim"],
-        protocol=config["data"]["protocol"],
-        p_value=config["data"]["p_value"],
-        random_seed=config["base"]["random_seed"],
-        dataset_type="val",
+    logging.info(f"Splitting to train/eval dataset (paths).")
+    val_len = int(len(dataset) * config["data"]["val_data_ratio"])
+    train_len = len(dataset) - val_len
+    train_dataset, val_dataset = torch.utils.data.random_split(
+        dataset=dataset,
+        lengths=[train_len, val_len],
+        generator=torch.Generator().manual_seed(config["base"]["random_seed"]),
     )
+    logging.info(f"Loading test dataset (paths).")
     test_dataset = _get_dataset(
         data_name=config["data"]["name"],
-        networks_config=config["data"]["test_dataset"],
+        networks_config=config["data"]["test_data"],
         labels=config["data"]["output_label_name"],
         input_dim=config["model"]["parameters"]["input_dim"],
         output_dim=config["model"]["parameters"]["output_dim"],
-        protocol=config["data"]["protocol"],
-        p_value=config["data"]["p_value"],
-        random_seed=config["base"]["random_seed"],
-        dataset_type="test",
+        protocol=config["data"]["icm"]["protocol"],
+        p_value=config["data"]["icm"]["p"],
+    )
+    logging.info(
+        f"Graphs: test-{len(train_dataset)}, eval-{len(val_dataset)}, test-{len(test_dataset)}"
     )
     return {
         "train": train_dataset,
         "val": val_dataset,
-        "test": test_dataset
+        "test": test_dataset,
     }
 
 
 def get_datamodule(
-    datasets: dict[str, BaseHeteroDataset], config: dict[str, Any]
+    datasets: dict[str, SuperSpreadersDataset], config: dict[str, Any]
 ) -> LightningDataset:
     return LightningDataset(
-        train_dataset=datasets["train"].data_list,
-        val_dataset=datasets["val"].data_list,
-        test_dataset=datasets["test"].data_list,
-        batch_size=config["data"]["batch"]["gradient_accumulation_step"],
-        num_workers=get_num_workers(config),
+        train_dataset=datasets["train"],
+        val_dataset=datasets["val"],
+        test_dataset=datasets["test"],
+        batch_size=1,
+        num_workers=0,
+        pin_memory=True,
     )
 
 
-def get_metadata(datasets: list[BaseHeteroDataset]) -> tuple[list[NodeType], list[EdgeType]]:
+def get_metadata(
+    datasets: list[SuperSpreadersDataset],
+) -> tuple[list[NodeType], list[EdgeType]]:
     """
     Here, we treat as metadata types of relations and types of agents.
 
-    In current approach it's just "actors" for agents and a union of layer names available in the 
+    In current approach it's just "actors" for agents and a union of layer names available in the
     dataset. This function is used only in autoconverters from base torch_geometric models
     to heterogeneous ones.
     """

@@ -5,21 +5,22 @@ import yaml
 from hydra.core.hydra_config import HydraConfig
 from omegaconf import DictConfig
 
+from _data_set.nsl_data_utils.loaders.constants import CENTRALITY_FUNCTIONS
+from src import CONFIGS_PATH
+
 
 def load_config(
-    cfg: DictConfig,
     cofig_path: str | Path,
+    cfg: DictConfig | None = None,
 ) -> dict[str, Any]:
-    with open(cofig_path, "r") as file:
+    with open(cofig_path, "r", encoding="utf-8") as file:
         config = yaml.safe_load(file)
 
-    config["default"] = cfg
+    if cfg:
+        config["default"] = cfg
     config["hydra"] = HydraConfig.get()
 
     return config
-
-
-from src import CONFIGS_PATH
 
 
 def get_available_configs() -> list[str]:
@@ -28,3 +29,18 @@ def get_available_configs() -> list[str]:
         for config_path in CONFIGS_PATH.iterdir()
         if config_path.stem != "hydra"
     ]
+
+
+def validate_config(args: dict[str, Any]) -> None:
+    """Check whether input and output dimensions for model match the dataset."""
+    model_params = args["model"]["parameters"]
+    data_params = args["data"]
+    for train_data in data_params["train_data"]:
+        if train_data["features_type"] == "centralities":
+            assert model_params["input_dim"] <= len(CENTRALITY_FUNCTIONS)
+            continue
+    for train_data in data_params["test_data"]:
+        if train_data["features_type"] == "centralities":
+            assert model_params["input_dim"] <= len(CENTRALITY_FUNCTIONS)
+            continue
+    assert model_params["output_dim"] == len(data_params["output_label_name"])

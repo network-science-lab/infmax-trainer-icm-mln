@@ -2,41 +2,29 @@ base:
   random_seed: 43
 
 data:
-  name: DataFrameHeteroDataset
-  num_workers: 32
+  name: SuperSpreadersDataset
+  num_workers: -1
   batch:
-    size: 16
+    size: 32
     neighbours_sampling: [8, 4, 2]
-    subgraph_type: "bidirectional" # TODO: test with "induced"
-    gradient_accumulation_step: 1
-  protocol: OR
-  p_value: -1 # AND: {0.80, 0.85, 0.90, 0.95}, OR: {0.05, 0.10, 0.15, 0.20}, -1 to avg SP in protocol
+    subgraph_type: "induced"
+  icm:
+    protocol: OR
+    p: -1 # AND: {0.80, 0.85, 0.90, 0.95}, OR: {0.05, 0.10, 0.15, 0.20}, -1 to avg SP in protocol
   output_label_name:
     - exposed
     - simulation_length
     - peak_iteration
     - peak_infected
-  train_networks:
+  val_data_ratio: 0.2
+  train_data:
     - name: artificial_er
       features_type: centralities
-      val_split: True
     - name: artificial_pa
-      features_type: zeros
-      val_split: True
+      features_type: centralities
     - name: artificial_small
       features_type: centralities
-      val_split: True
-  val_dataset:
-    - name: artificial_er
-      features_type: centralities
-      val_split: True
-    - name: artificial_pa
-      features_type: zeros
-      val_split: True
-    - name: artificial_small
-      features_type: centralities
-      val_split: True
-  test_dataset:
+  test_data:
     - name: arxiv_netscience_coauthorship
       features_type: centralities
     - name: aucs
@@ -45,18 +33,14 @@ data:
       features_type: centralities
     - name: eu_transportation
       features_type: centralities
-    - name: l2_course_net_1
+    - name: l2_course
       features_type: centralities
     - name: lazega
       features_type: centralities
-    - name: timik1q2009
-      features_type: centralities
+    # - name: timik1q2009
+    #   features_type: centralities
     # ##### ##### ##### ##### ##### ##### ##### ##### other available networks
-    # - name: arxiv_netscience_coauthorship_math.oc
-    #   features_type: centralities
     # - name: cannes
-    #   features_type: centralities
-    # - name: eu_transport_klm
     #   features_type: centralities
     # - name: fmri74
     #   features_type: centralities
@@ -72,8 +56,8 @@ model:
 
 training:
   accelerator: gpu # cpu or gpu
-  devices: [0] # list[int] | int | str; default=auto # TODO it seems that if more than 1 GPU is available, then training is repeated on all available devices
-  max_epochs: 200
+  devices: [0] # list[int] | int | str; default=auto
+  max_epochs: 50
   loss:
     name: MRTWSE # Depends on the "output_dim"
     args:
@@ -96,17 +80,18 @@ training:
       monitor: val_loss
       interval: epoch
       frequency: 1
-  loggers:
-    - name: neptune
-      model_summary_max_depth: -1
-      tags:
-        - name: net-ssnet
-        - name: data-full
-        - name: features-centralities
-        - name: loss-mrtwse
-        - name: icm_proto-or
-        - name: icm_p-average
-        - name: batch_level-actor
+  logger:
+    name: neptune
+    model_summary_max_depth: -1
+    tags:
+      - name: TEST-LOADERS
+      - name: net-ssnet
+      - name: data-full
+      - name: features-centralities
+      - name: loss-mrtwse
+      - name: icm_proto-or
+      - name: icm_p-average
+      - name: batch_level-actor
   callbacks:
     - name: model_summary
       max_depth: -1

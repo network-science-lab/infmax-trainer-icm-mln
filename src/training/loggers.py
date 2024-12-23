@@ -1,51 +1,55 @@
 import logging
 import os
 from typing import Any
+from unittest.mock import MagicMock
 
 import neptune
 from lightning.pytorch import loggers
 from lightning.pytorch.loggers.logger import Logger
-from pytorch_lightning import LightningModule
+
+class DummyLogger:
+    def __init__(*args, **kwargs):
+        pass
+
+    def __getattr__(self, name):
+        return type(self)
 
 
-def get_loggers(
-    config: dict[str, Any],
-    model: LightningModule,
-) -> list[Logger]:
-    result = []
+def get_lightning_neptune(config: dict[str, Any]) -> loggers.NeptuneLogger | MagicMock:
+    """Initialise neptune logger integrated with Lightning or return MagicMock."""
+    logging.getLogger("neptune").setLevel(logging.CRITICAL)
+    try:
+        logger = loggers.NeptuneLogger(
+            api_key=os.getenv(
+                key="NEPTUNE_API_KEY",
+                default=neptune.ANONYMOUS_API_TOKEN,
+            ),
+            project="infmax/infmax-gnn",
+            tags=[
+                tag_config["name"]
+                for tag_config in config["training"]["logger"]["tags"]
+            ],
+            description=config["model"]["name"],
+            name=config["model"]["name"],
+        )
+    except Exception as e:
+        logging.exception(e)
+        logging.warning("Neptune not initialised - using mocked logger!")
+        logger = DummyLogger()
 
-    for logger_config in config["training"]["loggers"]:
-        match logger_config["name"]:
-            case "tensor_board":
-                result.append(
-                    loggers.TensorBoardLogger(
-                        save_dir=config["hydra"]["run"]["dir"],
-                        name="tensorboard",
-                    )
-                )
-            case "neptune":
-                logger = loggers.NeptuneLogger(
-                    api_key=os.getenv(
-                        key="NEPTUNE_API_KEY",
-                        default=neptune.ANONYMOUS_API_TOKEN,
-                    ),
-                    project="infmax/infmax-gnn",
-                    tags=[tag_config["name"] for tag_config in logger_config["tags"]],
-                    description=config["model"]["name"],
-                    name=config["model"]["name"],
-                )
+    return logger
 
-                logger.log_model_summary(
-                    model=model,
-                    max_depth=logger_config["model_summary_max_depth"],
-                )
-                logger.log_hyperparams(
-                    {key: value for key, value in config.items() if key != "hydra"}
-                )
 
-                result.append(logger)
-                logging.getLogger("neptune").setLevel(logging.CRITICAL)
-            case _:
-                logging.warning(f"{logger_config['name']} is not supported")
-
-    return result
+def get_loggers(config: dict[str, Any]) -> Logger:
+    match config["training"]["logger"]["name"]:
+        case "tensor_board":
+            return loggers.TensorBoardLogger(
+                save_dir=config["hydra"]["run"]["dir"],
+                name="tensorboard",
+            )
+        case "neptune":
+            return get_lightning_neptune(config)
+        case _:
+            logging.warning(f"{config['training']['loggers']['name']} is not supported")
+            logging.info('Using mocked logger')
+            return DummyLogger()
