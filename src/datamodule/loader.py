@@ -20,18 +20,18 @@ def _load_mln_info_chunk(
     p_value: float,
 ) -> list[MLNInfo]:
     """Load raw networks and target labels for given network type and spreading params."""
-    mlni_chunk = []
-    for net_name in load_net_names(net_type=network_type):
-        mlni_chunk.append(
-            MLNInfo.from_config(
-                mln_type=network_type,
-                mln_name=net_name,
-                icm_protocol=protocol,
-                icm_p=p_value,
-                x_type=features_type,
-                y_type=labels_type,
-            )
+    mlni_chunk = [
+        MLNInfo.from_config(
+            mln_type=network_type,
+            mln_name=net_name,
+            icm_protocol=protocol,
+            icm_p=p_value,
+            x_type=features_type,
+            y_type=labels_type,
         )
+        for net_name in load_net_names(net_type=network_type)
+    ]
+
     return mlni_chunk
 
 
@@ -44,25 +44,23 @@ def _get_dataset(
     input_dim: int,
     output_dim: int,
 ) -> SuperSpreadersDataset:
-    match data_name:
-        case SuperSpreadersDataset.__name__:
-            mlni_nets = []
-            for network_config in networks_config:
-                mlni_chunk = _load_mln_info_chunk(
-                    network_type=network_config["name"],
-                    labels_type=labels,
-                    features_type=network_config["features_type"],
-                    protocol=protocol,
-                    p_value=p_value,
-                )
-                mlni_nets.extend(mlni_chunk)
-            return SuperSpreadersDataset(
-                networks=mlni_nets,
-                input_dim=input_dim,
-                output_dim=output_dim,
+    if data_name == SuperSpreadersDataset.__name__:
+        mlni_nets = []
+        for network_config in networks_config:
+            mlni_chunk = _load_mln_info_chunk(
+                network_type=network_config["name"],
+                labels_type=labels,
+                features_type=network_config["features_type"],
+                protocol=protocol,
+                p_value=p_value,
             )
-        case _:
-            raise AttributeError(f"Unknown dataset: {data_name}")
+            mlni_nets.extend(mlni_chunk)
+        return SuperSpreadersDataset(
+            networks=mlni_nets,
+            input_dim=input_dim,
+            output_dim=output_dim,
+        )
+    raise AttributeError(f"Unknown dataset: {data_name}")
 
 
 def get_datasets(config: dict[str, Any]) -> dict[str, SuperSpreadersDataset]:

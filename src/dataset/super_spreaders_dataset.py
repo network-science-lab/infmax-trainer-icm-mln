@@ -39,7 +39,7 @@ class SuperSpreadersDataset(Dataset):
     def _prepare_metadata(self) -> tuple[list[NodeType], list[EdgeType]]:
         nodes_data = []
         edges_data = []
-        for i in range(self.len()):
+        for i in range(self.data_list):
             node_data, edge_data = self.get(i).metadata()
             nodes_data.extend(node_data)
             edges_data.extend(edge_data)

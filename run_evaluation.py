@@ -73,8 +73,7 @@ class HeteroGNN_Predictor:
                 network_name=network_name,
                 network_type=network_type,
             )
-        else:
-            raise AttributeError(
+        raise AttributeError(
                 f"Unknown selecton function: {self._config['base']['selection_function']}"
             )
 
@@ -293,7 +292,7 @@ def main(cfg: DictConfig) -> None:
 
     evaluation_results = {}
     for idx, network in tqdm(enumerate(config["run"]["networks"])):
-        logging.info(f'Processing: {network["name"]}')
+        tqdm.write(f'Processing: {network["name"]}')
         network_ts = evaluator(
             network_name=network["name"],
             network_type=network["type"],

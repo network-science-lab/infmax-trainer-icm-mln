@@ -13,7 +13,7 @@ def load_config(
     cofig_path: str | Path,
     cfg: DictConfig | None = None,
 ) -> dict[str, Any]:
-    with open(cofig_path, "r") as file:
+    with open(cofig_path, "r", encoding="utf-8") as file:
         config = yaml.safe_load(file)
 
     if cfg:

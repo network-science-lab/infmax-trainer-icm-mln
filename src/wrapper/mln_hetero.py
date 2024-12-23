@@ -4,7 +4,7 @@ import re
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Self, TypeVar
+from typing import Any, ClassVar, Self, TypeVar
 
 import pandas as pd
 import pytorch_lightning as pl
@@ -36,8 +36,8 @@ class HetergoGNNWrapperConfig:
     batch_subraph_type: str
     num_workers: int
     metadata: tuple
-    CONFIG_ARGS_PATTERN: re.Pattern = re.compile(r"(\w+)\((.*)\)")
-    CONFIG_ARGS_SPLIT_PATTERN: re.Pattern = re.compile(r",\s\b(?=\D)")
+    CONFIG_ARGS_PATTERN: ClassVar[re.Pattern] = re.compile(r"(\w+)\((.*)\)")
+    CONFIG_ARGS_SPLIT_PATTERN: ClassVar[re.Pattern] = re.compile(r",\s\b(?=\D)")
 
     @classmethod
     def from_str(cls, obj: str) -> Self:

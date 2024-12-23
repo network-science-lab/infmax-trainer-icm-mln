@@ -7,6 +7,13 @@ import neptune
 from lightning.pytorch import loggers
 from lightning.pytorch.loggers.logger import Logger
 
+class DummyLogger:
+    def __init__(*args, **kwargs):
+        pass
+
+    def __getattr__(self, name):
+        return type(self)
+
 
 def get_lightning_neptune(config: dict[str, Any]) -> loggers.NeptuneLogger | MagicMock:
     """Initialise neptune logger integrated with Lightning or return MagicMock."""
@@ -26,9 +33,9 @@ def get_lightning_neptune(config: dict[str, Any]) -> loggers.NeptuneLogger | Mag
             name=config["model"]["name"],
         )
     except Exception as e:
-        logging.info(e)
-        logging.info("Neptune not initialised - using mocked logger!")
-        logger = MagicMock()
+        logging.exception(e)
+        logging.warning("Neptune not initialised - using mocked logger!")
+        logger = DummyLogger()
 
     return logger
 
@@ -44,3 +51,5 @@ def get_loggers(config: dict[str, Any]) -> Logger:
             return get_lightning_neptune(config)
         case _:
             logging.warning(f"{config['training']['loggers']['name']} is not supported")
+            logging.info('Using mocked logger')
+            return DummyLogger()

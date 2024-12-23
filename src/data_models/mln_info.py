@@ -48,12 +48,16 @@ class MLNInfo:
         x_type: str,
         y_type: str,
     ) -> None:
-        assert icm_protocol in {OR, AND}
-        assert {icm_p}.issubset(_VALID_ICM_PARAMS[icm_protocol])
-        assert x_type in {"zeros", "scrapped", "centralities"}
-        assert set(y_type).issubset(
+        if icm_protocol not in {OR, AND}:
+            raise ValueError(f"Unknown icm_protocol: {icm_protocol}")
+        if not {icm_p}.issubset(_VALID_ICM_PARAMS[icm_protocol]):
+            raise ValueError(f"Invalid icm_p: {icm_p}")
+        if x_type not in {"zeros", "scrapped", "centralities"}:
+            raise ValueError(f'Unknown x_type: {x_type}')
+        if not set(y_type).issubset(
             {EXPOSED, SIMULATION_LENGTH, PEAK_ITERATION, PEAK_INFECTED}
-        )
+        ):
+            raise ValueError(f'Unknown y_type: {y_type}')
 
     @staticmethod
     def _get_ft_path(
@@ -67,8 +71,7 @@ class MLNInfo:
             return load_centralities_path(network_type=mln_type, network_name=mln_name)
         elif x_type == "scrapped":
             raise NotImplementedError(f"{x_type} has not been implemented yet")
-        else:
-            raise ValueError("Unknown x_type!")
+        raise ValueError("Unknown x_type!")
 
     @staticmethod
     def _filter_sp_path(
@@ -107,9 +110,9 @@ class MLNInfo:
         ft_path = cls._get_ft_path(x_type, mln_type, mln_name)
 
         if len(sp_paths_filtered) == 0:
-            raise ValueError
+            raise ValueError('Incorrect data paths')
         if ft_path is None and x_type == "centralities":
-            raise ValueError
+            raise ValueError('Incorrect data paths')
 
         return cls(
             mln_type=mln_type,
