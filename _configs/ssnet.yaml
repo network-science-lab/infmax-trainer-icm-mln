@@ -37,8 +37,8 @@ data:
       features_type: centralities
     - name: lazega
       features_type: centralities
-    # - name: timik1q2009
-    #   features_type: centralities
+    - name: timik1q2009
+      features_type: centralities
     # ##### ##### ##### ##### ##### ##### ##### ##### other available networks
     # - name: cannes
     #   features_type: centralities
@@ -48,7 +48,7 @@ data:
     #   features_type: centralities
 
 model:
-  name: SSNet
+  name: SSNetVariantB
   parameters:
     input_dim: 5
     output_dim: 4
@@ -57,7 +57,7 @@ model:
 training:
   accelerator: gpu # cpu or gpu
   devices: [0] # list[int] | int | str; default=auto
-  max_epochs: 50
+  max_epochs: 100
   loss:
     name: MRTWSE # Depends on the "output_dim"
     args:
@@ -84,8 +84,8 @@ training:
     name: neptune
     model_summary_max_depth: -1
     tags:
-      - name: TEST-LOADERS
-      - name: net-ssnet
+      - name: TEST-TRAINING
+      - name: net-ssnet_vatiant_b
       - name: data-full
       - name: features-centralities
       - name: loss-mrtwse
