@@ -3,7 +3,7 @@
 import torch
 
 
-class MRTWSE(torch.nn.Module):
+class MTWAE(torch.nn.Module):
     def __init__(
         self,
         w_sl: float,
@@ -12,12 +12,12 @@ class MRTWSE(torch.nn.Module):
         w_pit: float,
     ) -> None:
         """
-        Mean Root Total Weighted Squared Error.
+        Mean Total Weighted Absolute Error.
 
         1. scale weights by softmax so that they sum to 1
-        2. compute squared error
+        2. compute absolute error
         3. scale it by weights
-        4. for each actor sum the vector of partial errors and obtain squared root of it
+        4. for each actor sum the vector of partial errors
         5. return mean value of such errors along the batch
 
         :param w_sl: weight for simulation length
@@ -34,10 +34,8 @@ class MRTWSE(torch.nn.Module):
         if not self._bypass_flag:
             self.weights = self.weights.to(device=y.device)
             self._bypass_flag = True
-        se = (y_hat - y) ** 2  # squared error
-        wse = se * self.weights.expand_as(se)  # weighted se
-        rtwse = torch.sqrt(
-            wse.sum(dim=1)
-        )  # root total wse (for each y_i sum err and sqrt them)
-        mrtwse = rtwse.mean()  # compute mean rtwse in the batch
-        return mrtwse
+        ae = torch.abs(y_hat - y)  # absolute error
+        wae = ae * self.weights.expand_as(ae)  # weighted ae
+        twae = wae.sum(dim=1)  # total wae
+        mtwae = twae.mean()  # compute mean swae in the batch
+        return mtwae
