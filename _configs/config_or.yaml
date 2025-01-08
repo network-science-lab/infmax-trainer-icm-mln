@@ -53,7 +53,7 @@ model:
     input_dim: 5
     output_dim: 4
     hidden_channels: 400
-    aggregation_type: "LayerwiseAggregation"
+    aggregation_type: LayerwiseAggregation
 
 training:
   accelerator: gpu # cpu or gpu

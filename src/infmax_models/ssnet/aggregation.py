@@ -57,7 +57,7 @@ class SumAggregation(torch.nn.Module):
         :return: a tensor of shape `[hidden_dim, nb_mln_actors]`
         """
         h = torch.stack(list(h.values()))
-        return torch.sum(h, dim=0).shape
+        return torch.sum(h, dim=0)
 
 
 class LayerwiseAggregation(torch.nn.Module):
