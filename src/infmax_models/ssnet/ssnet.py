@@ -1,11 +1,18 @@
+from typing import Literal
 import torch
 from torch.nn import Dropout
 from torch_geometric.nn import GCNConv, SAGEConv, Sequential
 
 from _data_set.nsl_data_utils.loaders.constants import ACTOR
 from src.infmax_models.base.base import BaseHeteroModule
-from src.infmax_models.ssnet.layerwise_aggregation import LayerwiseAggregation
-
+from src.infmax_models.ssnet.aggregation import (
+    MaxAggregation,
+    MinAggregation,
+    AvgAggregation,
+    SumAggregation,
+    LayerwiseAggregation,
+    AttentionAggregation,
+)
 
 class SSNet(BaseHeteroModule):
     """
@@ -13,7 +20,7 @@ class SSNet(BaseHeteroModule):
 
     Idea backing this implementation is following:
     1. Compute embeddings of actors on each layer separately using the same trainable nn.modules
-    2. Aggregate embeddings with trainable nn.module
+    2. Aggregate embeddings
     3. With Linear head predict spreading potentials as `out_channels`-dim vector
     """
 
@@ -22,70 +29,71 @@ class SSNet(BaseHeteroModule):
         input_dim: int,
         hidden_channels: int,
         output_dim: int,
+        aggregation_type: Literal[
+            "MaxAggregation",
+            "MinAggregation",
+            "AvgAggregation",
+            "SumAggregation",
+            "LayerwiseAggregation",
+            "AttentionAggregation",
+        ] = "LayerwiseAggregation"
     ) -> None:
         """Initialise the object."""
         super().__init__(is_hetero=True)
+
         self.layerwise_encoder = Sequential(
             "x_actors, x_edges",
             [
                 (
-                    GCNConv(
-                        in_channels=input_dim,
-                        out_channels=hidden_channels // 4,
-                        normalize=True,
-                    ),
+                    GCNConv(input_dim, hidden_channels // 4, normalize=True),
                     "x_actors, x_edges -> x_interim",
                 ),
                 torch.nn.LeakyReLU(inplace=True),
                 (Dropout(p=0.2), "x_interim -> x_interim"),
                 (
-                    SAGEConv(
-                        in_channels=hidden_channels // 4,
-                        out_channels=hidden_channels // 2,
-                        aggr="mean",
-                    ),
+                    SAGEConv(hidden_channels // 4, hidden_channels // 2, "mean"),
                     "x_interim, x_edges -> x_interim",
                 ),
                 torch.nn.LeakyReLU(inplace=True),
                 (Dropout(p=0.2), "x_interim -> x_interim"),
                 (
-                    SAGEConv(
-                        in_channels=hidden_channels // 2,
-                        out_channels=hidden_channels,
-                        aggr="mean",
-                    ),
+                    SAGEConv(hidden_channels // 2, hidden_channels, "mean"),
                     "x_interim, x_edges -> x_interim",
                 ),
                 torch.nn.LeakyReLU(inplace=True),
                 (Dropout(p=0.2), "x_interim -> x_interim"),
                 (
-                    SAGEConv(
-                        in_channels=hidden_channels,
-                        out_channels=hidden_channels // 2,
-                        aggr="mean",
-                    ),
+                    SAGEConv(hidden_channels, hidden_channels // 2, "mean"),
                     "x_interim, x_edges -> x_interim",
                 ),
                 torch.nn.LeakyReLU(inplace=True),
                 (Dropout(p=0.2), "x_interim -> x_interim"),
                 (
-                    SAGEConv(
-                        in_channels=hidden_channels // 2,
-                        out_channels=hidden_channels // 4,
-                        aggr="mean",
-                    ),
+                    SAGEConv(hidden_channels // 2, hidden_channels // 4, "mean"),
                     "x_interim, x_edges -> x_interim",
                 ),
                 torch.nn.LeakyReLU(inplace=True),
             ],
         )
-        self.layerwise_aggregator = LayerwiseAggregation(hidden_channels // 4)
+
+        if aggregation_type == LayerwiseAggregation.__name__:
+            self.layerwise_aggregator = LayerwiseAggregation(hidden_channels // 4)
+        elif aggregation_type == MaxAggregation.__name__:
+            self.layerwise_aggregator = MaxAggregation()
+        elif aggregation_type == MinAggregation.__name__:
+            self.layerwise_aggregator = MinAggregation()
+        elif aggregation_type == AvgAggregation.__name__:
+            self.layerwise_aggregator = AvgAggregation()
+        elif aggregation_type == SumAggregation.__name__:
+            self.layerwise_aggregator = SumAggregation()
+        elif aggregation_type == AttentionAggregation.__name__:
+            self.layerwise_aggregator = AttentionAggregation(hidden_channels // 4)
+        else:
+            raise AttributeError("Incorrect name of the aggregator!")
+
         self.head = torch.nn.Sequential(
-            torch.nn.Linear(
-                in_features=hidden_channels // 4,
-                out_features=output_dim,
-            ),
-            torch.nn.Softplus(),  # ditto
+            torch.nn.Linear(hidden_channels // 4, output_dim),
+            torch.nn.Softplus(),
         )
 
     def forward(
@@ -103,17 +111,16 @@ class SSNet(BaseHeteroModule):
 
         :return: spreading potentials as a vector of shape `[nb_mln_actors, out_channels]`
         """
-        y_relations = []
+        y_relations = {}
         z_mask = 1 - z_dict[ACTOR]
 
         # embed actors on each mln layer separately
-        for layer_idx, layer_edges in enumerate(edge_index_dict.values()):
+        for layer_idx, (layer_name, layer_edges) in enumerate(edge_index_dict.items()):
             layer_x = x_dict[ACTOR] * z_mask[:, layer_idx].unsqueeze(dim=1).expand_as(
                 x_dict[ACTOR]
             )
             y_relation = self.layerwise_encoder(layer_x, layer_edges)
-            y_relations.append(y_relation)
-        y_relations = torch.stack(y_relations)
+            y_relations[layer_name] = y_relation
 
         # aggregate embeddings
         y_aggregated = self.layerwise_aggregator(y_relations)

@@ -53,6 +53,7 @@ model:
     input_dim: 5
     output_dim: 4
     hidden_channels: 400
+    aggregation_type: "LayerwiseAggregation"
 
 training:
   accelerator: gpu # cpu or gpu
@@ -84,14 +85,7 @@ training:
     name: neptune
     model_summary_max_depth: -1
     tags:
-      - name: TEST-TRAINING
-      - name: net-ssnet_vatiant_b
-      - name: data-full
-      - name: features-centralities
-      - name: loss-mrtwse
-      - name: icm_proto-or
-      - name: icm_p-average
-      - name: batch_level-actor
+      - name: ssnet
   callbacks:
     - name: model_summary
       max_depth: -1
