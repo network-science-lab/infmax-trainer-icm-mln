@@ -51,9 +51,9 @@ model:
   name: SSNet
   parameters:
     input_dim: 5
-    output_dim: 4
+    output_dim: auto
     hidden_channels: 400
-    aggregation_type: LayerwiseAggregation
+    aggregation_type: SumAggregation
 
 training:
   accelerator: gpu # cpu or gpu

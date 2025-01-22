@@ -140,9 +140,7 @@ class MLNHeteroData(HeteroData):
             return features_norm_pt[:, :input_dim]
 
         elif network_info.x_type == "scrapped":
-            raise NotImplementedError(
-                f"{network_info.x_type} has not been implemented yet"
-            )
+            raise NotImplementedError(f"{network_info.x_type} has not been implemented yet")
 
         else:
             raise ValueError("Unknown x_type!")
@@ -166,9 +164,6 @@ class MLNHeteroData(HeteroData):
         Y_raw["actor_idx"] = Y_raw[ACTOR].map(network_torch.actors_map)
         Y_raw = Y_raw.set_index("actor_idx").sort_index()
 
-        labels = torch.tensor(
-                Y_raw[network_info.y_type].values,
-                dtype=torch.float32,
-            )
+        labels = torch.tensor(Y_raw[network_info.y_type].values, dtype=torch.float32)
         labels = labels / len(network_torch.actors_map)
         return labels

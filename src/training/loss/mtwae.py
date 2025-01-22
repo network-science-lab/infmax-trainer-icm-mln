@@ -26,7 +26,11 @@ class MTWAE(torch.nn.Module):
         :param w_pit: weight for peak iteration
         """
         super().__init__()
-        raw_weights = torch.tensor([w_sl, w_e, w_pin, w_pit], dtype=torch.float32)
+
+        raw_weights = torch.tensor(
+            data=[w for w in [w_sl, w_e, w_pin, w_pit] if w != 0],
+            dtype=torch.float32,
+        )
         self.weights = torch.softmax(raw_weights, dim=0)
         self._bypass_flag = False
 

@@ -31,6 +31,13 @@ def get_available_configs() -> list[str]:
     ]
 
 
+def update_config(args: dict[str, Any]) -> dict[str, Any]:
+    """Replace all "auto" params with the proper ones."""
+    if args["model"]["parameters"]["output_dim"] == "auto":
+        args["model"]["parameters"]["output_dim"] = len(args["data"]["output_label_name"])
+    return args
+
+
 def validate_config(args: dict[str, Any]) -> None:
     """Check whether input and output dimensions for model match the dataset."""
     model_params = args["model"]["parameters"]

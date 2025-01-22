@@ -10,7 +10,7 @@ from src.datamodule.loader import get_datamodule, get_datasets, get_metadata
 from src.infmax_models.loader import load_model
 from src.training.callbacks import get_callbacks
 from src.training.loggers import get_loggers
-from src.utils.config import validate_config
+from src.utils.config import update_config, validate_config
 from src.utils.misc import general_test_result
 from src.utils.worker import get_num_workers
 from src.utils.wrapper import get_accelerator
@@ -19,6 +19,7 @@ from src.wrapper.mln_hetero import HetergoGNNWrapperConfig, HeteroGNNWrapper
 
 def train(args: dict[str, Any]) -> None:
     """Main training loop with args provided by YAML config.."""
+    args = update_config(args)
     validate_config(args)
     logger = get_loggers(config=args)
     logger.log_hyperparams(
