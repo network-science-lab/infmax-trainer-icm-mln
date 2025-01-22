@@ -136,8 +136,9 @@ class MLNHeteroData(HeteroData):
             features_sorted_df = features_df.loc[actors_order]
             features_np = features_sorted_df.to_numpy()
             features_pt = torch.tensor(data=features_np, dtype=torch.float32)
-            features_norm_pt = features_pt / len(network_torch.actors_map)
-            return features_norm_pt[:, :input_dim]
+            # features_norm_pt = features_pt / len(network_torch.actors_map)
+            # return features_norm_pt[:, :input_dim]
+            return features_pt[:, :input_dim]
 
         elif network_info.x_type == "scrapped":
             raise NotImplementedError(f"{network_info.x_type} has not been implemented yet")
@@ -165,5 +166,5 @@ class MLNHeteroData(HeteroData):
         Y_raw = Y_raw.set_index("actor_idx").sort_index()
 
         labels = torch.tensor(Y_raw[network_info.y_type].values, dtype=torch.float32)
-        labels = labels / len(network_torch.actors_map)
+        # labels = labels / len(network_torch.actors_map)
         return labels
