@@ -60,7 +60,7 @@ class ConctractWithLog(BaseTransform):
         super().__init__()
 
     def __call__(self, data: MLNHeteroData) -> MLNHeteroData:
-        data[ACTOR].y = torch.log(data[ACTOR].y + 1).numpy()
+        data[ACTOR].y = torch.log(data[ACTOR].y + 1)
         # plot_distr(data, "distribution_log.png")
         return data
 
