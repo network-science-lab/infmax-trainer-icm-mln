@@ -2,5 +2,5 @@ hydra:
   run:
     dir: _data_results/model_outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
 
-experiment-config: config_or
+experiment-config: config_and
 # experiment-config: hetero_top_spreader_network #TODO: NEED TO CHANGE ARCHITECTURE

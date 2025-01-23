@@ -9,15 +9,8 @@ from torch_geometric.typing import EdgeType, NodeType
 
 from _data_set.nsl_data_utils.loaders.net_loader import load_net_names
 from src.data_models.mln_info import MLNInfo
+from src.dataset import transforms
 from src.dataset.super_spreaders_dataset import SuperSpreadersDataset
-from src.dataset.transforms import (
-    NormaliseByActorsNumber,
-    NormaliseByMax,
-    ScatterWithExponent,
-    ConctractWithLog,
-    ScatterAndNormalise,
-    ConctractAndNormalise,
-)
 
 
 def _load_mln_info_chunk(
@@ -43,21 +36,11 @@ def _load_mln_info_chunk(
     return mlni_chunk
 
 
-def _get_transform(transform_name: str):
+def _get_transform(transform: str):
     """Get data transformation according to provided configuration."""
-    if transform_name == NormaliseByActorsNumber.__name__:
-        return NormaliseByActorsNumber()
-    elif transform_name == NormaliseByMax.__name__:
-        return NormaliseByMax()
-    elif transform_name == ScatterWithExponent.__name__:
-        return ScatterWithExponent()
-    elif transform_name == ConctractWithLog.__name__:
-        return ConctractWithLog()
-    elif transform_name == ScatterAndNormalise.__name__:
-        return ScatterAndNormalise()
-    elif transform_name == ConctractAndNormalise.__name__:
-        return ConctractAndNormalise()
-    raise AttributeError(f"Unknown dataset: {transform_name}")
+    tr_class = getattr(transforms, transform["name"])
+    tr_params = transform["parameters"] if isinstance(transform["parameters"], dict) else {}
+    return tr_class(**tr_params)
 
 
 def _get_dataset(

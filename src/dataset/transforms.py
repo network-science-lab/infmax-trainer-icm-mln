@@ -34,21 +34,23 @@ class NormaliseByMax(BaseTransform):
         super().__init__()
 
     def __call__(self, data: MLNHeteroData) -> MLNHeteroData:
-        data[ACTOR].x = data[ACTOR].x / data[ACTOR].x.max()
-        data[ACTOR].y = data[ACTOR].y / data[ACTOR].y.max()
+        data[ACTOR].x = data[ACTOR].x / data[ACTOR].x.max(dim=0).values
+        data[ACTOR].y = data[ACTOR].y / data[ACTOR].y.max(dim=0).values
         # plot_distr(data, "distribution_normmax.png")
         return data
 
 
 class ScatterWithExponent(BaseTransform):
-    """Apply if data is too concentrated."""
+    """Apply if data is too concentrated, keeps data in the original range."""
 
-    def __init__(self) -> None:
+    def __init__(self, scatter_factor: float) -> None:
         super().__init__()
+        if scatter_factor <= 0:
+            raise AttributeError("scatter factor should be >= 0")
+        self.sf = scatter_factor
 
     def __call__(self, data: MLNHeteroData) -> MLNHeteroData:
-        median = torch.median(data[ACTOR].y, dim=0).values
-        data[ACTOR].y = torch.exp(data[ACTOR].y - median)
+        data[ACTOR].y = torch.exp(self.sf * data[ACTOR].y) / torch.exp(torch.tensor(self.sf))
         # plot_distr(data, "distribution_exp.png")
         return data
 
@@ -65,12 +67,12 @@ class ConctractWithLog(BaseTransform):
         return data
 
 
-class ScatterAndNormalise(BaseTransform):
-    """ScatterWithExponent -> NormaliseByMax"""
+class NormaliseAndScatter(BaseTransform):
+    """NormaliseByMax -> ScatterWithExponent"""
 
-    def __init__(self) -> None:
+    def __init__(self, scatter_factor: float) -> None:
         super().__init__()
-        self.transform = Compose([ScatterWithExponent(), NormaliseByMax()])
+        self.transform = Compose([NormaliseByMax(), ScatterWithExponent(scatter_factor)])
     
     def __call__(self, data: MLNHeteroData) -> MLNHeteroData:
         # plot_distr(data, "distribution_raw.png")
