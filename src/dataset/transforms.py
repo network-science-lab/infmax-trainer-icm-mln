@@ -32,10 +32,16 @@ class NormaliseByMax(BaseTransform):
 
     def __init__(self) -> None:
         super().__init__()
+    
+    @staticmethod
+    def _get_norm_matrix(x: torch.Tensor) -> torch.Tensor:
+        norm_max = x.max(dim=0).values
+        norm_max[norm_max == 0.] = 1.
+        return norm_max
 
     def __call__(self, data: MLNHeteroData) -> MLNHeteroData:
-        data[ACTOR].x = data[ACTOR].x / data[ACTOR].x.max(dim=0).values
-        data[ACTOR].y = data[ACTOR].y / data[ACTOR].y.max(dim=0).values
+        data[ACTOR].x = data[ACTOR].x / self._get_norm_matrix(data[ACTOR].x)
+        data[ACTOR].y = data[ACTOR].y / self._get_norm_matrix(data[ACTOR].y)
         # plot_distr(data, "distribution_normmax.png")
         return data
 
