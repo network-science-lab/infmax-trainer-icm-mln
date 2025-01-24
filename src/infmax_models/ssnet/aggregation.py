@@ -108,9 +108,20 @@ class AttentionAggregation(torch.nn.Module):
         :return: a tensor of shape `[hidden_dim, nb_mln_actors]`
         """
         b = torch.cat(
-            [self.V(self.q(h[edge_type]), h[edge_type]).tanh() for edge_type in h.keys()],
+            [
+                self.V(self.q(h[edge_type]), h[edge_type]).tanh()
+                for edge_type in h.keys()
+            ],
             dim=-1,
         )
-        alpha = b.softmax(dim=0)
-        embeddings = torch.stack(list(h.values()))
-        return (alpha.unsqueeze(dim=0).permute(2, 1, 0) * embeddings).sum(dim=0)
+        # alpha = b.softmax(dim=0)
+        alpha = b.softmax(dim=-1)
+        embeddings = torch.stack(self._to_ordered(h), dim=-1)
+        # embeddings = torch.stack(list(h.values()))
+        
+        z = (alpha.unsqueeze(dim=1) * embeddings).sum(dim=-1)
+        return z
+        # return (alpha.unsqueeze(dim=0).permute(2, 1, 0) * embeddings).sum(dim=0)
+    
+    def _to_ordered(self, h: dict[str, torch.Tensor]) -> list[torch.Tensor]:
+        return [h[et] for et in h.keys()]
