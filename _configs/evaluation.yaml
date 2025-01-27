@@ -1,15 +1,75 @@
 base:
   random_seed: 43
   project: infmax/infmax-gnn
-  run_id: IN-374
-  nb_seeds: 2
-  selection_function: elimination_approach # elimination_approach or top_k_approach
+  run_ids:
+    # - id: IN-593
+    #   features_type: centralities # zeros | centralities | ones
+    #   protocol: OR # OR | AND
+    # - id: IN-603
+    #   features_type: zeros
+    #   protocol: OR
+    - id: IN-595
+      features_type: ones
+      protocol: OR
+
+    - id: IN-579
+      features_type: centralities
+      protocol: AND
+    - id: IN-580
+      features_type: zeros
+      protocol: AND
+    - id: IN-604
+      features_type: ones
+      protocol: AND
+      
+    - id: IN-609
+      features_type: centralities
+      protocol: OR
+    - id: IN-597
+      features_type: zeros
+      protocol: OR
+    - id: IN-598
+      features_type: ones
+      protocol: OR
+
+    - id: IN-585
+      features_type: centralities
+      protocol: AND
+    - id: IN-586
+      features_type: zeros
+      protocol: AND
+    - id: IN-587
+      features_type: ones
+      protocol: AND
+
+    - id: IN-590
+      features_type: centralities
+      protocol: OR
+    - id: IN-591
+      features_type: zeros
+      protocol: OR
+    - id: IN-607
+      features_type: ones
+      protocol: OR
+
+    - id: IN-608
+      features_type: centralities
+      protocol: AND
+    - id: IN-602
+      features_type: zeros
+      protocol: AND
+    - id: IN-601
+      features_type: ones
+      protocol: AND
+      
+  nb_seeds: 1
+  selection_function: elimination_approach # elimination_approach or top_k_approach | bis
   icm_p: -1
   device: "cuda:0"
 
 data:
-  features_type: centralities # zeros | centralities
-  protocol: OR # OR | AND
+  # features_type: zeros # zeros | centralities
+  # protocol: AND # OR | AND
   output_label_name:
     - exposed
     - simulation_length
