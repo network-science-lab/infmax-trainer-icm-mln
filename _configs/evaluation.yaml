@@ -1,15 +1,34 @@
 base:
   random_seed: 43
   project: infmax/infmax-gnn
-  run_id: IN-374
-  nb_seeds: 2
-  selection_function: elimination_approach # elimination_approach or top_k_approach
+  run_ids:
+    [
+      IN-523,
+      IN-509,
+      IN-524,
+      IN-525,
+      IN-526,
+      IN-527,
+      IN-528,
+      IN-529,
+      IN-439,
+      IN-449,
+      IN-453,
+      IN-455,
+      IN-451,
+      IN-530,
+      IN-539,
+      IN-533,
+      IN-534,
+    ]
+  nb_seeds: 1
+  selection_function: elimination_approach # elimination_approach or top_k_approach | bis
   icm_p: -1
   device: "cuda:0"
 
 data:
-  features_type: centralities # zeros | centralities
-  protocol: OR # OR | AND
+  features_type: zeros # zeros | centralities
+  protocol: AND # OR | AND
   output_label_name:
     - exposed
     - simulation_length
