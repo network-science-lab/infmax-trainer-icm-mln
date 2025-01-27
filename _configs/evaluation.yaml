@@ -1,15 +1,70 @@
 base:
   random_seed: 43
   project: infmax/infmax-gnn
-  run_id: IN-374
-  nb_seeds: 2
+  # run_ids: [
+  #     IN-541,
+  #     IN-542,
+  #     IN-543,
+  #     IN-545,
+  #     IN-546,
+  #     IN-547,
+  #     IN-548,
+  #     IN-549,
+  #     IN-440,
+  #     IN-450,
+  #     IN-454,
+  #     IN-452,
+  #     IN-531,
+  #     IN-457,
+  #     IN-532,
+  #     IN-535,
+  #   ] # bez 540
+
+  # run_ids: [IN-533, IN-534]
+  run_ids:
+    [
+      IN-523,
+      IN-509,
+      IN-524,
+      IN-525,
+      IN-526,
+      IN-527,
+      IN-528,
+      IN-529,
+      IN-439,
+      IN-449,
+      IN-453,
+      IN-455,
+      IN-451,
+      IN-530,
+      IN-539,
+      IN-533,
+      IN-534,
+    ]
+  # run_id: IN-547
+  nb_seeds: 1
   selection_function: elimination_approach # elimination_approach or top_k_approach
   icm_p: -1
-  device: "cuda:0"
+  device: "cpu"
+
+#transformations
+# AND: 523, 509, 524, 525, 526, 527, 528, 529 i 455;
+#OR: 541, 542, 543, 545, 546, 547, 548, 549 i 457
+# aggregations:
+# AND: 439, 449, 453, 455, 451, 530;
+# OR: 440, 450, 454, 457, 452, 531
+
+# hidden channels:
+# AND: 455, 533, 534;
+# OR: 457, 532, 535
+
+# convolutions bowtie vs diamond:
+# AND: 455, 539;
+# OR: 457, 540
 
 data:
-  features_type: centralities # zeros | centralities
-  protocol: OR # OR | AND
+  features_type: zeros # zeros | centralities
+  protocol: AND # OR | AND
   output_label_name:
     - exposed
     - simulation_length

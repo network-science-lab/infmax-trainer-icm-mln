@@ -68,6 +68,11 @@ class HeteroGNN_Predictor:
                 network_name=network_name,
                 network_type=network_type,
             )
+        if self._config["base"]["selection_function"] == "elimination_approach_bis":
+            return self.elimination_approach_bis(
+                network_name=network_name,
+                network_type=network_type,
+            )
         elif self._config["base"]["selection_function"] == "top_k_approach":
             return self.top_k_approach(
                 network_name=network_name,
@@ -200,6 +205,103 @@ class HeteroGNN_Predictor:
             columns=network.y_names,
         ).sort_index()
         return df
+    
+    @staticmethod
+    def compare_tensors(t1: torch.Tensor, t2: torch.Tensor, weights: torch.Tensor) -> int:
+        for i in reversed(range(len(weights))):
+            if t1[i] > t2[i]:
+                return 1
+            elif t1[i] < t2[i]:
+                return -1
+        return 0
+
+
+    def best_actor(self, dict_tensory, weights):
+        _best_actor = None
+        _best_result = None
+        for klucz, tensor in dict_tensory.items():
+            if _best_actor is None or self.compare_tensors(tensor, _best_result, weights) > 0:
+                _best_actor = klucz
+                _best_result = tensor
+        return _best_actor
+    
+    def elimination_approach_bis(
+        self,
+        network_type: str,
+        network_name: str,
+    ) -> pd.DataFrame:
+        output_weights = torch.Tensor(
+            [
+                self._config["data"]["output_weights"]["w_e"],
+                self._config["data"]["output_weights"]["w_sl"],
+                self._config["data"]["output_weights"]["w_pit"],
+                self._config["data"]["output_weights"]["w_pin"],
+            ]
+        ).to(self._config["base"]["device"])
+
+        mln_info = MLNInfo.from_config(
+            mln_type=network_type,
+            mln_name=network_name,
+            icm_protocol=self._config["data"]["protocol"],
+            icm_p=self._config["base"]["icm_p"],
+            x_type=self._config["data"]["features_type"],
+            y_type=self._config["data"]["output_label_name"],
+        )
+        net = load_network(
+            net_type=network_type,
+            net_name=network_name,
+            as_tensor=False,
+        )
+        sp_df = load_sp(mln_info.sp_paths)
+
+        top_spreader = None
+        top_spreaders = []
+        top_spreader_potentials = []
+        for _ in range(self._config["base"]["nb_seeds"]):
+            ts_actor = top_spreader[0] if top_spreader != None else top_spreader
+            not_ts_actors = [
+                actor for actor in net.get_actors() if str(actor.actor_id) != ts_actor
+            ]
+            net = net.subgraph(not_ts_actors)
+            sp_df = sp_df[sp_df["actor"] != str(top_spreader)]
+
+            network = MLNHeteroData.from_mln_network(
+                mln_torch=nd.MultilayerNetworkTorch.from_mln(net),
+                sp_df=sp_df,
+                network_info=mln_info,
+                output_dim=self._config["model_config"]["parameters"]["output_dim"],
+                input_dim=self._config["model_config"]["parameters"]["input_dim"],
+            ).to(self._config["base"]["device"])
+
+            data = self._wrapper.predict_step(
+                batch=network,
+                batch_idx=0,
+            )
+
+            max_key = self.best_actor(data["actor"], output_weights)
+
+            top_spreader_potential = data["actor"][max_key].numpy() * len(
+                network.actors_map
+            )
+            top_spreader_potentials.append(top_spreader_potential)
+            top_spreader = self.convert_seed_set(
+                seeds=[max_key],
+                actors_map=bidict(
+                    {
+                        str(actor): actors_map
+                        for actor, actors_map in network.actors_map.items()
+                    }
+                ),
+            )
+            top_spreaders.extend(top_spreader)
+
+        df = pd.DataFrame(
+            data=top_spreader_potentials,
+            index=top_spreaders,
+            columns=network.y_names,
+        ).sort_index()
+
+        return df
 
     def top_k_approach(
         self,
@@ -288,22 +390,31 @@ def main(cfg: DictConfig) -> None:
     )
     logging.info(f"Loaded config: {config}")
 
-    evaluator = HeteroGNN_Predictor(config)
+    for run_id in config["base"]['run_ids']:
+        logging.info(f"Run: {run_id}")
 
-    evaluation_results = {}
-    for idx, network in tqdm(enumerate(config["run"]["networks"])):
-        tqdm.write(f'Processing: {network["name"]}')
-        network_ts = evaluator(
-            network_name=network["name"],
-            network_type=network["type"],
-        )
+        config["base"]['run_id'] = run_id
+        evaluator = HeteroGNN_Predictor(config)
+        result_path = Path(config["evaluation_dir"]) / 'results'
+        result_path.mkdir(exist_ok=True, parents=True)
 
-        evaluation_results[network["name"] + str(idx)] = {
-            "features_type": config["data"]["features_type"],
-            "network_ts": network_ts,
-        }
+        evaluation_results = {}
+        for idx, network in tqdm(enumerate(config["run"]["networks"])):
+            tqdm.write(f'Processing: {network["name"]}')
+            network_ts = evaluator(
+                network_name=network["name"],
+                network_type=network["type"],
+            )
 
-    logging.info(evaluation_results)
+            network_ts.to_csv(
+                result_path / f'{network["type"]}_{network["name"]}.csv'
+            )
+            evaluation_results[network["name"] + str(idx)] = {
+                "features_type": config["data"]["features_type"],
+                "network_ts": network_ts,
+            }
+
+        logging.info(evaluation_results)
 
 
 if __name__ == "__main__":
