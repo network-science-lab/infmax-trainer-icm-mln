@@ -49,7 +49,7 @@ def train(args: dict[str, Any]) -> None:
             batch_subraph_type=args["data"]["batch"]["subgraph_type"],
             num_workers=get_num_workers(config=args),
             metadata=get_metadata(
-                [datasets["train"].dataset, datasets["val"].dataset, datasets["test"]]
+                [datasets["train"].dataset, datasets["val"].dataset, datasets["test"].dataset]
             ),
         ),
     )
