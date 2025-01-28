@@ -73,7 +73,7 @@ def _get_dataset(
 
 
 def get_datasets(config: dict[str, Any]) -> dict[str, SuperSpreadersDataset]:
-    logging.info(f"Loading train dataset (paths).")
+    logging.info(f"Loading dataset (paths).")
     dataset = _get_dataset(
         data_name=config["data"]["name"],
         networks_config=config["data"]["train_data"],
@@ -83,27 +83,28 @@ def get_datasets(config: dict[str, Any]) -> dict[str, SuperSpreadersDataset]:
         input_dim=config["model"]["parameters"]["input_dim"],  # TODO: a convolved parameter!
         transform=config["data"]["transform"],
     )
-    logging.info(f"Splitting to train/eval dataset (paths).")
+    logging.info(f"Splitting to train/eval/test dataset (paths).")
     val_len = int(len(dataset) * config["data"]["val_data_ratio"])
-    train_len = len(dataset) - val_len
-    train_dataset, val_dataset = torch.utils.data.random_split(
+    test_len = int(len(dataset) * config["data"]["test_data_ratio"])
+    train_len = len(dataset) - val_len - test_len
+    train_dataset, val_dataset, test_dataset = torch.utils.data.random_split(
         dataset=dataset,
-        lengths=[train_len, val_len],
+        lengths=[train_len, val_len, test_len],
         generator=torch.Generator().manual_seed(config["base"]["random_seed"]),
     )
-    logging.info(f"Loading test dataset (paths).")
-    test_dataset = _get_dataset(
-        data_name=config["data"]["name"],
-        networks_config=config["data"]["test_data"],
-        labels=config["data"]["output_label_name"],
-        protocol=config["data"]["icm"]["protocol"],
-        p=config["data"]["icm"]["p"],
-        input_dim=config["model"]["parameters"]["input_dim"],  # TODO: a convolved parameter!
-        transform=config["data"]["transform"],
-    )
-    logging.info(
-        f"Graphs: test-{len(train_dataset)}, eval-{len(val_dataset)}, test-{len(test_dataset)}"
-    )
+    # logging.info(f"Loading test dataset (paths).")
+    # test_dataset = _get_dataset(
+    #     data_name=config["data"]["name"],
+    #     networks_config=config["data"]["test_data"],
+    #     labels=config["data"]["output_label_name"],
+    #     protocol=config["data"]["icm"]["protocol"],
+    #     p=config["data"]["icm"]["p"],
+    #     input_dim=config["model"]["parameters"]["input_dim"],  # TODO: a convolved parameter!
+    #     transform=config["data"]["transform"],
+    # )
+    # logging.info(
+    #     f"Graphs: test-{len(train_dataset)}, eval-{len(val_dataset)}, test-{len(test_dataset)}"
+    # )
     return {
         "train": train_dataset,
         "val": val_dataset,

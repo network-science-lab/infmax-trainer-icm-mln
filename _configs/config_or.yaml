@@ -5,7 +5,7 @@ data:
   name: SuperSpreadersDataset
   num_workers: -1
   batch:
-    size: 128
+    size: 256
     neighbours_sampling: [8, 4, 2]
     subgraph_type: induced
   icm:
@@ -16,7 +16,8 @@ data:
     - exposed
     - peak_iteration
     - peak_infected
-  val_data_ratio: 0.2
+  val_data_ratio: 0.1
+  test_data_ratio: 0.1
   train_data:
     - name: artificial_er
       features_type: centralities
@@ -24,29 +25,31 @@ data:
       features_type: centralities
     - name: artificial_small
       features_type: centralities
-  test_data:
-    - name: arxiv_netscience_coauthorship
-      features_type: centralities
-    - name: aucs
-      features_type: centralities
-    - name: ckm_physicians
-      features_type: centralities
-    - name: eu_transportation
-      features_type: centralities
-    - name: l2_course
-      features_type: centralities
-    - name: lazega
-      features_type: centralities
-    - name: timik1q2009
-      features_type: centralities
-    # ##### ##### ##### ##### ##### ##### ##### ##### other available networks
-    # - name: cannes
-    #   features_type: centralities
-    # - name: fmri74
-    #   features_type: centralities
-    # - name: toy_network
-    #   features_type: centralities
-  transform: NormaliseByActorsNumber
+  # test_data:
+  #   - name: arxiv_netscience_coauthorship
+  #     features_type: centralities
+  #   - name: aucs
+  #     features_type: centralities
+  #   - name: ckm_physicians
+  #     features_type: centralities
+  #   - name: eu_transportation
+  #     features_type: centralities
+  #   - name: l2_course
+  #     features_type: centralities
+  #   - name: lazega
+  #     features_type: centralities
+  #   - name: timik1q2009
+  #     features_type: centralities
+  #   ##### ##### ##### ##### ##### ##### ##### ##### other available networks
+  #   - name: cannes
+  #     features_type: centralities
+  #   - name: fmri74
+  #     features_type: centralities
+  #   - name: toy_network
+  #     features_type: centralities
+  transform:
+    name: NormaliseByMax
+    parameters:
 
 model:
   name: SSNet
@@ -64,7 +67,7 @@ training:
     name: MTWAE # Depends on the "output_dim"
     args:
       w_sl: 1
-      w_e: 4
+      w_e: 5
       w_pin: 1
       w_pit: 1
   optimizer:
@@ -86,7 +89,7 @@ training:
     name: neptune
     model_summary_max_depth: -1
     tags:
-      - name: net-ssnet_variant_a_sageconv_all
+      - name: onlny-artificial-data
   callbacks:
     - name: model_summary
       max_depth: -1
