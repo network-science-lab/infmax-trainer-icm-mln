@@ -5,8 +5,8 @@ data:
   name: SuperSpreadersDataset
   num_workers: -1
   batch:
-    size: 256
-    neighbours_sampling: [8, 4, 2]
+    size: 128
+    neighbours_sampling: [32, 16, 8, 4]
     subgraph_type: induced
   icm:
     protocol: OR
