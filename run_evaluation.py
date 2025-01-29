@@ -393,7 +393,10 @@ def main(cfg: DictConfig) -> None:
     for run_id in config["base"]['run_ids']:
         logging.info(f"Run: {run_id}")
 
-        config["base"]['run_id'] = run_id
+        config["base"]['run_id'] = run_id['id']
+        config["data"]['features_type'] = run_id['features_type']
+        config["data"]['protocol'] = run_id['protocol']
+        
         evaluator = HeteroGNN_Predictor(config)
         result_path = Path(config["evaluation_dir"]) / 'results'
         result_path.mkdir(exist_ok=True, parents=True)

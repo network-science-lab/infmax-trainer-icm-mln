@@ -2,48 +2,74 @@ base:
   random_seed: 43
   project: infmax/infmax-gnn
   run_ids:
-    [
-      IN-523,
-      IN-509,
-      IN-524,
-      IN-525,
-      IN-526,
-      IN-527,
-      IN-528,
-      IN-529,
-      IN-439,
-      IN-449,
-      IN-453,
-      IN-455,
-      IN-451,
-      IN-530,
-      IN-539,
-      IN-533,
-      IN-534,
-    ]
+    # - id: IN-593
+    #   features_type: centralities # zeros | centralities | ones
+    #   protocol: OR # OR | AND
+    # - id: IN-603
+    #   features_type: zeros
+    #   protocol: OR
+    - id: IN-595
+      features_type: ones
+      protocol: OR
+
+    - id: IN-579
+      features_type: centralities
+      protocol: AND
+    - id: IN-580
+      features_type: zeros
+      protocol: AND
+    - id: IN-604
+      features_type: ones
+      protocol: AND
+      
+    - id: IN-609
+      features_type: centralities
+      protocol: OR
+    - id: IN-597
+      features_type: zeros
+      protocol: OR
+    - id: IN-598
+      features_type: ones
+      protocol: OR
+
+    - id: IN-585
+      features_type: centralities
+      protocol: AND
+    - id: IN-586
+      features_type: zeros
+      protocol: AND
+    - id: IN-587
+      features_type: ones
+      protocol: AND
+
+    - id: IN-590
+      features_type: centralities
+      protocol: OR
+    - id: IN-591
+      features_type: zeros
+      protocol: OR
+    - id: IN-607
+      features_type: ones
+      protocol: OR
+
+    - id: IN-608
+      features_type: centralities
+      protocol: AND
+    - id: IN-602
+      features_type: zeros
+      protocol: AND
+    - id: IN-601
+      features_type: ones
+      protocol: AND
+      
   nb_seeds: 1
   selection_function: elimination_approach # elimination_approach or top_k_approach | bis
   icm_p: -1
-  device: "cpu"
-
-#transformations
-# AND: 523, 509, 524, 525, 526, 527, 528, 529 i 455;
-#OR: 541, 542, 543, 545, 546, 547, 548, 549 i 457
-# aggregations:
-# AND: 439, 449, 453, 455, 451, 530;
-# OR: 440, 450, 454, 457, 452, 531
-
-# hidden channels:
-# AND: 455, 533, 534;
-# OR: 457, 532, 535
-
-# convolutions bowtie vs diamond:
-# AND: 455, 539;
-# OR: 457, 540
+  device: "cuda:0"
 
 data:
-  features_type: zeros # zeros | centralities
-  protocol: AND # OR | AND
+  # features_type: zeros # zeros | centralities
+  # protocol: AND # OR | AND
   output_label_name:
     - exposed
     - simulation_length

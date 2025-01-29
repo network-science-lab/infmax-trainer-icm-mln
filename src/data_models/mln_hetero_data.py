@@ -114,6 +114,9 @@ class MLNHeteroData(HeteroData):
 
         if network_info.x_type == "zeros":
             return torch.zeros((len(network_torch.actors_map), input_dim))
+        
+        elif network_info.x_type == "ones":
+            return torch.ones((len(network_torch.actors_map), input_dim))
 
         elif network_info.x_type == "centralities":
             if input_dim > len(CENTRALITY_FUNCTIONS) or input_dim <= 0:

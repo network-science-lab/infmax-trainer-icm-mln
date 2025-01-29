@@ -30,7 +30,7 @@ class MLNInfo:
     mln_name: str
     icm_protocol: Literal["OR", "AND"]
     icm_p: float
-    x_type: Literal["zeros", "scrapped", "centralities"]
+    x_type: Literal["zeros", "scrapped", "centralities", 'ones']
     y_type: list[Literal["exposed", "simulation_length", "peak_iteration", "peak_infected"]]
     sp_paths: list[Path]
     ft_path: Path
@@ -50,7 +50,7 @@ class MLNInfo:
             raise ValueError(f"Unknown icm_protocol: {icm_protocol}")
         if not {icm_p}.issubset(_VALID_ICM_PARAMS[icm_protocol]):
             raise ValueError(f"Invalid icm_p: {icm_p}")
-        if x_type not in {"zeros", "scrapped", "centralities"}:
+        if x_type not in {"zeros", "scrapped", "centralities", 'ones'}:
             raise ValueError(f'Unknown x_type: {x_type}')
         if not set(y_type).issubset({EXPOSED, SIMULATION_LENGTH, PEAK_ITERATION, PEAK_INFECTED}):
             raise ValueError(f'Unknown y_type: {y_type}')
@@ -62,6 +62,8 @@ class MLNInfo:
         mln_name: str,
     ) -> Path | None:
         if x_type == "zeros":
+            return None
+        if x_type == "ones":
             return None
         elif x_type == "centralities":
             return load_centralities_path(network_type=mln_type, network_name=mln_name)
