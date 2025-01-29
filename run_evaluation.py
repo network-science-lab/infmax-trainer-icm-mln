@@ -184,7 +184,7 @@ class HeteroGNN_Predictor:
             }
             max_key = max(weighted_sums, key=weighted_sums.get)
 
-            top_spreader_potential = data["actor"][max_key].numpy() * len(
+            top_spreader_potential = data["actor"][max_key].cpu().numpy() * len(
                 network.actors_map
             )
             top_spreader_potentials.append(top_spreader_potential)
@@ -280,7 +280,7 @@ class HeteroGNN_Predictor:
 
             max_key = self.best_actor(data["actor"], output_weights)
 
-            top_spreader_potential = data["actor"][max_key].numpy() * len(
+            top_spreader_potential = data["actor"][max_key].cpu().numpy() * len(
                 network.actors_map
             )
             top_spreader_potentials.append(top_spreader_potential)

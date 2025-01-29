@@ -1,26 +1,6 @@
 base:
   random_seed: 43
   project: infmax/infmax-gnn
-  # run_ids: [
-  #     IN-541,
-  #     IN-542,
-  #     IN-543,
-  #     IN-545,
-  #     IN-546,
-  #     IN-547,
-  #     IN-548,
-  #     IN-549,
-  #     IN-440,
-  #     IN-450,
-  #     IN-454,
-  #     IN-452,
-  #     IN-531,
-  #     IN-457,
-  #     IN-532,
-  #     IN-535,
-  #   ] # bez 540
-
-  # run_ids: [IN-533, IN-534]
   run_ids:
     [
       IN-523,
@@ -41,9 +21,8 @@ base:
       IN-533,
       IN-534,
     ]
-  # run_id: IN-547
   nb_seeds: 1
-  selection_function: elimination_approach # elimination_approach or top_k_approach
+  selection_function: elimination_approach # elimination_approach or top_k_approach | bis
   icm_p: -1
   device: "cpu"
 
