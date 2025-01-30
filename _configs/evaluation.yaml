@@ -1,17 +1,56 @@
+# # ##### ##### ##### ##### BASE CONFIG
+# base:
+#   random_seed: 43
+#   project: infmax/infmax-gnn
+#   run_ids:
+#     - id: IN-593
+#       features_type: centralities # zeros | centralities | ones
+#       protocol: OR # OR | AND
+#     - id: IN-603
+#       features_type: zeros
+#       protocol: OR
+#   nb_seeds: 1
+#   selection_function: top_k_approach # elimination_approach or top_k_approach | bis
+#   icm_p: -1
+#   device: "cuda:2"
+
+# data:
+#   # features_type: zeros # zeros | centralities
+#   # protocol: AND # OR | AND
+#   output_label_name:
+#     - exposed
+#     - simulation_length
+#     - peak_iteration
+#     - peak_infected
+#   output_weights:
+#     w_e: 4
+#     w_sl: 1
+#     w_pit: 1
+#     w_pin: 1
+
+# run:
+#   networks:
+#     - name: arxiv_netscience_coauthorship
+#       type: arxiv_netscience_coauthorship
+#     - name: aucs
+#       type: aucs
+#     - name: ckm_physicians
+#       type: ckm_physicians
+#     - name: eu_transportation
+#       type: eu_transportation
+#     - name: l2_course_net_1
+#       type: l2_course
+#     - name: lazega
+#       type: lazega
+#     - name: timik1q2009
+#       type: timik1q2009
+# # ##### ##### ##### ##### BASE CONFIG
+
+# ##### ##### ##### ##### ALL ARTIFICIAL NETWORKS
 base:
   random_seed: 43
   project: infmax/infmax-gnn
   run_ids:
-    # - id: IN-593
-    #   features_type: centralities # zeros | centralities | ones
-    #   protocol: OR # OR | AND
-    # - id: IN-603
-    #   features_type: zeros
-    #   protocol: OR
-    - id: IN-595
-      features_type: ones
-      protocol: OR
-
     - id: IN-579
       features_type: centralities
       protocol: AND
@@ -21,79 +60,188 @@ base:
     - id: IN-604
       features_type: ones
       protocol: AND
-      
-    - id: IN-609
+    - id: IN-593
       features_type: centralities
       protocol: OR
-    - id: IN-597
+    - id: IN-603
       features_type: zeros
       protocol: OR
-    - id: IN-598
+    - id: IN-595
       features_type: ones
       protocol: OR
-
-    - id: IN-585
-      features_type: centralities
-      protocol: AND
-    - id: IN-586
-      features_type: zeros
-      protocol: AND
-    - id: IN-587
-      features_type: ones
-      protocol: AND
-
-    - id: IN-590
-      features_type: centralities
-      protocol: OR
-    - id: IN-591
-      features_type: zeros
-      protocol: OR
-    - id: IN-607
-      features_type: ones
-      protocol: OR
-
-    - id: IN-608
-      features_type: centralities
-      protocol: AND
-    - id: IN-602
-      features_type: zeros
-      protocol: AND
-    - id: IN-601
-      features_type: ones
-      protocol: AND
-      
   nb_seeds: 1
-  selection_function: elimination_approach # elimination_approach or top_k_approach | bis
+  selection_function: top_k_approach
   icm_p: -1
-  device: "cuda:0"
+  device: "cuda:2"
 
 data:
-  # features_type: zeros # zeros | centralities
-  # protocol: AND # OR | AND
   output_label_name:
     - exposed
     - simulation_length
     - peak_iteration
     - peak_infected
-  output_weights:
-    w_e: 4
-    w_sl: 1
-    w_pit: 1
-    w_pin: 1
 
 run:
   networks:
-    - name: arxiv_netscience_coauthorship
-      type: arxiv_netscience_coauthorship
-    - name: aucs
-      type: aucs
-    - name: ckm_physicians
-      type: ckm_physicians
-    - name: eu_transportation
-      type: eu_transportation
-    - name: l2_course_net_1
-      type: l2_course
-    - name: lazega
-      type: lazega
-    - name: timik1q2009
-      type: timik1q2009
+    - name: network_10
+      type: artificial_er
+    - name: network_12
+      type: artificial_er
+    - name: network_29
+      type: artificial_er
+    - name: network_31
+      type: artificial_er
+    - name: network_36
+      type: artificial_er
+    - name: network_55
+      type: artificial_er
+    - name: network_62
+      type: artificial_er
+    - name: network_89
+      type: artificial_er
+    - name: network_2
+      type: artificial_pa
+    - name: network_16
+      type: artificial_pa
+    - name: network_20
+      type: artificial_pa
+    - name: network_24
+      type: artificial_pa
+    - name: network_38
+      type: artificial_pa
+    - name: network_40
+      type: artificial_pa
+    - name: network_50
+      type: artificial_pa
+    - name: network_73
+      type: artificial_pa
+    - name: network_75
+      type: artificial_pa
+    - name: network_97
+      type: artificial_pa
+    - name: network_98
+      type: artificial_pa
+    - name: network_99
+      type: artificial_pa
+# ##### ##### ##### #####
+
+
+# # ##### ##### ##### ##### ALL ER NETWORKS
+# base:
+#   random_seed: 43
+#   project: infmax/infmax-gnn
+#   run_ids:
+#     - id: IN-608
+#       features_type: centralities
+#       protocol: AND
+#     - id: IN-602
+#       features_type: zeros
+#       protocol: AND
+#     - id: IN-601
+#       features_type: ones
+#       protocol: AND
+#     - id: IN-590
+#       features_type: centralities
+#       protocol: OR
+#     - id: IN-591
+#       features_type: zeros
+#       protocol: OR
+#     - id: IN-607
+#       features_type: ones
+#       protocol: OR
+#   nb_seeds: 1
+#   selection_function: top_k_approach
+#   icm_p: -1
+#   device: "cuda:2"
+
+# data:
+#   output_label_name:
+#     - exposed
+#     - simulation_length
+#     - peak_iteration
+#     - peak_infected
+
+# run:
+#   networks:
+#     - name: network_11
+#       type: artificial_er
+#     - name: network_33
+#       type: artificial_er
+#     - name: network_36
+#       type: artificial_er
+#     - name: network_45
+#       type: artificial_er
+#     - name: network_56
+#       type: artificial_er
+#     - name: network_68
+#       type: artificial_er
+#     - name: network_81
+#       type: artificial_er
+#     - name: network_89
+#       type: artificial_er
+#     - name: network_97
+#       type: artificial_er
+#     - name: network_100
+#       type: artificial_er
+# # ##### ##### ##### #####
+
+
+# # ##### ##### ##### ##### ALL PA NETWORKS
+# base:
+#   random_seed: 43
+#   project: infmax/infmax-gnn
+#   run_ids:
+#     - id: IN-585
+#       features_type: centralities
+#       protocol: AND
+#     - id: IN-586
+#       features_type: zeros
+#       protocol: AND
+#     - id: IN-587
+#       features_type: ones
+#       protocol: AND
+#     - id: IN-609
+#       features_type: centralities
+#       protocol: OR
+#     - id: IN-597
+#       features_type: zeros
+#       protocol: OR
+#     - id: IN-598
+#       features_type: ones
+#       protocol: OR
+#   nb_seeds: 1
+#   selection_function: top_k_approach
+#   icm_p: -1
+#   device: "cuda:2"
+
+# data:
+#   output_label_name:
+#     - exposed
+#     - simulation_length
+#     - peak_iteration
+#     - peak_infected
+
+# run:
+#   networks:
+#     - name: network_11
+#       type: artificial_pa
+#     - name: network_33
+#       type: artificial_pa
+#     - name: network_36
+#       type: artificial_pa
+#     - name: network_45
+#       type: artificial_pa
+#     - name: network_56
+#       type: artificial_pa
+#     - name: network_68
+#       type: artificial_pa
+#     - name: network_81
+#       type: artificial_pa
+#     - name: network_89
+#       type: artificial_pa
+#     - name: network_97
+#       type: artificial_pa
+#     - name: network_100
+#       type: artificial_pa
+# # ##### ##### ##### #####
+

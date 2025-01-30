@@ -36,14 +36,14 @@ def _load_mln_info_chunk(
     return mlni_chunk
 
 
-def _get_transform(transform: str):
+def get_transform(transform: str):
     """Get data transformation according to provided configuration."""
     tr_class = getattr(transforms, transform["name"])
     tr_params = transform["parameters"] if isinstance(transform["parameters"], dict) else {}
     return tr_class(**tr_params)
 
 
-def _get_dataset(
+def get_dataset(
     data_name: str,
     networks_config: list[dict[str, Any]],
     labels: list[str],
@@ -67,14 +67,14 @@ def _get_dataset(
             networks=mlni_nets,
             input_dim=input_dim,
             output_dim=len(labels),
-            transform=_get_transform(transform),
+            transform=get_transform(transform),
         )
     raise AttributeError(f"Unknown dataset: {data_name}")
 
 
 def get_datasets(config: dict[str, Any]) -> dict[str, SuperSpreadersDataset]:
     logging.info(f"Loading dataset (paths).")
-    dataset = _get_dataset(
+    dataset = get_dataset(
         data_name=config["data"]["name"],
         networks_config=config["data"]["train_data"],
         labels=config["data"]["output_label_name"],

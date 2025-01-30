@@ -224,6 +224,7 @@ class HeteroGNNWrapper(pl.LightningModule):
 
         all_predictions = []
         all_true_values = []
+        all_actors_idcs = []
 
         for subgraph in batch:
             predictions = self.forward(
@@ -231,64 +232,39 @@ class HeteroGNNWrapper(pl.LightningModule):
                 z_dict=subgraph.z_dict,
                 edge_index_dict=subgraph.edge_index_dict,
             )
+            # print(len(subgraph[ACTOR].input_id))
+            # print(subgraph[ACTOR].input_id[:5], subgraph[ACTOR].input_id[-5:])
+
             loss += self._calculate_loss(
                 batch=subgraph,
                 predictions=predictions,
             )
+
             subgraf_batch_size = subgraph[ACTOR].batch_size
             all_predictions.append(predictions[ACTOR][:subgraf_batch_size])
             all_true_values.append(subgraph[ACTOR].y[:subgraf_batch_size])
+            all_actors_idcs.extend(subgraph[ACTOR].input_id.tolist())
 
-        self.log(
-            name=f"test_loss_{graph_name}",
-            value=loss,
-            batch_size=len(batch),
-        )
+            self.log(
+                name=f"test_loss_{graph_name}",
+                value=loss,
+                batch_size=len(batch),
+            )
 
         self.test_preds["preds"][graph_name] = self.transform_labels(
             actors_map=actors_map,
             y_names=y_names,
             preds=torch.cat(all_predictions, dim=0),
+            actors_idcs=all_actors_idcs,
         )
         self.test_preds["trues"][graph_name] = self.transform_labels(
             actors_map=actors_map,
             y_names=y_names,
             preds=torch.cat(all_true_values, dim=0),
+            actors_idcs=all_actors_idcs,
         )
 
         return loss
-
-    @torch.no_grad
-    def predict_step(
-        self,
-        batch: MLNHeteroDataBatch,
-        batch_idx: int,
-    ) -> dict[str, torch.Tensor]:
-        layers = batch.x_dict.keys()
-        result = defaultdict(dict)
-        batch = self._get_neighbour_loader(
-            graph_sample=batch,
-            shuffle=False,
-            subgraph_type="induced",
-        )
-
-        for subgraf_batch in batch:
-            predictions = self.forward(
-                x_dict=subgraf_batch.x_dict,
-                z_dict=subgraf_batch.z_dict,
-                edge_index_dict=subgraf_batch.edge_index_dict,
-            )
-
-            for layer in layers:
-                subgraf_batch_size = subgraf_batch[layer].batch_size
-                for idx, key in enumerate(
-                    subgraf_batch[layer].n_id[:subgraf_batch_size]
-                ):
-                    result[layer][key.tolist()] = predictions[layer][
-                        :subgraf_batch_size
-                    ][idx]
-
-        return result
 
     def on_train_epoch_end(self) -> None:
         torch.cuda.empty_cache()
@@ -305,21 +281,6 @@ class HeteroGNNWrapper(pl.LightningModule):
     ) -> None:
         torch.cuda.empty_cache()
         super().on_test_batch_end(
-            outputs=outputs,
-            batch=batch,
-            batch_idx=batch_idx,
-            dataloader_idx=dataloader_idx,
-        )
-
-    def on_predict_batch_end(
-        self,
-        outputs: STEP_OUTPUT,
-        batch: Any,
-        batch_idx: int,
-        dataloader_idx: int = 0,
-    ) -> None:
-        torch.cuda.empty_cache()
-        super().on_predict_batch_end(
             outputs=outputs,
             batch=batch,
             batch_idx=batch_idx,
@@ -370,10 +331,11 @@ class HeteroGNNWrapper(pl.LightningModule):
         actors_map: bidict,
         y_names: list[str],
         preds: torch.Tensor,
+        actors_idcs: list[int],
     ) -> pd.DataFrame:
         actors_map = bidict({a_id: int(a_idx) for a_id, a_idx in actors_map.items()})
-        real_labels = [actors_map.inverse[i] for i in range(preds.shape[0])]
-        preds_np = preds.cpu().numpy() * len(actors_map)
+        real_labels  = [actors_map.inverse[actor_idx] for actor_idx in actors_idcs]
+        preds_np = preds.cpu().numpy()
         return pd.DataFrame(
             preds_np,
             index=real_labels,
