@@ -20,11 +20,11 @@ data:
   test_data_ratio: 0.1
   train_data:
     - name: artificial_er
-      features_type: centralities
+      features_type: ones
     - name: artificial_pa
-      features_type: centralities
+      features_type: ones
     - name: artificial_small
-      features_type: centralities
+      features_type: ones
   # test_data:
   #   - name: arxiv_netscience_coauthorship
   #     features_type: zeros
@@ -52,7 +52,7 @@ data:
     parameters:
 
 model:
-  name: SSNet
+  name: SSNetVariantC
   parameters:
     input_dim: 5
     output_dim: auto

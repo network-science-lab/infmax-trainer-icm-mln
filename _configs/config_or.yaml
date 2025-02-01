@@ -52,7 +52,7 @@ data:
     parameters:
 
 model:
-  name: SSNet
+  name: SSNetVariantC
   parameters:
     input_dim: 5
     output_dim: auto
