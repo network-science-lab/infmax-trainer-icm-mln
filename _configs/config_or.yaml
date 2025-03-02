@@ -52,22 +52,29 @@ data:
     parameters:
 
 model:
-  name: SSNetVariantC
+  name: SSNetVariantB # D 300 GIN; B GATCONV 400
   parameters:
     input_dim: 5
     output_dim: auto
     hidden_channels: 400
-    aggregation_type: SumAggregation
+    aggregation_type: AttentionAggregation
 
 training:
   accelerator: gpu # cpu or gpu
   devices: [0] # list[int] | int | str; default=auto
-  max_epochs: 100
+  max_epochs: 50
   loss:
-    name: MTWAE # Depends on the "output_dim"
+    # name: MSELoss # Depends on the "output_dim"
+    # args:
+    #   reduction: mean
+      
+    # name: MeanAbsoluteError # Depends on the "output_dim"
+    # args:
+    #   compute_on_cpu: False
+    name: MTWAE
     args:
       w_sl: 1
-      w_e: 5
+      w_e: 6
       w_pin: 1
       w_pit: 1
   optimizer:
@@ -76,20 +83,40 @@ training:
       weight_decay: 0.00001
       lr: 0.001
   scheduler:
-    name: ReduceLROnPlateau
+    name: OneCycleLR
     args:
-      mode: min
-      factor: 0.5
-      patience: 10
+      max_lr: 0.003
+      steps_per_epoch: 168
+      epochs: 50
+      pct_start: 0.3
+      anneal_strategy: cos
+      div_factor: 10
+      final_div_factor: 100
     config:
       monitor: val_loss
       interval: epoch
       frequency: 1
+    # name: ReduceLROnPlateau
+    # args:
+    #   mode: min
+    #   factor: 0.7
+    #   patience: 10
+    # config:
+    #   monitor: val_loss
+    #   interval: epoch
+    #   frequency: 1  
   logger:
+    # name: tensor_board
     name: neptune
     model_summary_max_depth: -1
     tags:
-      - name: onlny-artificial-data
+      - name: or
+      # - name: ReduceLROnPlateau
+      # - name: exposed_only
+      - name: batch_norm
+      #- name: att
+      # - name: MTWMSE
+      # - name: dropout_node
   callbacks:
     - name: model_summary
       max_depth: -1

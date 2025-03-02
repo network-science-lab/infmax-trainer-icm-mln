@@ -14,7 +14,7 @@ class SuperSpreadersDataset(Dataset):
         networks: list[MLNInfo],
         input_dim: int,
         output_dim: int,
-        transform: BaseTransform,
+        transform: BaseTransform | None,
     ) -> None:
         """
         Initialise the object.
@@ -42,7 +42,9 @@ class SuperSpreadersDataset(Dataset):
             input_dim=self._input_dim,
             output_dim=self._output_dim,
         )
-        return self.transform(mln_hetero_data)
+        if self.transform:
+            return self.transform(mln_hetero_data)
+        return mln_hetero_data
 
     def _prepare_metadata(self) -> tuple[list[NodeType], list[EdgeType]]:
         nodes_data = []

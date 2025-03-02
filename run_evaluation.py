@@ -325,6 +325,10 @@ class HeteroGNN_Predictor:
             [EXPOSED, SIMULATION_LENGTH, PEAK_INFECTED, PEAK_ITERATION],
             ascending=[False, True, True, False]
         )
+        # prediction_sorted = prediction_raw.sort_values(
+        #     [EXPOSED],
+        #     ascending=[False]
+        # )
         return prediction_sorted[:self._eval_config["base"]["nb_seeds"]]  # .index.to_list()
   
     # @staticmethod

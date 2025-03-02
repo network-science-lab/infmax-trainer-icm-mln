@@ -38,9 +38,12 @@ def _load_mln_info_chunk(
 
 def get_transform(transform: str):
     """Get data transformation according to provided configuration."""
-    tr_class = getattr(transforms, transform["name"])
+    tr_class = getattr(transforms, transform["name"], None)
     tr_params = transform["parameters"] if isinstance(transform["parameters"], dict) else {}
-    return tr_class(**tr_params)
+    if tr_class:
+        return tr_class(**tr_params)
+    else:
+        return None
 
 
 def get_dataset(
