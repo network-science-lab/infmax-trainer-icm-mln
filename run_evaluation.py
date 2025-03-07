@@ -115,7 +115,7 @@ class HeteroGNN_Predictor:
     
         return wrapper, run_config
 
-    # def elimination_approach(
+    # def elimination_approach( # TODO: REMOVE AFTER DECISION BASED ON FINAL EVALUATION METHOD
     #     self,
     #     network_type: str,
     #     network_name: str,
@@ -320,18 +320,14 @@ class HeteroGNN_Predictor:
             self._wrapper_obj.test_step(batch=mln_hetero_data, batch_idx=0)
         prediction_raw = self._wrapper_obj.test_preds["preds"][
             f"{mln_hetero_data.network_type[0]}_{mln_hetero_data.network_name[0]}"
-        ]  # this is due to the lightning bug
+        ]
         prediction_sorted = prediction_raw.sort_values(
             [EXPOSED, SIMULATION_LENGTH, PEAK_INFECTED, PEAK_ITERATION],
             ascending=[False, True, True, False]
         )
-        # prediction_sorted = prediction_raw.sort_values(
-        #     [EXPOSED],
-        #     ascending=[False]
-        # )
         return prediction_sorted[:self._eval_config["base"]["nb_seeds"]]  # .index.to_list()
   
-    # @staticmethod
+    # @staticmethod # TODO: remove
     # def convert_seed_set(
     #     seeds: list,
     #     actors_map: bidict,

@@ -232,8 +232,6 @@ class HeteroGNNWrapper(pl.LightningModule):
                 z_dict=subgraph.z_dict,
                 edge_index_dict=subgraph.edge_index_dict,
             )
-            # print(len(subgraph[ACTOR].input_id))
-            # print(subgraph[ACTOR].input_id[:5], subgraph[ACTOR].input_id[-5:])
 
             loss += self._calculate_loss(
                 batch=subgraph,
@@ -265,6 +263,38 @@ class HeteroGNNWrapper(pl.LightningModule):
         )
 
         return loss
+    
+    @torch.no_grad
+    def predict_step(
+        self,
+        batch: MLNHeteroDataBatch,
+        batch_idx: int,
+    ) -> dict[str, torch.Tensor]:
+        layers = batch.x_dict.keys()
+        result = defaultdict(dict)
+        batch = self._get_neighbour_loader(
+            graph_sample=batch,
+            shuffle=False,
+            subgraph_type="induced",
+        )
+
+        for subgraf_batch in batch:
+            predictions = self.forward(
+                x_dict=subgraf_batch.x_dict,
+                z_dict=subgraf_batch.z_dict,
+                edge_index_dict=subgraf_batch.edge_index_dict,
+            )
+
+            for layer in layers:
+                subgraf_batch_size = subgraf_batch[layer].batch_size
+                for idx, key in enumerate(
+                    subgraf_batch[layer].n_id[:subgraf_batch_size]
+                ):
+                    result[layer][key.tolist()] = predictions[layer][
+                        :subgraf_batch_size
+                    ][idx]
+
+        return result
 
     def on_train_epoch_end(self) -> None:
         torch.cuda.empty_cache()
@@ -334,7 +364,7 @@ class HeteroGNNWrapper(pl.LightningModule):
         actors_idcs: list[int],
     ) -> pd.DataFrame:
         actors_map = bidict({a_id: int(a_idx) for a_id, a_idx in actors_map.items()})
-        real_labels  = [actors_map.inverse[actor_idx] for actor_idx in actors_idcs]
+        real_labels = [actors_map.inverse[actor_idx] for actor_idx in actors_idcs]
         preds_np = preds.cpu().numpy()
         return pd.DataFrame(
             preds_np,

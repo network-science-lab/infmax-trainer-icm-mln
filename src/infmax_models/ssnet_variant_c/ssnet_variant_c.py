@@ -1,8 +1,8 @@
 from typing import Literal
 import torch
 from torch_geometric.utils import dropout
-from torch.nn import BatchNorm1d, Linear, ReLU, Dropout
-from torch_geometric.nn import GINConv, Sequential, GATConv
+from torch.nn import BatchNorm1d, Linear, Dropout
+from torch_geometric.nn import GINConv, Sequential
 
 from _data_set.nsl_data_utils.loaders.constants import ACTOR
 from src.infmax_models.base.base import BaseHeteroModule
@@ -13,7 +13,6 @@ from src.infmax_models.ssnet.aggregation import (
     SumAggregation,
     LayerwiseAggregation,
     AttentionAggregation,
-    SelfAttentionLayer,
 )
 
 class SSNetVariantC(BaseHeteroModule):
@@ -74,11 +73,6 @@ class SSNetVariantC(BaseHeteroModule):
                 (BatchNorm1d(hidden_channels), "x_interim -> x_interim"),
                 torch.nn.LeakyReLU(inplace=True),
                 (Dropout(p=0.2), "x_interim -> x_interim"),
-                # (
-                #     self.get_gin_layer(hidden_channels // 2, hidden_channels // 4),
-                #     "x_interim, x_edges -> x_interim",
-                # ),
-                # torch.nn.LeakyReLU(inplace=True),
             ],
         )
 
@@ -97,16 +91,13 @@ class SSNetVariantC(BaseHeteroModule):
         else:
             raise AttributeError("Incorrect name of the aggregator!")
 
-        # self.node_dropout = DropoutNode(p=0.2)
         # self.edge_dropout = DropoutEdge(p=0.1)
         self.head = torch.nn.Sequential(
             torch.nn.Linear(hidden_channels, hidden_channels // 2),
             torch.nn.LeakyReLU(inplace=True),
             torch.nn.Linear(hidden_channels // 2, output_dim),
             torch.nn.Sigmoid(),
-            # torch.nn.Softplus(),
         )
-        # self.activation = torch.nn.Softplus()
     
     @staticmethod
     def get_gin_layer(in_channels: int, out_channels: int) -> torch.nn.Module:
@@ -115,8 +106,6 @@ class SSNetVariantC(BaseHeteroModule):
                 Linear(in_channels, out_channels),
                 torch.nn.LeakyReLU(inplace=True),
                 Linear(out_channels, out_channels),
-                # torch.nn.LeakyReLU(inplace=True),
-                # BatchNorm1d(out_channels),
             ),
             train_eps=True,
         )
@@ -145,7 +134,6 @@ class SSNetVariantC(BaseHeteroModule):
                 x_dict[ACTOR]
             )
             # edges = self.edge_dropout(layer_edges)
-            # x, edges = self.node_dropout(layer_x, layer_edges)
             y_relation = self.layerwise_encoder(layer_x, layer_edges)
             y_relations[layer_name] = y_relation
 
@@ -155,51 +143,25 @@ class SSNetVariantC(BaseHeteroModule):
         # obtain final prediction
         y_pred = self.head(y_aggregated)
 
-        # y_pred = torch.clamp(self.activation(y_pred), min=1e-10, max=1.0)
-        
         return {ACTOR: y_pred}
 
 
-# class DropoutNode(torch.nn.Module):
-#     def __init__(
-#         self,
-#         p: float = 0.2,
-#         num_nodes: int | None = None,
-#         relabel_nodes: bool = False,
-#     ) -> None:
-#         super().__init__()
-#         self._p = p
-#         self._num_nodes = num_nodes
-#         self._relabel_nodes = relabel_nodes
+class DropoutEdge(torch.nn.Module):
+    def __init__(
+        self,
+        p: float = 0.2,
+        relabel_nodes: bool = False,
+    ) -> None:
+        super().__init__()
+        self._p = p
+        self._force_undirected = relabel_nodes
         
-#     def forward(self, x: torch.Tensor, edge_index: torch.Tensor) -> torch.Tensor:
-#         edges, edge_mask, node_mask = dropout.dropout_node(
-#             edge_index=edge_index,
-#             p=self._p,
-#             num_nodes=self._num_nodes,
-#             training=self.training,
-#             relabel_nodes=self._relabel_nodes,
-#         )
+    def forward(self, edge_index: torch.Tensor) -> torch.Tensor:
+        edges, edge_mask = dropout.dropout_edge(
+            edge_index=edge_index,
+            p=self._p,
+            force_undirected=self._force_undirected,
+            training=self.training,
+        )
         
-#         return x[node_mask], edges
-    
-
-# class DropoutEdge(torch.nn.Module):
-#     def __init__(
-#         self,
-#         p: float = 0.2,
-#         relabel_nodes: bool = False,
-#     ) -> None:
-#         super().__init__()
-#         self._p = p
-#         self._force_undirected = relabel_nodes
-        
-#     def forward(self, edge_index: torch.Tensor) -> torch.Tensor:
-#         edges, edge_mask = dropout.dropout_edge(
-#             edge_index=edge_index,
-#             p=self._p,
-#             force_undirected=self._force_undirected,
-#             training=self.training,
-#         )
-        
-#         return edges
+        return edges

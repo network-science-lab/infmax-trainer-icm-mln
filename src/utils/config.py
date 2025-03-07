@@ -46,8 +46,4 @@ def validate_config(args: dict[str, Any]) -> None:
         if train_data["features_type"] == "centralities":
             assert model_params["input_dim"] <= len(CENTRALITY_FUNCTIONS)
             continue
-    # for train_data in data_params["test_data"]:
-    #     if train_data["features_type"] == "centralities":
-    #         assert model_params["input_dim"] <= len(CENTRALITY_FUNCTIONS)
-    #         continue
     assert model_params["output_dim"] == len(data_params["output_label_name"])

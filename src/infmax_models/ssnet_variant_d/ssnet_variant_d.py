@@ -1,8 +1,8 @@
 from typing import Literal
 import torch
 from torch_geometric.utils import dropout
-from torch.nn import BatchNorm1d, Linear, ReLU, Dropout
-from torch_geometric.nn import GINConv, Sequential, GATConv
+from torch.nn import BatchNorm1d, Linear, Dropout
+from torch_geometric.nn import GINConv, Sequential
 
 from _data_set.nsl_data_utils.loaders.constants import ACTOR
 from src.infmax_models.base.base import BaseHeteroModule
@@ -13,7 +13,6 @@ from src.infmax_models.ssnet.aggregation import (
     SumAggregation,
     LayerwiseAggregation,
     AttentionAggregation,
-    SelfAttentionLayer,
 )
 
 class SSNetVariantD(BaseHeteroModule):
@@ -95,7 +94,6 @@ class SSNetVariantD(BaseHeteroModule):
         self.head = torch.nn.Sequential(
             torch.nn.Linear(hidden_channels // 4, hidden_channels // 4),
             torch.nn.LeakyReLU(inplace=True),
-            # torch.nn.Dropout(p=0.2),
             torch.nn.Linear(hidden_channels // 4, output_dim),
             torch.nn.Sigmoid(),
         )
@@ -107,7 +105,6 @@ class SSNetVariantD(BaseHeteroModule):
                 Linear(in_channels, out_channels),
                 torch.nn.LeakyReLU(inplace=True),
                 Linear(out_channels, out_channels),
-                # BatchNorm1d(out_channels),
             ),
             train_eps=True,
         )
@@ -145,28 +142,3 @@ class SSNetVariantD(BaseHeteroModule):
         y_pred = self.head(y_aggregated)
 
         return {ACTOR: y_pred}
-
-
-class DropoutNode(torch.nn.Module):
-    def __init__(
-        self,
-        p: float = 0.2,
-        num_nodes: int | None = None,
-        relabel_nodes: bool = False,
-    ) -> None:
-        super().__init__()
-        self._p = p
-        self._num_nodes = num_nodes
-        self._relabel_nodes = relabel_nodes
-        
-    def forward(self, x: torch.Tensor, edge_index: torch.Tensor) -> torch.Tensor:
-        edges, edge_mask, node_mask = dropout.dropout_node(
-            edge_index=edge_index,
-            p=self._p,
-            num_nodes=self._num_nodes,
-            training=self.training,
-            relabel_nodes=self._relabel_nodes,
-        )
-        
-        return x[node_mask], edges
-    

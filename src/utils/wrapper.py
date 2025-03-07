@@ -7,7 +7,7 @@ from torch.nn.modules.loss import _Loss
 from torch.nn.parameter import Parameter
 from torch.optim import Optimizer, lr_scheduler
 
-from src.training.loss.mtwae import MTWAE, MTWMSE
+from src.training.loss.mtwae import MTWAE
 from src.training.loss.weighted_mse import WeightedMSE
 
 
@@ -25,9 +25,6 @@ def get_loss(
         case MTWAE.__name__:
             return MTWAE(**loss_args)
 
-        case MTWMSE.__name__:
-            return MTWAE(**loss_args)
-        
         case MeanAbsoluteError.__name__:
             return MeanAbsoluteError(**loss_args)
 
