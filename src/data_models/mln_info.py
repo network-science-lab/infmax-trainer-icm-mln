@@ -75,13 +75,11 @@ class MLNInfo:
     @staticmethod
     def _filter_sp_path(
         sp_paths: list[Path],
-        # sp_paths: dict[str, list[Path]]m
         icm_protocol: str,
         icm_p: float,
         mln_name: str,
     ) -> list[Path]:
         "Filters filenames based on protocol, p, and the network name."
-        # sp_paths_flat = [spp for spp in sp_paths.values()]
         if icm_p == -1:
             valid_p_values = _VALID_ICM_PARAMS[icm_protocol].difference({-1})
             regex_vpvs = [r"\.".join(str(vpv).split(".")) for vpv in valid_p_values]
@@ -90,7 +88,6 @@ class MLNInfo:
             icm_p_pattern = re.escape(f"{icm_p:.2f}")
         pattern = rf"^proto-{icm_protocol}--p-({icm_p_pattern})--net-{mln_name}\.csv$"
         return [sp_path for sp_path in sp_paths if re.match(pattern, sp_path.name)]
-        # return [sp_path for sp_path in sp_paths_flat if re.match(pattern, sp_path.name)]
 
     @classmethod
     def from_config(

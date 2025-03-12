@@ -90,7 +90,7 @@ def get_datasets(config: dict[str, Any]) -> dict[str, SuperSpreadersDataset]:
     val_len = int(len(dataset) * config["data"]["val_data_ratio"])
     test_len = int(len(dataset) * config["data"]["test_data_ratio"])
     train_len = len(dataset) - val_len - test_len
-    train_dataset, val_dataset, test_dataset = torch.utils.data.random_split(
+    train_dataset, val_dataset, test_dataset = torch.utils.data.random_split( # TODO: handle the test data provided explicitly
         dataset=dataset,
         lengths=[train_len, val_len, test_len],
         generator=torch.Generator().manual_seed(config["base"]["random_seed"]),

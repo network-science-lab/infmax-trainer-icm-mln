@@ -56,6 +56,14 @@ class HeteroGNN_Predictor:
             logging.info(f"Setting randomness seed as {random_seed}!")
             set_seed(config["base"]["random_seed"])
 
+        self.run = neptune.init_run(
+            api_token=os.getenv(
+                key="NEPTUNE_API_KEY",
+                default=neptune.ANONYMOUS_API_TOKEN,
+            ),
+            project=config["base"]["project"],
+            with_id=config["base"]["run_id"],
+        )
         wrapper_obj, wrapper_config = self.from_neptune(config)
         self._wrapper_obj = wrapper_obj
         self._wrapper_obj.eval()
@@ -65,7 +73,10 @@ class HeteroGNN_Predictor:
     
     def __call__(self, *args, **kwargs) -> pd.DataFrame:
         return self._inference_func(*args, **kwargs)
-
+    
+    def upload_result(self, network_type: str, network_name: str, result_path: Path) -> None:
+        self.run[f'evaluation/{network_type}/{network_name}'].upload(str(result_path))
+            
     def _get_inference_func(self, func_name: str) -> Callable:
         if func_name == "elimination_approach":
             raise AttributeError
@@ -78,30 +89,20 @@ class HeteroGNN_Predictor:
         raise AttributeError(f"Unknown selecton function: {func_name}")
 
     def from_neptune(self, run_config: dict[str, Any]) -> tuple[HeteroGNNWrapper, dict[str, Any]]:
-        run = neptune.init_run(
-            api_token=os.getenv(
-                key="NEPTUNE_API_KEY",
-                default=neptune.ANONYMOUS_API_TOKEN,
-            ),
-            project=run_config["base"]["project"],
-            with_id=run_config["base"]["run_id"],
-            mode="read-only",
-        )
-
-        temp = run["training/model/best_model_path"].fetch()
+        temp = self.run["training/model/best_model_path"].fetch()
         neptune_best_ckpt_path = (f"training/model/checkpoints/{temp.split('/')[-1].split('.')[0]}")
         local_best_ckpt_path = str(self.evaluation_dir / "best.ckpt")
-        run[neptune_best_ckpt_path].download(destination=local_best_ckpt_path)
+        self.run[neptune_best_ckpt_path].download(destination=local_best_ckpt_path)
 
         model_config = {
             "model": {
-                "name": run["training/hyperparams/model/name"].fetch(),
-                "parameters": run["training/hyperparams/model/parameters"].fetch(),
+                "name": self.run["training/hyperparams/model/name"].fetch(),
+                "parameters": self.run["training/hyperparams/model/parameters"].fetch(),
             }
         }
         model = load_model(model_config)
 
-        wrapper_config = HetergoGNNWrapperConfig.from_str(run["training/hyperparams/config"].fetch())
+        wrapper_config = HetergoGNNWrapperConfig.from_str(self.run["training/hyperparams/config"].fetch())
         wrapper = HeteroGNNWrapper.load_from_checkpoint(
             checkpoint_path=local_best_ckpt_path,
             model=model,
@@ -110,7 +111,7 @@ class HeteroGNN_Predictor:
 
         run_config = {
             "model": model_config["model"],
-            "data": run["training/hyperparams/data"].fetch(),
+            "data": self.run["training/hyperparams/data"].fetch(),
         }
     
         return wrapper, run_config
@@ -325,7 +326,7 @@ class HeteroGNN_Predictor:
             [EXPOSED, SIMULATION_LENGTH, PEAK_INFECTED, PEAK_ITERATION],
             ascending=[False, True, True, False]
         )
-        return prediction_sorted[:self._eval_config["base"]["nb_seeds"]]  # .index.to_list()
+        return prediction_sorted  # .index.to_list()
   
     # @staticmethod # TODO: remove
     # def convert_seed_set(
@@ -363,6 +364,11 @@ def main(cfg: DictConfig) -> None:
             tqdm.write(f'Processing: {network["name"]}')
             network_ts = evaluator(network_name=network["name"], network_type=network["type"])
             network_ts.to_csv(result_path / f"{network['type']}_{network['name']}.csv")
+            evaluator.upload_result(
+                network_name=network["name"], 
+                network_type=network["type"],
+                result_path=result_path / f"{network['type']}_{network['name']}.csv",                      
+            )
         logging.info("Evaluation completed")
 
 
