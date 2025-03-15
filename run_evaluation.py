@@ -89,8 +89,8 @@ class HeteroGNN_Predictor:
         raise AttributeError(f"Unknown selecton function: {func_name}")
 
     def from_neptune(self, run_config: dict[str, Any]) -> tuple[HeteroGNNWrapper, dict[str, Any]]:
-        temp = self.run["training/model/best_model_path"].fetch()
-        neptune_best_ckpt_path = (f"training/model/checkpoints/{temp.split('/')[-1].split('.')[0]}")
+        temp = Path(self.run["training/model/best_model_path"].fetch())
+        neptune_best_ckpt_path = (f"training/model/checkpoints/{temp.stem}")
         local_best_ckpt_path = str(self.evaluation_dir / "best.ckpt")
         self.run[neptune_best_ckpt_path].download(destination=local_best_ckpt_path)
 
