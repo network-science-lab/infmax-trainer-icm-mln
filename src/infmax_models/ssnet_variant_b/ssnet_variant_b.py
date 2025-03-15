@@ -1,7 +1,7 @@
 from typing import Literal
 import torch
-from torch.nn import Dropout
-from torch_geometric.nn import GCNConv, SAGEConv, Sequential
+from torch.nn import BatchNorm1d, Linear, Dropout
+from torch_geometric.nn import GINConv, Sequential, GATConv
 
 from _data_set.nsl_data_utils.loaders.constants import ACTOR
 from src.infmax_models.base.base import BaseHeteroModule
@@ -14,9 +14,9 @@ from src.infmax_models.ssnet.aggregation import (
     AttentionAggregation,
 )
 
-class SSNet(BaseHeteroModule):
+class SSNetVariantB(BaseHeteroModule):
     """
-    Super Spreaders Network.
+    Super Spreaders Network Variant B.
 
     Idea backing this implementation is following:
     1. Compute embeddings of actors on each layer separately using the same trainable nn.modules
@@ -45,34 +45,33 @@ class SSNet(BaseHeteroModule):
             "x_actors, x_edges",
             [
                 (
-                    GCNConv(input_dim, hidden_channels // 4, normalize=True),
+                    GATConv(input_dim, hidden_channels // 4, heads=4),
                     "x_actors, x_edges -> x_interim",
                 ),
+                (BatchNorm1d(hidden_channels), "x_interim -> x_interim"),
                 torch.nn.LeakyReLU(inplace=True),
                 (Dropout(p=0.2), "x_interim -> x_interim"),
                 (
-                    SAGEConv(hidden_channels // 4, hidden_channels // 2, "mean"),
+                    self.get_gin_layer(hidden_channels, hidden_channels),
                     "x_interim, x_edges -> x_interim",
                 ),
+                (BatchNorm1d(hidden_channels), "x_interim -> x_interim"),
                 torch.nn.LeakyReLU(inplace=True),
                 (Dropout(p=0.2), "x_interim -> x_interim"),
                 (
-                    SAGEConv(hidden_channels // 2, hidden_channels, "mean"),
+                    GATConv(hidden_channels, hidden_channels // 8, heads=4),
                     "x_interim, x_edges -> x_interim",
                 ),
+                (BatchNorm1d(hidden_channels // 2), "x_interim -> x_interim"),
                 torch.nn.LeakyReLU(inplace=True),
                 (Dropout(p=0.2), "x_interim -> x_interim"),
                 (
-                    SAGEConv(hidden_channels, hidden_channels // 2, "mean"),
+                    self.get_gin_layer(hidden_channels // 2, hidden_channels // 4),
                     "x_interim, x_edges -> x_interim",
                 ),
+                (BatchNorm1d(hidden_channels // 4), "x_interim -> x_interim"),
                 torch.nn.LeakyReLU(inplace=True),
                 (Dropout(p=0.2), "x_interim -> x_interim"),
-                (
-                    SAGEConv(hidden_channels // 2, hidden_channels // 4, "mean"),
-                    "x_interim, x_edges -> x_interim",
-                ),
-                torch.nn.LeakyReLU(inplace=True),
             ],
         )
 
@@ -92,8 +91,21 @@ class SSNet(BaseHeteroModule):
             raise AttributeError("Incorrect name of the aggregator!")
 
         self.head = torch.nn.Sequential(
-            torch.nn.Linear(hidden_channels // 4, output_dim),
-            torch.nn.Softplus(),
+            torch.nn.Linear(hidden_channels // 4, hidden_channels // 2),
+            torch.nn.LeakyReLU(inplace=True),
+            torch.nn.Linear(hidden_channels // 2, output_dim),
+            torch.nn.Sigmoid(),
+        )
+    
+    @staticmethod
+    def get_gin_layer(in_channels: int, out_channels: int) -> torch.nn.Module:
+        return GINConv(
+            nn=torch.nn.Sequential(
+                Linear(in_channels, out_channels),
+                torch.nn.LeakyReLU(inplace=True),
+                Linear(out_channels, out_channels),
+            ),
+            train_eps=True,
         )
 
     def forward(

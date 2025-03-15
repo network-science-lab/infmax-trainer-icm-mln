@@ -224,6 +224,7 @@ class HeteroGNNWrapper(pl.LightningModule):
 
         all_predictions = []
         all_true_values = []
+        all_actors_idcs = []
 
         for subgraph in batch:
             predictions = self.forward(
@@ -231,33 +232,38 @@ class HeteroGNNWrapper(pl.LightningModule):
                 z_dict=subgraph.z_dict,
                 edge_index_dict=subgraph.edge_index_dict,
             )
+
             loss += self._calculate_loss(
                 batch=subgraph,
                 predictions=predictions,
             )
+
             subgraf_batch_size = subgraph[ACTOR].batch_size
             all_predictions.append(predictions[ACTOR][:subgraf_batch_size])
             all_true_values.append(subgraph[ACTOR].y[:subgraf_batch_size])
+            all_actors_idcs.extend(subgraph[ACTOR].input_id.tolist())
 
-        self.log(
-            name=f"test_loss_{graph_name}",
-            value=loss,
-            batch_size=len(batch),
-        )
+            self.log(
+                name=f"test_loss_{graph_name}",
+                value=loss,
+                batch_size=len(batch),
+            )
 
         self.test_preds["preds"][graph_name] = self.transform_labels(
             actors_map=actors_map,
             y_names=y_names,
             preds=torch.cat(all_predictions, dim=0),
+            actors_idcs=all_actors_idcs,
         )
         self.test_preds["trues"][graph_name] = self.transform_labels(
             actors_map=actors_map,
             y_names=y_names,
             preds=torch.cat(all_true_values, dim=0),
+            actors_idcs=all_actors_idcs,
         )
 
         return loss
-
+    
     @torch.no_grad
     def predict_step(
         self,
@@ -311,21 +317,6 @@ class HeteroGNNWrapper(pl.LightningModule):
             dataloader_idx=dataloader_idx,
         )
 
-    def on_predict_batch_end(
-        self,
-        outputs: STEP_OUTPUT,
-        batch: Any,
-        batch_idx: int,
-        dataloader_idx: int = 0,
-    ) -> None:
-        torch.cuda.empty_cache()
-        super().on_predict_batch_end(
-            outputs=outputs,
-            batch=batch,
-            batch_idx=batch_idx,
-            dataloader_idx=dataloader_idx,
-        )
-
     def configure_optimizers(self) -> dict[str, Optimizer | dict[str, Any]]:
         configures_optimizers = {
             "optimizer": get_optimizer(
@@ -370,10 +361,11 @@ class HeteroGNNWrapper(pl.LightningModule):
         actors_map: bidict,
         y_names: list[str],
         preds: torch.Tensor,
+        actors_idcs: list[int],
     ) -> pd.DataFrame:
         actors_map = bidict({a_id: int(a_idx) for a_id, a_idx in actors_map.items()})
-        real_labels = [actors_map.inverse[i] for i in range(preds.shape[0])]
-        preds_np = preds.cpu().numpy() * len(actors_map)
+        real_labels = [actors_map.inverse[actor_idx] for actor_idx in actors_idcs]
+        preds_np = preds.cpu().numpy()
         return pd.DataFrame(
             preds_np,
             index=real_labels,

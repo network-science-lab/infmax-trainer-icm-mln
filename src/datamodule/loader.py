@@ -9,6 +9,7 @@ from torch_geometric.typing import EdgeType, NodeType
 
 from _data_set.nsl_data_utils.loaders.net_loader import load_net_names
 from src.data_models.mln_info import MLNInfo
+from src.dataset import transforms
 from src.dataset.super_spreaders_dataset import SuperSpreadersDataset
 
 
@@ -17,7 +18,7 @@ def _load_mln_info_chunk(
     labels_type: str,
     features_type: str,
     protocol: str,
-    p_value: float,
+    p: float,
 ) -> list[MLNInfo]:
     """Load raw networks and target labels for given network type and spreading params."""
     mlni_chunk = [
@@ -25,7 +26,7 @@ def _load_mln_info_chunk(
             mln_type=network_type,
             mln_name=net_name,
             icm_protocol=protocol,
-            icm_p=p_value,
+            icm_p=p,
             x_type=features_type,
             y_type=labels_type,
         )
@@ -35,14 +36,24 @@ def _load_mln_info_chunk(
     return mlni_chunk
 
 
-def _get_dataset(
+def get_transform(transform: str):
+    """Get data transformation according to provided configuration."""
+    tr_class = getattr(transforms, transform["name"], None)
+    tr_params = transform["parameters"] if isinstance(transform["parameters"], dict) else {}
+    if tr_class:
+        return tr_class(**tr_params)
+    else:
+        return None
+
+
+def get_dataset(
     data_name: str,
     networks_config: list[dict[str, Any]],
     labels: list[str],
     protocol: str,
-    p_value: float,
+    p: float,
     input_dim: int,
-    output_dim: int,
+    transform: str,
 ) -> SuperSpreadersDataset:
     if data_name == SuperSpreadersDataset.__name__:
         mlni_nets = []
@@ -52,49 +63,51 @@ def _get_dataset(
                 labels_type=labels,
                 features_type=network_config["features_type"],
                 protocol=protocol,
-                p_value=p_value,
+                p=p,
             )
             mlni_nets.extend(mlni_chunk)
         return SuperSpreadersDataset(
             networks=mlni_nets,
             input_dim=input_dim,
-            output_dim=output_dim,
+            output_dim=len(labels),
+            transform=get_transform(transform),
         )
     raise AttributeError(f"Unknown dataset: {data_name}")
 
 
 def get_datasets(config: dict[str, Any]) -> dict[str, SuperSpreadersDataset]:
-    logging.info(f"Loading train dataset (paths).")
-    dataset = _get_dataset(
+    logging.info(f"Loading dataset (paths).")
+    dataset = get_dataset(
         data_name=config["data"]["name"],
         networks_config=config["data"]["train_data"],
         labels=config["data"]["output_label_name"],
-        input_dim=config["model"]["parameters"]["input_dim"],
-        output_dim=config["model"]["parameters"]["output_dim"],
         protocol=config["data"]["icm"]["protocol"],
-        p_value=config["data"]["icm"]["p"],
+        p=config["data"]["icm"]["p"],
+        input_dim=config["model"]["parameters"]["input_dim"],  # TODO: a convolved parameter!
+        transform=config["data"]["transform"],
     )
-    logging.info(f"Splitting to train/eval dataset (paths).")
+    logging.info(f"Splitting to train/eval/test dataset (paths).")
     val_len = int(len(dataset) * config["data"]["val_data_ratio"])
-    train_len = len(dataset) - val_len
-    train_dataset, val_dataset = torch.utils.data.random_split(
+    test_len = int(len(dataset) * config["data"]["test_data_ratio"])
+    train_len = len(dataset) - val_len - test_len
+    train_dataset, val_dataset, test_dataset = torch.utils.data.random_split( # TODO: handle the test data provided explicitly
         dataset=dataset,
-        lengths=[train_len, val_len],
+        lengths=[train_len, val_len, test_len],
         generator=torch.Generator().manual_seed(config["base"]["random_seed"]),
     )
-    logging.info(f"Loading test dataset (paths).")
-    test_dataset = _get_dataset(
-        data_name=config["data"]["name"],
-        networks_config=config["data"]["test_data"],
-        labels=config["data"]["output_label_name"],
-        input_dim=config["model"]["parameters"]["input_dim"],
-        output_dim=config["model"]["parameters"]["output_dim"],
-        protocol=config["data"]["icm"]["protocol"],
-        p_value=config["data"]["icm"]["p"],
-    )
-    logging.info(
-        f"Graphs: test-{len(train_dataset)}, eval-{len(val_dataset)}, test-{len(test_dataset)}"
-    )
+    # logging.info(f"Loading test dataset (paths).")
+    # test_dataset = _get_dataset(
+    #     data_name=config["data"]["name"],
+    #     networks_config=config["data"]["test_data"],
+    #     labels=config["data"]["output_label_name"],
+    #     protocol=config["data"]["icm"]["protocol"],
+    #     p=config["data"]["icm"]["p"],
+    #     input_dim=config["model"]["parameters"]["input_dim"],  # TODO: a convolved parameter!
+    #     transform=config["data"]["transform"],
+    # )
+    # logging.info(
+    #     f"Graphs: test-{len(train_dataset)}, eval-{len(val_dataset)}, test-{len(test_dataset)}"
+    # )
     return {
         "train": train_dataset,
         "val": val_dataset,

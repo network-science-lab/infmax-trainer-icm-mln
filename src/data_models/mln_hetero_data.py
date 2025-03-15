@@ -80,12 +80,7 @@ class MLNHeteroData(HeteroData):
             data[ACTOR, f"l_{idx}", ACTOR].edge_index = layer_edge_idx
 
         # tensor of labels to predict
-        data[ACTOR].y = cls._prepare_labels(
-            network_info=network_info,
-            network_torch=mln_torch,
-            output_dim=output_dim,
-            sp_df=sp_df,
-        )
+        data[ACTOR].y = cls._prepare_labels(network_info, mln_torch, sp_df)
         data.y_names = network_info.y_type
 
         # mask of nodes that were added artificially to obtain multiplicity
@@ -119,6 +114,9 @@ class MLNHeteroData(HeteroData):
 
         if network_info.x_type == "zeros":
             return torch.zeros((len(network_torch.actors_map), input_dim))
+    
+        elif network_info.x_type == "ones":
+            return torch.ones((len(network_torch.actors_map), input_dim))
 
         elif network_info.x_type == "centralities":
             if input_dim > len(CENTRALITY_FUNCTIONS) or input_dim <= 0:
@@ -136,13 +134,10 @@ class MLNHeteroData(HeteroData):
             features_sorted_df = features_df.loc[actors_order]
             features_np = features_sorted_df.to_numpy()
             features_pt = torch.tensor(data=features_np, dtype=torch.float32)
-            features_norm_pt = features_pt / len(network_torch.actors_map)
-            return features_norm_pt[:, :input_dim]
+            return features_pt[:, :input_dim]
 
         elif network_info.x_type == "scrapped":
-            raise NotImplementedError(
-                f"{network_info.x_type} has not been implemented yet"
-            )
+            raise NotImplementedError(f"{network_info.x_type} has not been implemented yet")
 
         else:
             raise ValueError("Unknown x_type!")
@@ -151,7 +146,6 @@ class MLNHeteroData(HeteroData):
     def _prepare_labels(
         network_info: MLNInfo,
         network_torch: nd.MultilayerNetworkTorch,
-        output_dim: int,
         sp_df: pd.DataFrame | None = None,
     ) -> torch.Tensor:
         logging.debug(f"Preparing labels: {network_info.name}")
@@ -166,9 +160,5 @@ class MLNHeteroData(HeteroData):
         Y_raw["actor_idx"] = Y_raw[ACTOR].map(network_torch.actors_map)
         Y_raw = Y_raw.set_index("actor_idx").sort_index()
 
-        labels = torch.tensor(
-                Y_raw[network_info.y_type].values,
-                dtype=torch.float32,
-            )
-        labels = labels / len(network_torch.actors_map)
+        labels = torch.tensor(Y_raw[network_info.y_type].values, dtype=torch.float32)
         return labels

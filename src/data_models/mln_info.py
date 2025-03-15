@@ -30,10 +30,8 @@ class MLNInfo:
     mln_name: str
     icm_protocol: Literal["OR", "AND"]
     icm_p: float
-    x_type: Literal["zeros", "scrapped", "centralities"]
-    y_type: list[
-        Literal["exposed", "simulation_length", "peak_iteration", "peak_infected"]
-    ]
+    x_type: Literal["zeros", "ones", "scrapped", "centralities"]
+    y_type: list[Literal["exposed", "simulation_length", "peak_iteration", "peak_infected"]]
     sp_paths: list[Path]
     ft_path: Path
 
@@ -52,11 +50,9 @@ class MLNInfo:
             raise ValueError(f"Unknown icm_protocol: {icm_protocol}")
         if not {icm_p}.issubset(_VALID_ICM_PARAMS[icm_protocol]):
             raise ValueError(f"Invalid icm_p: {icm_p}")
-        if x_type not in {"zeros", "scrapped", "centralities"}:
+        if x_type not in {"zeros", "ones", "scrapped", "centralities"}:
             raise ValueError(f'Unknown x_type: {x_type}')
-        if not set(y_type).issubset(
-            {EXPOSED, SIMULATION_LENGTH, PEAK_ITERATION, PEAK_INFECTED}
-        ):
+        if not set(y_type).issubset({EXPOSED, SIMULATION_LENGTH, PEAK_ITERATION, PEAK_INFECTED}):
             raise ValueError(f'Unknown y_type: {y_type}')
 
     @staticmethod
@@ -67,15 +63,18 @@ class MLNInfo:
     ) -> Path | None:
         if x_type == "zeros":
             return None
+        elif x_type == "ones":
+            return None
         elif x_type == "centralities":
             return load_centralities_path(network_type=mln_type, network_name=mln_name)
         elif x_type == "scrapped":
             raise NotImplementedError(f"{x_type} has not been implemented yet")
         raise ValueError("Unknown x_type!")
 
+    # TODO: update after dataset gets updated with the batch 2
     @staticmethod
     def _filter_sp_path(
-        sp_paths: Path,
+        sp_paths: list[Path],
         icm_protocol: str,
         icm_p: float,
         mln_name: str,
@@ -98,21 +97,17 @@ class MLNInfo:
         icm_protocol: Literal["OR", "AND"],
         icm_p: float,
         x_type: Literal["zeros", "scrapped", "centralities"],
-        y_type: list[
-            Literal["exposed", "simulation_length", "peak_iteration", "peak_infected"]
-        ],
+        y_type: list[Literal["exposed", "simulation_length", "peak_iteration", "peak_infected"]],
     ) -> "MLNInfo":
         cls._validate_args(icm_protocol, icm_p, x_type, y_type)
         sp_paths_all = load_sp_paths(net_type=mln_type, net_name=mln_name)
-        sp_paths_filtered = cls._filter_sp_path(
-            sp_paths_all, icm_protocol, icm_p, mln_name
-        )
+        sp_paths_filtered = cls._filter_sp_path(sp_paths_all, icm_protocol, icm_p, mln_name)
         ft_path = cls._get_ft_path(x_type, mln_type, mln_name)
 
         if len(sp_paths_filtered) == 0:
-            raise ValueError('Incorrect data paths')
+            raise ValueError("Incorrect data paths")
         if ft_path is None and x_type == "centralities":
-            raise ValueError('Incorrect data paths')
+            raise ValueError("Incorrect data paths")
 
         return cls(
             mln_type=mln_type,

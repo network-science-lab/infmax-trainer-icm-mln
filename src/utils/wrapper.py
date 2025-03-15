@@ -2,11 +2,12 @@ from typing import Any, Iterator
 
 from torch import cuda, optim
 from torch.nn import MSELoss
+from torchmetrics.regression import MeanAbsoluteError
 from torch.nn.modules.loss import _Loss
 from torch.nn.parameter import Parameter
 from torch.optim import Optimizer, lr_scheduler
 
-from src.training.loss.mrtwse import MRTWSE
+from src.training.loss.mtwae import MTWAE
 from src.training.loss.weighted_mse import WeightedMSE
 
 
@@ -21,8 +22,11 @@ def get_loss(
         case WeightedMSE.__name__:
             return WeightedMSE(**loss_args)
 
-        case MRTWSE.__name__:
-            return MRTWSE(**loss_args)
+        case MTWAE.__name__:
+            return MTWAE(**loss_args)
+
+        case MeanAbsoluteError.__name__:
+            return MeanAbsoluteError(**loss_args)
 
         case _:
             raise AttributeError(f"Unknown loss function: {loss_name}")
