@@ -2,6 +2,37 @@ hydra:
   run:
     dir: _data_results/model_outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
 
-experiment-config: config_and
+# features experiments
+experiment-config: max_att_cent_and
+# experiment-config: max_att_ones_and
+# experiment-config: max_att_ones_or
+# experiment-config: max_att_zeros_or
+
+# transformations experiments
+# TODO: IN CONFIGS REPLACE BEST_FROM_TRAININGS BASED ON RESULTS FROM FEATURES EXPERIMENTS
+# experiment-config: att_cont_log_and
+# experiment-config: att_cont_log_or
+# experiment-config: att_cont_norm_and
+# experiment-config: att_cont_norm_or
+# experiment-config: att_max_and
+# experiment-config: att_max_or
+# experiment-config: att_norm_scatt_and
+# experiment-config: att_norm_scatt_or
+
+# agregations experiments
+# TODO: IN CONFIGS REPLACE BEST_FROM_TRAININGS BASED ON RESULTS FROM FEATURES EXPERIMENTS
+# TODO: IN CONFIGS TRANSFORMS REPLACE BEST_FROM_TRAININGS BASED ON RESULTS FROM TRANSFORMATIONS EXPERIMENTS
+# experiment-config: tatt_and
+# experiment-config: tatt_or
+# experiment-config: tavg_and
+# experiment-config: tavg_or
+# experiment-config: tmax_and
+# experiment-config: tmax_or
+# experiment-config: tmin_and
+# experiment-config: tmin_or
+# experiment-config: tsum_and
+# experiment-config: tsum_or
+
+# experiment-config: config_and
 # experiment-config: config_or
 # experiment-config: hetero_top_spreader_network #TODO: NEED TO CHANGE ARCHITECTURE
