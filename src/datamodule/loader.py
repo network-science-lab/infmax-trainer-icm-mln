@@ -13,6 +13,30 @@ from src.dataset import transforms
 from src.dataset.super_spreaders_dataset import SuperSpreadersDataset
 
 
+CLEAN_AFTER_ME_PLEASE = {
+    ("artificial_er", "network_15"),
+    ("artificial_er", "network_20"),
+    ("artificial_er", "network_40"),
+    ("artificial_er", "network_45"),
+    ("artificial_er", "network_71"),
+    ("artificial_er", "network_78"),
+    ("artificial_er", "network_79"),
+    ("artificial_er", "network_80"),
+    ("artificial_pa", "network_7"),
+    ("artificial_pa", "network_23"),
+    ("artificial_pa", "network_39"),
+    ("artificial_pa", "network_57"),
+    ("artificial_pa", "network_58"),
+    ("artificial_pa", "network_75"),
+    ("artificial_pa", "network_85"),
+    ("artificial_pa", "network_95"),
+    ("artificial_pa", "network_22"),
+    ("artificial_pa", "network_68"),
+    ("artificial_pa", "network_83"),
+    ("artificial_pa", "network_93"),
+}
+
+
 def _load_mln_info_chunk(
     network_type: str,
     labels_type: str,
@@ -88,13 +112,42 @@ def get_datasets(config: dict[str, Any]) -> dict[str, SuperSpreadersDataset]:
     )
     logging.info(f"Splitting to train/eval/test dataset (paths).")
     val_len = int(len(dataset) * config["data"]["val_data_ratio"])
-    test_len = int(len(dataset) * config["data"]["test_data_ratio"])
-    train_len = len(dataset) - val_len - test_len
-    train_dataset, val_dataset, test_dataset = torch.utils.data.random_split( # TODO: handle the test data provided explicitly
-        dataset=dataset,
-        lengths=[train_len, val_len, test_len],
+    ##### ##### ##### dirty deletion - start
+    # test_len = int(len(dataset) * config["data"]["test_data_ratio"])
+    # train_len = len(dataset) - val_len - test_len
+    # train_dataset, val_dataset, test_dataset = torch.utils.data.random_split( # TODO: handle the test data provided explicitly
+    #     dataset=dataset,
+    #     lengths=[train_len, val_len, test_len],
+    #     generator=torch.Generator().manual_seed(config["base"]["random_seed"]),
+    # )
+    ##### ##### ##### dirty deletion - stop
+    ##### ##### ##### dirty addition - start
+    train_val_mlninfos, test_mlninfos = [], []
+    for mlninfo in dataset.data_list:
+        mlninfo_id = (mlninfo.mln_type, mlninfo.mln_name)
+        if mlninfo_id in CLEAN_AFTER_ME_PLEASE:
+            test_mlninfos.append(mlninfo)
+        else:
+            train_val_mlninfos.append(mlninfo)
+    test_dataset = SuperSpreadersDataset(
+        networks=test_mlninfos,
+        input_dim=dataset._input_dim,
+        output_dim=dataset._output_dim,
+        transform=dataset.transform,
+    )
+    train_val_dataset = SuperSpreadersDataset(
+        networks=train_val_mlninfos,
+        input_dim=dataset._input_dim,
+        output_dim=dataset._output_dim,
+        transform=dataset.transform,
+    )
+    train_len = len(dataset) - val_len - len(test_dataset)
+    train_dataset, val_dataset = torch.utils.data.random_split(
+        dataset=train_val_dataset,
+        lengths=[train_len, val_len],
         generator=torch.Generator().manual_seed(config["base"]["random_seed"]),
     )
+    ##### ##### ##### dirty addition - stop
     # logging.info(f"Loading test dataset (paths).")
     # test_dataset = _get_dataset(
     #     data_name=config["data"]["name"],
