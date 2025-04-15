@@ -20,11 +20,11 @@ data:
   test_data_ratio: 0.1
   train_data:
     - name: artificial_er
-      features_type: BEST_FROM_TRAININGS
+      features_type: zeros
     - name: artificial_pa
-      features_type: BEST_FROM_TRAININGS
+      features_type: zeros
     - name: artificial_small
-      features_type: BEST_FROM_TRAININGS
+      features_type: zeros
   # test_data:
   #   - name: arxiv_netscience_coauthorship
   #     features_type: zeros
@@ -48,7 +48,7 @@ data:
   #   - name: toy_network
   #     features_type: zeros
   transform:
-    name: BEST_FROM_TRAININGS
+    name: NormaliseByMax
     parameters:
 
 model:
@@ -64,7 +64,7 @@ training:
   devices: [0] # list[int] | int | str; default=auto
   max_epochs: 50
   loss:
-    name: MTWAE
+    name: SListMLELoss
     args:
       w_sl: 1
       w_e: 6

@@ -9,6 +9,9 @@ experiment-config: variant_e_3_gin
 # experiment-config: variant_e_3_gat
 # experiment-config: variant_e_3_gcn
 
+# experiment-config: tavg_and
+# experiment-config: tmax_and
+
 # experiment-config: 766_ones_and
 # experiment-config: 766_ones_or
 # experiment-config: 767_ones_and
