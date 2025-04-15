@@ -5,3 +5,4 @@ from src.infmax_models.ssnet.ssnet import SSNet
 from src.infmax_models.ssnet_variant_c.ssnet_variant_c import SSNetVariantC
 from src.infmax_models.ssnet_variant_b.ssnet_variant_b import SSNetVariantB
 from src.infmax_models.ssnet_variant_d.ssnet_variant_d import SSNetVariantD
+from src.infmax_models.ssnet_variant_e.ssnet_variant_e import SSNetVariantE

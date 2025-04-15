@@ -3,7 +3,13 @@ hydra:
     dir: _data_results/model_outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
 
 # features experiments
-experiment-config: 766_ones_and
+experiment-config: variant_e_3_gin
+# experiment-config: variant_e_2_gin
+# experiment-config: variant_e_1_gin
+# experiment-config: variant_e_3_gat
+# experiment-config: variant_e_3_gcn
+
+# experiment-config: 766_ones_and
 # experiment-config: 766_ones_or
 # experiment-config: 767_ones_and
 # experiment-config: 767_ones_or

@@ -12,6 +12,7 @@ import torch
 from bidict import bidict
 from pytorch_lightning.utilities.types import STEP_OUTPUT
 from torch.optim import Optimizer
+from sklearn.metrics import r2_score
 from torch_geometric.loader.neighbor_loader import NeighborLoader
 from torch_geometric.nn import to_hetero_with_bases
 
@@ -184,6 +185,8 @@ class HeteroGNNWrapper(pl.LightningModule):
         batch_idx: int,
     ) -> torch.Tensor:
         loss = 0
+        preds = torch.empty((0, 4)).to('cpu')
+        trues = torch.empty((0, 4)).to('cpu')
         batch_len = len(batch)
         batch = self._get_neighbour_loader(batch)
         for subgraph in batch:
@@ -196,10 +199,19 @@ class HeteroGNNWrapper(pl.LightningModule):
                 batch=subgraph,
                 predictions=predictions,
             )
+            preds = torch.cat((preds, predictions[ACTOR].to('cpu')), dim=0)
+            trues = torch.cat((trues, subgraph[ACTOR].y.to('cpu')), dim=0)
 
         self.log(
             name="val_loss",
             value=loss,
+            batch_size=batch_len,
+            prog_bar=True,
+            on_epoch=True,
+        )
+        self.log(
+            name="val_r2",
+            value=r2_score(y_true=trues, y_pred=preds),
             batch_size=batch_len,
             prog_bar=True,
             on_epoch=True,
@@ -217,6 +229,8 @@ class HeteroGNNWrapper(pl.LightningModule):
         y_names = batch.y_names
         graph_name = f"{batch.network_type[0]}_{batch.network_name[0]}"
         loss = 0
+        preds = torch.empty((0, 4)).to('cpu')
+        trues = torch.empty((0, 4)).to('cpu')
         batch = self._get_neighbour_loader(
             graph_sample=batch,
             shuffle=False,
@@ -237,17 +251,35 @@ class HeteroGNNWrapper(pl.LightningModule):
                 batch=subgraph,
                 predictions=predictions,
             )
+            preds = torch.cat((preds, predictions[ACTOR].to('cpu')), dim=0)
+            trues = torch.cat((trues, subgraph[ACTOR].y.to('cpu')), dim=0)
 
             subgraf_batch_size = subgraph[ACTOR].batch_size
             all_predictions.append(predictions[ACTOR][:subgraf_batch_size])
             all_true_values.append(subgraph[ACTOR].y[:subgraf_batch_size])
             all_actors_idcs.extend(subgraph[ACTOR].input_id.tolist())
 
-            self.log(
-                name=f"test_loss_{graph_name}",
-                value=loss,
-                batch_size=len(batch),
-            )
+        r2 = r2_score(y_true=trues, y_pred=preds)
+        self.log(
+            name=f"test_loss_{graph_name}",
+            value=loss,
+            batch_size=len(batch),
+        )
+        self.log(
+            name=f"test_loss",
+            value=loss,
+            batch_size=len(batch),
+        )
+        self.log(
+            name=f"test_r2",
+            value=r2,
+            batch_size=len(batch),
+        )
+        self.log(
+            name=f"test_r2_{graph_name}",
+            value=r2,
+            batch_size=len(batch),
+        )
 
         self.test_preds["preds"][graph_name] = self.transform_labels(
             actors_map=actors_map,

@@ -148,19 +148,22 @@ def get_datasets(config: dict[str, Any]) -> dict[str, SuperSpreadersDataset]:
         generator=torch.Generator().manual_seed(config["base"]["random_seed"]),
     )
     ##### ##### ##### dirty addition - stop
-    # logging.info(f"Loading test dataset (paths).")
-    # test_dataset = _get_dataset(
-    #     data_name=config["data"]["name"],
-    #     networks_config=config["data"]["test_data"],
-    #     labels=config["data"]["output_label_name"],
-    #     protocol=config["data"]["icm"]["protocol"],
-    #     p=config["data"]["icm"]["p"],
-    #     input_dim=config["model"]["parameters"]["input_dim"],  # TODO: a convolved parameter!
-    #     transform=config["data"]["transform"],
-    # )
-    # logging.info(
-    #     f"Graphs: test-{len(train_dataset)}, eval-{len(val_dataset)}, test-{len(test_dataset)}"
-    # )
+    logging.info(f"Loading test dataset (paths).")
+    if config['data'].get("test_data"):
+        _test_dataset = get_dataset(
+            data_name=config["data"]["name"],
+            networks_config=config["data"]["test_data"],
+            labels=config["data"]["output_label_name"],
+            protocol=config["data"]["icm"]["protocol"],
+            p=config["data"]["icm"]["p"],
+            input_dim=config["model"]["parameters"]["input_dim"],  # TODO: a convolved parameter!
+            transform=config["data"]["transform"],
+        )
+        test_dataset = torch.utils.data.ConcatDataset([test_dataset, _test_dataset])
+
+    logging.info(
+        f"Graphs: test-{len(train_dataset)}, eval-{len(val_dataset)}, test-{len(test_dataset)}"
+    )
     return {
         "train": train_dataset,
         "val": val_dataset,
@@ -194,10 +197,10 @@ def get_metadata(
     nodes_data = set()
     edges_data = set()
 
-    for dataset in datasets:
-        node_data, edge_data = dataset.get_metadata()
+    # for dataset in datasets: # TODO:
+    #     node_data, edge_data = dataset.get_metadata()
 
-        nodes_data = nodes_data.union(node_data)
-        edges_data = edges_data.union(edge_data)
+    #     nodes_data = nodes_data.union(node_data)
+    #     edges_data = edges_data.union(edge_data)
 
     return list(nodes_data), list(edges_data)
