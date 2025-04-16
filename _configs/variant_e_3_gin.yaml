@@ -57,7 +57,7 @@ model:
     input_dim: 5
     output_dim: auto
     hidden_channels: 400
-    aggregation_type: AttentionAggregation
+    aggregation_type: MaxAggregation
     num_layers: 3
     layer_type: GINConv
 
@@ -65,7 +65,6 @@ training:
   accelerator: gpu # cpu or gpu
   devices: [0] # list[int] | int | str; default=auto
   max_epochs: 50
-  # max_epochs: 50 # TODO:
   loss:
     name: MTWAE
     args:

@@ -57,7 +57,7 @@ model:
     input_dim: 5
     output_dim: auto
     hidden_channels: 400
-    aggregation_type: AttentionAggregation
+    aggregation_type: MaxAggregation
     num_layers: 2
     layer_type: GINConv
 

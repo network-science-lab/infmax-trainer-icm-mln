@@ -106,15 +106,15 @@ class SSNetVariantE(BaseHeteroModule):
         if i == 1:
             return self.hidden_channels
         if i > 1:
-            pow = (i - 1) * 2
-            return self.hidden_channels // pow
+            depth = (i - 1) * 2
+            return self.hidden_channels // depth
         
     def get_out_channel(self,i:int) -> int:
         if i == 0:
             return self.hidden_channels
         if i > 0:
-            pow = i * 2
-            return self.hidden_channels // pow
+            depth = i * 2
+            return self.hidden_channels // depth
 
     def get_conv(
         self,
