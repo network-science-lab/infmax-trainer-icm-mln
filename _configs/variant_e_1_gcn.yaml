@@ -59,14 +59,14 @@ model:
     hidden_channels: 400
     aggregation_type: MaxAggregation
     num_layers: 1
-    layer_type: GINConv
+    layer_type: GCNConv
 
 training:
   accelerator: gpu # cpu or gpu
   devices: [0] # list[int] | int | str; default=auto
   max_epochs: 50
   loss:
-    name: MTWAE
+    name: SListMLELoss
     args:
       w_sl: 1
       w_e: 6
