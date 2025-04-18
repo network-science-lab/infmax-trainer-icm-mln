@@ -57,7 +57,7 @@ model:
     input_dim: 5
     output_dim: auto
     hidden_channels: 400
-    aggregation_type: MaxAggregation
+    aggregation_type: MinAggregation
 
 training:
   accelerator: gpu # cpu or gpu
@@ -94,9 +94,7 @@ training:
     model_summary_max_depth: -1
     tags:
       - name: and
-      - name: BEST_TRANSFORM
-      - name: max
-      - name: BEST_FEATURES
+      - name: MinAggregation
   callbacks:
     - name: model_summary
       max_depth: -1

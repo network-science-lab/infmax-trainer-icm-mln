@@ -20,26 +20,26 @@ data:
   test_data_ratio: 0.1
   train_data:
     - name: artificial_er
-      features_type: BEST_FROM_TRAININGS
+      features_type: zeros
     - name: artificial_pa
-      features_type: BEST_FROM_TRAININGS
+      features_type: zeros
     - name: artificial_small
-      features_type: BEST_FROM_TRAININGS
-  # test_data:
-  #   - name: arxiv_netscience_coauthorship
-  #     features_type: zeros
-  #   - name: aucs
-  #     features_type: zeros
-  #   - name: ckm_physicians
-  #     features_type: zeros
-  #   - name: eu_transportation
-  #     features_type: zeros
-  #   - name: l2_course
-  #     features_type: zeros
-  #   - name: lazega
-  #     features_type: zeros
-  #   - name: timik1q2009
-  #     features_type: zeros
+      features_type: zeros
+  test_data:
+    - name: arxiv_netscience_coauthorship
+      features_type: zeros
+    - name: aucs
+      features_type: zeros
+    - name: ckm_physicians
+      features_type: zeros
+    - name: eu_transportation
+      features_type: zeros
+    - name: l2_course
+      features_type: zeros
+    - name: lazega
+      features_type: zeros
+    - name: timik1q2009
+      features_type: zeros
   #   ##### ##### ##### ##### ##### ##### ##### ##### other available networks
   #   - name: cannes
   #     features_type: zeros
@@ -48,7 +48,7 @@ data:
   #   - name: toy_network
   #     features_type: zeros
   transform:
-    name: ConctractWithLog
+    name: NormaliseByMax
     parameters:
 
 model:
@@ -56,15 +56,15 @@ model:
   parameters:
     input_dim: 5
     output_dim: auto
-    hidden_channels: 400
-    aggregation_type: AttentionAggregation
+    hidden_channels: 800
+    aggregation_type: AvgAggregation
 
 training:
   accelerator: gpu # cpu or gpu
   devices: [0] # list[int] | int | str; default=auto
   max_epochs: 50
   loss:
-    name: MTWAE
+    name: SListMLELoss
     args:
       w_sl: 1
       w_e: 6
@@ -94,9 +94,7 @@ training:
     model_summary_max_depth: -1
     tags:
       - name: and
-      - name: cont_log
-      - name: att
-      - name: BEST_FEATURES
+      - name: h_800
   callbacks:
     - name: model_summary
       max_depth: -1

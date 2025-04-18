@@ -2,49 +2,38 @@ hydra:
   run:
     dir: _data_results/model_outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
 
+# experiment-config: tavg_and # BASELING
+# experiment-config: best_or # TODO: FINAL
+
 # features experiments
-# experiment-config: variant_e_3_gin
-# experiment-config: variant_e_2_gcn
-# experiment-config: variant_e_1_gcn
-# experiment-config: variant_e_3_gat
-# experiment-config: variant_e_3_gcn
-# experiment-config: tmax_and
-experiment-config: tavg_and
-
-# experiment-config: 766_ones_and
-# experiment-config: 766_ones_or
-# experiment-config: 767_ones_and
-# experiment-config: 767_ones_or
-
-# experiment-config: max_att_cent_and
-# experiment-config: max_att_ones_and
-# experiment-config: max_att_ones_or
-# experiment-config: max_att_zeros_or
-
-# transformations experiments
 # TODO: IN CONFIGS REPLACE BEST_FROM_TRAININGS BASED ON RESULTS FROM FEATURES EXPERIMENTS
-# experiment-config: att_cont_log_and
-# experiment-config: att_cont_log_or
-# experiment-config: att_cont_norm_and
-# experiment-config: att_cont_norm_or
-# experiment-config: att_max_and
-# experiment-config: att_max_or
-# experiment-config: att_norm_scatt_and
-# experiment-config: att_norm_scatt_or
+experiment-config: f_cent
+# experiment-config: f_ones
+# experiment-config: f_zeros
+
+# transforms experiments
+# TODO: IN CONFIGS TRANSFORMS REPLACE BEST_FROM_TRAININGS BASED ON RESULTS FROM TRANSFORMATIONS EXPERIMENTS
+# experiment-config: t_actor_num
+# experiment-config: t_contract_and_norm
+# experiment-config: t_contract_with_log
+# experiment-config: t_max
+# experiment-config: t_norm_and_scatter
+# experiment-config: t_scatter_exponent
 
 # agregations experiments
 # TODO: IN CONFIGS REPLACE BEST_FROM_TRAININGS BASED ON RESULTS FROM FEATURES EXPERIMENTS
-# TODO: IN CONFIGS TRANSFORMS REPLACE BEST_FROM_TRAININGS BASED ON RESULTS FROM TRANSFORMATIONS EXPERIMENTS
-# experiment-config: tatt_and
-# experiment-config: tatt_or
-# experiment-config: tavg_and
-# experiment-config: tavg_or
-# experiment-config: tmax_and
-# experiment-config: tmax_or
-# experiment-config: tmin_and
-# experiment-config: tmin_or
-# experiment-config: tsum_and
-# experiment-config: tsum_or
+# experiment-config: a_att
+# experiment-config: a_avg
+# experiment-config: a_max
+# experiment-config: a_min
+# experiment-config: a_sum
+
+# hidden channels experiments
+# TODO: IN CONFIGS REPLACE BEST_FROM_TRAININGS BASED ON RESULTS FROM FEATURES EXPERIMENTS
+# experiment-config: h_200
+# experiment-config: h_400
+# experiment-config: h_600
+# experiment-config: h_800
 
 # experiment-config: config_and
 # experiment-config: config_or
