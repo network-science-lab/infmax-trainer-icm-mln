@@ -7,7 +7,7 @@ hydra:
 
 # features experiments
 # TODO: IN CONFIGS REPLACE BEST_FROM_TRAININGS BASED ON RESULTS FROM FEATURES EXPERIMENTS
-experiment-config: f_cent
+# experiment-config: f_cent
 # experiment-config: f_ones
 # experiment-config: f_zeros
 
@@ -27,6 +27,7 @@ experiment-config: f_cent
 # experiment-config: a_max
 # experiment-config: a_min
 # experiment-config: a_sum
+experiment-config: a_linear
 
 # hidden channels experiments
 # TODO: IN CONFIGS REPLACE BEST_FROM_TRAININGS BASED ON RESULTS FROM FEATURES EXPERIMENTS
