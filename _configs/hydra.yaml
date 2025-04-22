@@ -15,8 +15,7 @@ hydra:
 # TODO: IN CONFIGS TRANSFORMS REPLACE BEST_FROM_TRAININGS BASED ON RESULTS FROM TRANSFORMATIONS EXPERIMENTS
 # experiment-config: t_actor_num
 # experiment-config: t_contract_and_norm
-# experiment-config: t_contract_with_log
-# experiment-config: t_max
+experiment-config: t_contract_with_log
 # experiment-config: t_norm_and_scatter
 # experiment-config: t_scatter_exponent
 
@@ -27,12 +26,11 @@ hydra:
 # experiment-config: a_max
 # experiment-config: a_min
 # experiment-config: a_sum
-experiment-config: a_linear
+# experiment-config: a_linear
 
 # hidden channels experiments
 # TODO: IN CONFIGS REPLACE BEST_FROM_TRAININGS BASED ON RESULTS FROM FEATURES EXPERIMENTS
 # experiment-config: h_200
-# experiment-config: h_400
 # experiment-config: h_600
 # experiment-config: h_800
 

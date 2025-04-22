@@ -50,6 +50,7 @@ data:
   transform:
     name: ScatterWithExponent
     parameters:
+      scatter_factor: 3
 
 model:
   name: SSNetVariantB
@@ -57,7 +58,7 @@ model:
     input_dim: 5
     output_dim: auto
     hidden_channels: 400
-    aggregation_type: AvgAggregation
+    aggregation_type: LayerwiseAggregation
 
 training:
   accelerator: gpu # cpu or gpu
