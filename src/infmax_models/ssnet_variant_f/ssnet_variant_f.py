@@ -1,6 +1,6 @@
 from typing import Literal
 import torch
-from torch.nn import BatchNorm1d, Linear, Dropout
+from torch.nn import Linear
 from torch_geometric.nn import GINConv, Sequential, GATConv
 
 from _data_set.nsl_data_utils.loaders.constants import ACTOR
@@ -14,9 +14,9 @@ from src.infmax_models.ssnet.aggregation import (
     AttentionAggregation,
 )
 
-class SSNetVariantD(BaseHeteroModule):
+class SSNetVariantF(BaseHeteroModule):
     """
-    Super Spreaders Network Variant D.
+    Super Spreaders Network Variant F.
 
     Idea backing this implementation is following:
     1. Compute embeddings of actors on each layer separately using the same trainable nn.modules
@@ -48,35 +48,22 @@ class SSNetVariantD(BaseHeteroModule):
                     GATConv(input_dim, hidden_channels // 4, heads=4),
                     "x_actors, x_edges -> x_interim",
                 ),
-                (BatchNorm1d(hidden_channels), "x_interim -> x_interim"),
                 torch.nn.ReLU(inplace=True),
-                (Dropout(p=0.2), "x_interim -> x_interim"),
                 (
                     self.get_gin_layer(hidden_channels, hidden_channels),
                     "x_interim, x_edges -> x_interim",
                 ),
-                (BatchNorm1d(hidden_channels), "x_interim -> x_interim"),
                 torch.nn.ReLU(inplace=True),
-                (Dropout(p=0.2), "x_interim -> x_interim"),
                 (
                     GATConv(hidden_channels, hidden_channels // 8, heads=4),
                     "x_interim, x_edges -> x_interim",
                 ),
-                (BatchNorm1d(hidden_channels // 2), "x_interim -> x_interim"),
                 torch.nn.ReLU(inplace=True),
-                (Dropout(p=0.2), "x_interim -> x_interim"),
-                (
-                    self.get_gin_layer(hidden_channels // 2, hidden_channels // 4),
-                    "x_interim, x_edges -> x_interim",
-                ),
-                (BatchNorm1d(hidden_channels // 4), "x_interim -> x_interim"),
-                torch.nn.ReLU(inplace=True),
-                (Dropout(p=0.2), "x_interim -> x_interim"),
             ],
         )
 
         if aggregation_type == LayerwiseAggregation.__name__:
-            self.layerwise_aggregator = LayerwiseAggregation(hidden_channels // 4)
+            self.layerwise_aggregator = LayerwiseAggregation(hidden_channels // 2)
         elif aggregation_type == MaxAggregation.__name__:
             self.layerwise_aggregator = MaxAggregation()
         elif aggregation_type == MinAggregation.__name__:
@@ -86,12 +73,12 @@ class SSNetVariantD(BaseHeteroModule):
         elif aggregation_type == SumAggregation.__name__:
             self.layerwise_aggregator = SumAggregation()
         elif aggregation_type == AttentionAggregation.__name__:
-            self.layerwise_aggregator = AttentionAggregation(hidden_channels // 4)
+            self.layerwise_aggregator = AttentionAggregation(hidden_channels // 2)
         else:
             raise AttributeError("Incorrect name of the aggregator!")
 
         self.head = torch.nn.Sequential(
-            torch.nn.Linear(hidden_channels // 4, hidden_channels // 2),
+            torch.nn.Linear(hidden_channels // 2, hidden_channels // 2),
             torch.nn.ReLU(inplace=True),
             torch.nn.Linear(hidden_channels // 2, output_dim),
             torch.nn.Sigmoid(),

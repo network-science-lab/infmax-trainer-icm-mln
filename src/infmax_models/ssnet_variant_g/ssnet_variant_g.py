@@ -14,9 +14,9 @@ from src.infmax_models.ssnet.aggregation import (
     AttentionAggregation,
 )
 
-class SSNetVariantD(BaseHeteroModule):
+class SSNetVariantG(BaseHeteroModule):
     """
-    Super Spreaders Network Variant D.
+    Super Spreaders Network Variant G.
 
     Idea backing this implementation is following:
     1. Compute embeddings of actors on each layer separately using the same trainable nn.modules
@@ -48,29 +48,25 @@ class SSNetVariantD(BaseHeteroModule):
                     GATConv(input_dim, hidden_channels // 4, heads=4),
                     "x_actors, x_edges -> x_interim",
                 ),
-                (BatchNorm1d(hidden_channels), "x_interim -> x_interim"),
-                torch.nn.ReLU(inplace=True),
+                torch.nn.LeakyReLU(inplace=True),
                 (Dropout(p=0.2), "x_interim -> x_interim"),
                 (
                     self.get_gin_layer(hidden_channels, hidden_channels),
                     "x_interim, x_edges -> x_interim",
                 ),
-                (BatchNorm1d(hidden_channels), "x_interim -> x_interim"),
-                torch.nn.ReLU(inplace=True),
+                torch.nn.LeakyReLU(inplace=True),
                 (Dropout(p=0.2), "x_interim -> x_interim"),
                 (
                     GATConv(hidden_channels, hidden_channels // 8, heads=4),
                     "x_interim, x_edges -> x_interim",
                 ),
-                (BatchNorm1d(hidden_channels // 2), "x_interim -> x_interim"),
-                torch.nn.ReLU(inplace=True),
+                torch.nn.LeakyReLU(inplace=True),
                 (Dropout(p=0.2), "x_interim -> x_interim"),
                 (
                     self.get_gin_layer(hidden_channels // 2, hidden_channels // 4),
                     "x_interim, x_edges -> x_interim",
                 ),
-                (BatchNorm1d(hidden_channels // 4), "x_interim -> x_interim"),
-                torch.nn.ReLU(inplace=True),
+                torch.nn.LeakyReLU(inplace=True),
                 (Dropout(p=0.2), "x_interim -> x_interim"),
             ],
         )
@@ -92,7 +88,7 @@ class SSNetVariantD(BaseHeteroModule):
 
         self.head = torch.nn.Sequential(
             torch.nn.Linear(hidden_channels // 4, hidden_channels // 2),
-            torch.nn.ReLU(inplace=True),
+            torch.nn.LeakyReLU(inplace=True),
             torch.nn.Linear(hidden_channels // 2, output_dim),
             torch.nn.Sigmoid(),
         )
@@ -102,7 +98,7 @@ class SSNetVariantD(BaseHeteroModule):
         return GINConv(
             nn=torch.nn.Sequential(
                 Linear(in_channels, out_channels),
-                torch.nn.ReLU(inplace=True),
+                torch.nn.LeakyReLU(inplace=True),
                 Linear(out_channels, out_channels),
             ),
             train_eps=True,

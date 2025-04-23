@@ -1,7 +1,6 @@
 from typing import Literal
 import torch
-from torch_geometric.utils import dropout
-from torch.nn import BatchNorm1d, Linear, Dropout
+from torch.nn import Linear
 from torch_geometric.nn import GINConv, Sequential, GATConv, GCNConv
 
 from _data_set.nsl_data_utils.loaders.constants import ACTOR
@@ -67,9 +66,7 @@ class SSNetVariantE(BaseHeteroModule):
                                 ),
                                 "x_actors, x_edges -> x_actors",
                             ),
-                            (BatchNorm1d(self.get_out_channel(i)), "x_actors -> x_actors"),
-                            torch.nn.LeakyReLU(inplace=True),
-                            (Dropout(p=0.2), "x_actors -> x_actors"),
+                            torch.nn.ReLU(inplace=True),
                         ],
                     ),
                     "x_actors, x_edges -> x_actors",
@@ -95,7 +92,7 @@ class SSNetVariantE(BaseHeteroModule):
 
         self.head = torch.nn.Sequential(
             torch.nn.Linear(self.get_out_channel(num_layers - 1), self.get_out_channel(num_layers - 1)),
-            torch.nn.LeakyReLU(inplace=True),
+            torch.nn.ReLU(inplace=True),
             torch.nn.Linear(self.get_out_channel(num_layers - 1), output_dim),
             torch.nn.Sigmoid(),
         )
@@ -145,7 +142,7 @@ class SSNetVariantE(BaseHeteroModule):
         return GINConv(
             nn=torch.nn.Sequential(
                 Linear(in_channels, out_channels),
-                torch.nn.LeakyReLU(inplace=True),
+                torch.nn.ReLU(inplace=True),
                 Linear(out_channels, out_channels),
             ),
             train_eps=True,

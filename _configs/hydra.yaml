@@ -34,6 +34,14 @@ experiment-config: f_cent
 # experiment-config: h_600
 # experiment-config: h_800
 
+# encoder experiments
+# TODO: IN CONFIGS REPLACE BEST_FROM_TRAININGS BASED ON RESULTS FROM FEATURES EXPERIMENTS
+experiment-config: e_variant_e
+# experiment-config: e_variant_f
+# experiment-config: e_variant_g
+# experiment-config: e_variant_d
+# experiment-config: e_variant_c
+
 # experiment-config: config_and
 # experiment-config: config_or
 # experiment-config: hetero_top_spreader_network #TODO: NEED TO CHANGE ARCHITECTURE
