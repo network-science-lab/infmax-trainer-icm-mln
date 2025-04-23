@@ -7,7 +7,7 @@ hydra:
 
 # features experiments
 # TODO: IN CONFIGS REPLACE BEST_FROM_TRAININGS BASED ON RESULTS FROM FEATURES EXPERIMENTS
-# experiment-config: f_cent
+experiment-config: f_cent
 # experiment-config: f_ones
 # experiment-config: f_zeros
 
@@ -15,7 +15,7 @@ hydra:
 # TODO: IN CONFIGS TRANSFORMS REPLACE BEST_FROM_TRAININGS BASED ON RESULTS FROM TRANSFORMATIONS EXPERIMENTS
 # experiment-config: t_actor_num
 # experiment-config: t_contract_and_norm
-experiment-config: t_contract_with_log
+# experiment-config: t_contract_with_log
 # experiment-config: t_norm_and_scatter
 # experiment-config: t_scatter_exponent
 
