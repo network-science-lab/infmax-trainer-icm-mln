@@ -59,11 +59,16 @@ class SSNetVariantF(BaseHeteroModule):
                     "x_interim, x_edges -> x_interim",
                 ),
                 torch.nn.ReLU(inplace=True),
+                (
+                    self.get_gin_layer(hidden_channels // 2, hidden_channels // 4),
+                    "x_interim, x_edges -> x_interim",
+                ),
+                torch.nn.ReLU(inplace=True),
             ],
         )
 
         if aggregation_type == LayerwiseAggregation.__name__:
-            self.layerwise_aggregator = LayerwiseAggregation(hidden_channels // 2)
+            self.layerwise_aggregator = LayerwiseAggregation(hidden_channels // 4)
         elif aggregation_type == MaxAggregation.__name__:
             self.layerwise_aggregator = MaxAggregation()
         elif aggregation_type == MinAggregation.__name__:
@@ -73,12 +78,12 @@ class SSNetVariantF(BaseHeteroModule):
         elif aggregation_type == SumAggregation.__name__:
             self.layerwise_aggregator = SumAggregation()
         elif aggregation_type == AttentionAggregation.__name__:
-            self.layerwise_aggregator = AttentionAggregation(hidden_channels // 2)
+            self.layerwise_aggregator = AttentionAggregation(hidden_channels // 4)
         else:
             raise AttributeError("Incorrect name of the aggregator!")
 
         self.head = torch.nn.Sequential(
-            torch.nn.Linear(hidden_channels // 2, hidden_channels // 2),
+            torch.nn.Linear(hidden_channels // 4, hidden_channels // 2),
             torch.nn.ReLU(inplace=True),
             torch.nn.Linear(hidden_channels // 2, output_dim),
             torch.nn.Sigmoid(),

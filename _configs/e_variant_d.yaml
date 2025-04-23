@@ -94,7 +94,7 @@ training:
     model_summary_max_depth: -1
     tags:
       - name: and
-      - name: GAT;GIN;BN;DRPT
+      - name: GAT;GIN;GAT;GIN+BN;RELU;DRPT
   callbacks:
     - name: model_summary
       max_depth: -1
