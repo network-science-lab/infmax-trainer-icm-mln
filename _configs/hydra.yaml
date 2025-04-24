@@ -5,9 +5,13 @@ hydra:
 # experiment-config: tavg_and # BASELING
 # experiment-config: best_or # TODO: FINAL
 
+# final
+experiment-config: loss_mae
+# experiment-config: or
+
 # features experiments
 # TODO: IN CONFIGS REPLACE BEST_FROM_TRAININGS BASED ON RESULTS FROM FEATURES EXPERIMENTS
-experiment-config: f_cent
+# experiment-config: f_cent
 # experiment-config: f_ones
 # experiment-config: f_zeros
 
@@ -36,7 +40,7 @@ experiment-config: f_cent
 
 # encoder experiments
 # TODO: IN CONFIGS REPLACE BEST_FROM_TRAININGS BASED ON RESULTS FROM FEATURES EXPERIMENTS
-experiment-config: e_variant_e
+# experiment-config: e_variant_e
 # experiment-config: e_variant_f
 # experiment-config: e_variant_g
 # experiment-config: e_variant_d
