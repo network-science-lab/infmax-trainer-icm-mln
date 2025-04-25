@@ -6,7 +6,8 @@ hydra:
 # experiment-config: best_or # TODO: FINAL
 
 # final
-experiment-config: loss_mae
+experiment-config: t_none
+# experiment-config: loss_mae
 # experiment-config: or
 
 # features experiments
