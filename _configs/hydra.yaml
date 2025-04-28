@@ -6,7 +6,10 @@ hydra:
 # experiment-config: best_or # TODO: FINAL
 
 # final
-experiment-config: t_none
+experiment-config: a_domain
+# experiment-config: variant_h
+# experiment-config: variant_i
+# experiment-config: t_none
 # experiment-config: loss_mae
 # experiment-config: or
 

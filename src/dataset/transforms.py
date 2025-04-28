@@ -14,6 +14,26 @@ def plot_distr(data:MLNHeteroData, title: str):
     plt.close()
 
 
+class NormaliseByDomain(BaseTransform): # TODO:
+    """Default transformation used in experiments."""
+
+    def __init__(self) -> None:
+        super().__init__()
+    
+    @staticmethod
+    def _get_norm_matrix(x: torch.Tensor) -> torch.Tensor:
+        norm_max = x.max(dim=0).values
+        norm_max[norm_max == 0.] = 1.
+        return norm_max
+
+    def __call__(self, data: MLNHeteroData) -> MLNHeteroData:
+        data[ACTOR].y[:,0] = data[ACTOR].y[:,0] / data.diameter
+        data[ACTOR].y[:,1] = data[ACTOR].y[:,1] / len(data.actors_map)
+        data[ACTOR].y[:,2] = data[ACTOR].y[:,2] / data.diameter
+        data[ACTOR].y[:,3] = data[ACTOR].y[:,3] / len(data.actors_map)
+        return data
+
+
 class NormaliseByActorsNumber(BaseTransform):
     """Default transformation used in experiments."""
 

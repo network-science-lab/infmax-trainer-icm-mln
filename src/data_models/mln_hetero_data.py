@@ -15,6 +15,7 @@ from _data_set.nsl_data_utils.loaders.constants import ACTOR, CENTRALITY_FUNCTIO
 from _data_set.nsl_data_utils.loaders.net_loader import load_network
 from _data_set.nsl_data_utils.loaders.sp_loader import load_sp
 from src.data_models.mln_info import MLNInfo
+import networkx as nx
 
 
 class MLNHeteroData(HeteroData):
@@ -46,6 +47,23 @@ class MLNHeteroData(HeteroData):
         output_dim: int,
     ) -> Self:
         # read the network itself
+        mln = load_network(
+            network_info.mln_type,
+            network_info.mln_name,
+            as_tensor=False,
+        )
+
+        diameter = 0 # TODO: CLEAN DIRTY CODE
+        for layer in mln.layers:
+            try:
+                diameter += nx.diameter(mln[layer])
+            except:
+                largest_cc = max(nx.connected_components(mln[layer]), key=len)
+                g_largest_cc = mln[layer].subgraph(largest_cc).copy()
+                diameter += nx.diameter(g_largest_cc)
+        diameter = diameter / len(mln.layers)
+        del mln
+
         mln_torch = load_network(
             network_info.mln_type,
             network_info.mln_name,
@@ -57,6 +75,7 @@ class MLNHeteroData(HeteroData):
             network_info=network_info,
             input_dim=input_dim,
             output_dim=output_dim,
+            diameter=diameter,
         )
 
     @classmethod
@@ -66,12 +85,14 @@ class MLNHeteroData(HeteroData):
         network_info: MLNInfo,
         input_dim: int,
         output_dim: int,
+        diameter: int,
         sp_df: pd.DataFrame | None = None,
     ) -> Self:
         """Default constructor for this class."""
         data = cls()
 
         # tensor of input features
+        data.diameter = diameter
         data[ACTOR].x = cls._prepare_features(network_info, mln_torch, input_dim)
 
         # tensor of edges; each layer denoted as another relation: [actor, l_<idx>, actor]
