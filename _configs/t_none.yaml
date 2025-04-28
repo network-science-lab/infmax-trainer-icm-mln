@@ -90,12 +90,11 @@ training:
       interval: epoch
       frequency: 1
   logger:
-    name: tensor_board
-    # name: neptune
-    # model_summary_max_depth: -1
-    # tags:
-    #   - name: and
-    #   - name: none transformation
+    name: neptune
+    model_summary_max_depth: -1
+    tags:
+      - name: and
+      - name: none transformation
   callbacks:
     - name: model_summary
       max_depth: -1
