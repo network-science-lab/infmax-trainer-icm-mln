@@ -90,13 +90,12 @@ training:
       interval: epoch
       frequency: 1
   logger:
-    name: tensor_board
-    # name: neptune
-    # model_summary_max_depth: -1
-    # tags:
-    #   - name: domain_agg
-    #   - name: LayerwiseAggregation
-    #   - name: BEST_FROM_TRAININGS
+    name: neptune
+    model_summary_max_depth: -1
+    tags:
+      - name: domain_agg
+      - name: LayerwiseAggregation
+      - name: BEST_FROM_TRAININGS
   callbacks:
     - name: model_summary
       max_depth: -1
