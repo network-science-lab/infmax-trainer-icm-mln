@@ -3,65 +3,53 @@ base:
   project: infmax/infmax-gnn
   run_ids:
     - id: IN-721
-      features_type: centralities
-      protocol: OR
     - id: IN-718
-      features_type: zeros
-      protocol: AND
 
   nb_seeds: 1
-  selection_function: top_k_approach
   icm_p: -1
   device: "cuda:0"
 
-data:
-  output_label_name:
-    - exposed
-    - simulation_length
-    - peak_iteration
-    - peak_infected
-
 run:
   networks:
-    - name: network_10
+    - name: network_15
       type: artificial_er
-    - name: network_12
-      type: artificial_er
-    - name: network_29
-      type: artificial_er
-    - name: network_31
-      type: artificial_er
-    - name: network_36
-      type: artificial_er
-    - name: network_55
-      type: artificial_er
-    - name: network_62
-      type: artificial_er
-    - name: network_89
-      type: artificial_er
-    - name: network_2
-      type: artificial_pa
-    - name: network_16
-      type: artificial_pa
     - name: network_20
-      type: artificial_pa
-    - name: network_24
-      type: artificial_pa
-    - name: network_38
-      type: artificial_pa
+      type: artificial_er
     - name: network_40
+      type: artificial_er
+    - name: network_45
+      type: artificial_er
+    - name: network_71
+      type: artificial_er
+    - name: network_78
+      type: artificial_er
+    - name: network_79
+      type: artificial_er
+    - name: network_80
+      type: artificial_er
+    - name: network_7
       type: artificial_pa
-    - name: network_50
+    - name: network_22
       type: artificial_pa
-    - name: network_73
+    - name: network_23
+      type: artificial_pa
+    - name: network_39
+      type: artificial_pa
+    - name: network_57
+      type: artificial_pa
+    - name: network_58
+      type: artificial_pa
+    - name: network_68
       type: artificial_pa
     - name: network_75
       type: artificial_pa
-    - name: network_97
+    - name: network_83
       type: artificial_pa
-    - name: network_98
+    - name: network_85
       type: artificial_pa
-    - name: network_99
+    - name: network_93
+      type: artificial_pa
+    - name: network_95
       type: artificial_pa
     - name: arxiv_netscience_coauthorship
       type: arxiv_netscience_coauthorship

@@ -13,7 +13,6 @@ from bidict import bidict
 from pytorch_lightning.utilities.types import STEP_OUTPUT
 from torch.optim import Optimizer
 from torch_geometric.loader.neighbor_loader import NeighborLoader
-from torch_geometric.nn import to_hetero_with_bases
 
 from _data_set.nsl_data_utils.loaders.constants import ACTOR
 from src.infmax_models.base.base import BaseHeteroModule
@@ -35,7 +34,6 @@ class HetergoGNNWrapperConfig:
     batch_neighbours: list[int]
     batch_subraph_type: str
     num_workers: int
-    metadata: tuple
     CONFIG_ARGS_PATTERN: ClassVar[re.Pattern] = re.compile(r"(\w+)\((.*)\)")
     CONFIG_ARGS_SPLIT_PATTERN: ClassVar[re.Pattern] = re.compile(r",\s\b(?=\D)")
 
@@ -63,49 +61,9 @@ class HeteroGNNWrapper(pl.LightningModule):
         self._config = config
         self.student = model
         self.is_hetero = model.is_hetero
-        if not model.is_hetero:
-            self.student = to_hetero_with_bases(
-                module=self.student,
-                metadata=self._config.metadata,
-                num_bases=model.num_bases,
-            )
         self._loss = get_loss(loss_name=config.loss_name, loss_args=config.loss_args)
         self.test_preds = {"trues": {}, "preds": {}}
         self.save_hyperparameters(ignore=["model"])
-
-    def _mask_batch(
-        self,
-        x_dict: dict[str, torch.Tensor],
-        edge_index_dict: dict[str, torch.Tensor],
-    ) -> tuple[dict[str, torch.Tensor], dict[str, torch.Tensor]]:
-        expected_node_types, expected_edge_types = self._config.metadata
-
-        missing_node_types = [
-            node_type for node_type in expected_node_types if node_type not in x_dict
-        ]
-
-        sample_node_type = x_dict[list(x_dict.keys())[0]]
-        for node_type in missing_node_types:
-            x_dict[node_type] = torch.empty(0, 0).to(sample_node_type.device)
-
-        present_edge_types = edge_index_dict.keys()
-        missing_edge_types = [
-            edge_type
-            for edge_type in expected_edge_types
-            if edge_type not in present_edge_types
-        ]
-
-        samle_edge_type = edge_index_dict[list(present_edge_types)[0]]
-        for edge_type in missing_edge_types:
-            edge_index_dict[edge_type] = torch.empty(
-                size=[samle_edge_type.shape[0], 0],
-                dtype=torch.long,
-            ).to(samle_edge_type.device)
-
-        return (
-            x_dict,
-            edge_index_dict,
-        )
 
     def forward(
         self,
@@ -113,10 +71,6 @@ class HeteroGNNWrapper(pl.LightningModule):
         z_dict: dict[str, torch.Tensor],
         edge_index_dict: dict[str, torch.Tensor],
     ) -> dict[str, torch.Tensor]:
-        if not self.is_hetero:
-            x_dict, edge_index_dict = self._mask_batch(
-                x_dict=x_dict, edge_index_dict=edge_index_dict
-            )
         return self.student.forward(x_dict, z_dict, edge_index_dict)
 
     def _calculate_loss(

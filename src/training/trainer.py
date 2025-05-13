@@ -6,7 +6,7 @@ from typing import Any
 import pytorch_lightning as pl
 from lightning.pytorch.loggers import NeptuneLogger
 
-from src.datamodule.loader import get_datamodule, get_datasets, get_metadata
+from src.datamodule.loader import get_datamodule, get_datasets
 from src.infmax_models.loader import load_model
 from src.training.callbacks import get_callbacks
 from src.training.loggers import get_loggers
@@ -48,9 +48,6 @@ def train(args: dict[str, Any]) -> None:
             batch_neighbours=args["data"]["batch"]["neighbours_sampling"],
             batch_subraph_type=args["data"]["batch"]["subgraph_type"],
             num_workers=get_num_workers(config=args),
-            metadata=get_metadata(
-                [datasets["train"].dataset, datasets["val"].dataset, datasets["test"]]
-            ),
         ),
     )
     if isinstance(logger, NeptuneLogger):
