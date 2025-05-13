@@ -71,7 +71,6 @@ class MLNInfo:
             raise NotImplementedError(f"{x_type} has not been implemented yet")
         raise ValueError("Unknown x_type!")
 
-    # TODO: update after dataset gets updated with the batch 2
     @staticmethod
     def _filter_sp_path(
         sp_paths: list[Path],

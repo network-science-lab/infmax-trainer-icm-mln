@@ -16,36 +16,33 @@ def plot_distr(data:MLNHeteroData, title: str):
     plt.close()
 
 
-class NormaliseByDomain(BaseTransform): # TODO:
+class NormaliseByDomain(BaseTransform):
     """Default transformation used in experiments."""
 
     def __init__(self) -> None:
         super().__init__()
-    
-    @staticmethod
-    def _get_norm_matrix(x: torch.Tensor) -> torch.Tensor:
-        norm_max = x.max(dim=0).values
-        norm_max[norm_max == 0.] = 1.
-        return norm_max
 
-    def __call__(self, data: MLNHeteroData) -> MLNHeteroData:
+    @staticmethod
+    def _get_diameter(graph: nx.Graph) -> float:
+        try:
+            return nx.diameter(graph)
+        except:
+            largest_cc = max(nx.connected_components(graph), key=len)
+            g_largest_cc = graph.subgraph(largest_cc).copy()
+            return nx.diameter(g_largest_cc)
+
+    def _get_mln_diameter(self, data: MLNHeteroData) -> float:
         mln = load_network(
             data.network_type,
             data.network_name,
             as_tensor=False,
         )
-        
-        diameter = 0 # TODO: CLEAN DIRTY CODE
-        for layer in mln.layers:
-            try:
-                diameter += nx.diameter(mln[layer])
-            except:
-                largest_cc = max(nx.connected_components(mln[layer]), key=len)
-                g_largest_cc = mln[layer].subgraph(largest_cc).copy()
-                diameter += nx.diameter(g_largest_cc)
-        diameter = diameter / len(mln.layers)
-        del mln
-        
+
+        diameter = sum([self._get_diameter(layer) for layer in mln.layers.values()])
+        return diameter / len(mln.layers)
+
+    def __call__(self, data: MLNHeteroData) -> MLNHeteroData:
+        diameter = self._get_mln_diameter(data)
         data[ACTOR].y[:,0] = data[ACTOR].y[:,0] / diameter
         data[ACTOR].y[:,1] = data[ACTOR].y[:,1] / len(data.actors_map)
         data[ACTOR].y[:,2] = data[ACTOR].y[:,2] / diameter
