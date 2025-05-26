@@ -4,13 +4,36 @@ from typing import Any
 import torch
 import torch.utils
 import torch.utils.data
+from torch.utils.data.dataset import Subset
 from torch_geometric.data.lightning import LightningDataset
 
 from _data_set.nsl_data_utils.loaders.net_loader import load_net_names
 from src.data_models.mln_info import MLNInfo
 from src.dataset import transforms
 from src.dataset.super_spreaders_dataset import SuperSpreadersDataset
-from src.utils.const import TEST_ARTIFICIAL_NETWORKS
+
+TEST_ARTIFICIAL_NETWORKS = {
+    ("artificial_er", "network_15"),
+    ("artificial_er", "network_20"),
+    ("artificial_er", "network_40"),
+    ("artificial_er", "network_45"),
+    ("artificial_er", "network_71"),
+    ("artificial_er", "network_78"),
+    ("artificial_er", "network_79"),
+    ("artificial_er", "network_80"),
+    ("artificial_pa", "network_7"),
+    ("artificial_pa", "network_23"),
+    ("artificial_pa", "network_39"),
+    ("artificial_pa", "network_57"),
+    ("artificial_pa", "network_58"),
+    ("artificial_pa", "network_75"),
+    ("artificial_pa", "network_85"),
+    ("artificial_pa", "network_95"),
+    ("artificial_pa", "network_22"),
+    ("artificial_pa", "network_68"),
+    ("artificial_pa", "network_83"),
+    ("artificial_pa", "network_93"),
+}
 
 
 def _load_mln_info_chunk(
@@ -39,7 +62,9 @@ def _load_mln_info_chunk(
 def get_transform(transform: str):
     """Get data transformation according to provided configuration."""
     tr_class = getattr(transforms, transform["name"], None)
-    tr_params = transform["parameters"] if isinstance(transform["parameters"], dict) else {}
+    tr_params = (
+        transform["parameters"] if isinstance(transform["parameters"], dict) else {}
+    )
     if tr_class:
         return tr_class(**tr_params)
     else:
@@ -75,6 +100,44 @@ def get_dataset(
     raise AttributeError(f"Unknown dataset: {data_name}")
 
 
+def _train_val_test_split(
+    config: dict[str, Any],
+    dataset: SuperSpreadersDataset,
+) -> tuple[Subset, Subset, SuperSpreadersDataset]:
+    train_val_mlninfos, test_mlninfos = [], []
+    for mlninfo in dataset.data_list:
+        if (mlninfo.mln_type, mlninfo.mln_name) in TEST_ARTIFICIAL_NETWORKS:
+            test_mlninfos.append(mlninfo)
+        else:
+            train_val_mlninfos.append(mlninfo)
+
+    train_val_dataset = SuperSpreadersDataset(
+        networks=train_val_mlninfos,
+        input_dim=dataset._input_dim,
+        output_dim=dataset._output_dim,
+        transform=dataset.transform,
+    )
+
+    val_len = int(len(dataset) * config["data"]["val_data_ratio"])
+    train_len = len(dataset) - val_len - len(test_mlninfos)
+    train_dataset, val_dataset = torch.utils.data.random_split(
+        dataset=train_val_dataset,
+        lengths=[train_len, val_len],
+        generator=torch.Generator().manual_seed(config["base"]["random_seed"]),
+    )
+
+    return (
+        train_dataset,
+        val_dataset,
+        SuperSpreadersDataset(
+            networks=test_mlninfos,
+            input_dim=dataset._input_dim,
+            output_dim=dataset._output_dim,
+            transform=dataset.transform,
+        ),
+    )
+
+
 def get_datasets(config: dict[str, Any]) -> dict[str, SuperSpreadersDataset]:
     logging.info(f"Loading dataset (paths).")
     dataset = get_dataset(
@@ -88,37 +151,13 @@ def get_datasets(config: dict[str, Any]) -> dict[str, SuperSpreadersDataset]:
     )
     logging.info(f"Splitting to train/eval/test dataset (paths).")
 
-    train_val_mlninfos, test_mlninfos = [], []
-    for mlninfo in dataset.data_list:
-        mlninfo_id = (mlninfo.mln_type, mlninfo.mln_name)
-        if mlninfo_id in TEST_ARTIFICIAL_NETWORKS:
-            test_mlninfos.append(mlninfo)
-        else:
-            train_val_mlninfos.append(mlninfo)
-
-    test_dataset = SuperSpreadersDataset(
-        networks=test_mlninfos,
-        input_dim=dataset._input_dim,
-        output_dim=dataset._output_dim,
-        transform=dataset.transform,
-    )
-    train_val_dataset = SuperSpreadersDataset(
-        networks=train_val_mlninfos,
-        input_dim=dataset._input_dim,
-        output_dim=dataset._output_dim,
-        transform=dataset.transform,
-    )
-
-    val_len = int(len(dataset) * config["data"]["val_data_ratio"])
-    train_len = len(dataset) - val_len - len(test_dataset)
-    train_dataset, val_dataset = torch.utils.data.random_split(
-        dataset=train_val_dataset,
-        lengths=[train_len, val_len],
-        generator=torch.Generator().manual_seed(config["base"]["random_seed"]),
+    train_dataset, val_dataset, test_dataset = _train_val_test_split(
+        config=config,
+        dataset=dataset,
     )
 
     logging.info(f"Loading test dataset (paths).")
-    if config['data'].get("test_data"):
+    if config["data"].get("test_data"):
         _test_dataset = get_dataset(
             data_name=config["data"]["name"],
             networks_config=config["data"]["test_data"],
