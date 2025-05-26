@@ -45,7 +45,7 @@ class SSNetVariantE(BaseHeteroModule):
         ] = "LayerwiseAggregation"
     ) -> None:
         """Initialise the object."""
-        super().__init__(is_hetero=True)
+        super().__init__()
 
         self.input_dim = input_dim
         self.hidden_channels = hidden_channels

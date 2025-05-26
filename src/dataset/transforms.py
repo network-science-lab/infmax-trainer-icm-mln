@@ -17,7 +17,11 @@ def plot_distr(data:MLNHeteroData, title: str):
 
 
 class NormaliseByDomain(BaseTransform):
-    """Default transformation used in experiments."""
+    """
+    Apply mixed transformation dividing outputs by
+    grpah diameter (simulation_length, peak_iteration)
+    and number of actors (exposed, peak_infected).
+    """
 
     def __init__(self) -> None:
         super().__init__()

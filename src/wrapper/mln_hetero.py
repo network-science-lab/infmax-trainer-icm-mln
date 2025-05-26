@@ -60,7 +60,6 @@ class HeteroGNNWrapper(pl.LightningModule):
         super().__init__()
         self._config = config
         self.student = model
-        self.is_hetero = model.is_hetero
         self._loss = get_loss(loss_name=config.loss_name, loss_args=config.loss_args)
         self.test_preds = {"trues": {}, "preds": {}}
         self.save_hyperparameters(ignore=["model"])
