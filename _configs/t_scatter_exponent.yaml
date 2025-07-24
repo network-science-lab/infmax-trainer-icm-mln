@@ -1,0 +1,112 @@
+base:
+  random_seed: 43
+
+data:
+  name: SuperSpreadersDataset
+  num_workers: -1
+  batch:
+    size: 128
+    neighbours_sampling: [32, 16, 8, 4]
+    subgraph_type: induced
+  icm:
+    protocol: AND
+    p: -1 # AND: {0.80, 0.85, 0.90, 0.95}, OR: {0.05, 0.10, 0.15, 0.20}, -1 to avg SP in protocol
+  output_label_name:
+    - simulation_length
+    - exposed
+    - peak_iteration
+    - peak_infected
+  val_data_ratio: 0.1
+  test_data_ratio: 0.1
+  train_data:
+    - name: artificial_er
+      features_type: zeros
+    - name: artificial_pa
+      features_type: zeros
+    - name: artificial_small
+      features_type: zeros
+  test_data:
+    - name: arxiv_netscience_coauthorship
+      features_type: zeros
+    - name: aucs
+      features_type: zeros
+    - name: ckm_physicians
+      features_type: zeros
+    - name: eu_transportation
+      features_type: zeros
+    - name: l2_course
+      features_type: zeros
+    - name: lazega
+      features_type: zeros
+    - name: timik1q2009
+      features_type: zeros
+  #   ##### ##### ##### ##### ##### ##### ##### ##### other available networks
+  #   - name: cannes
+  #     features_type: zeros
+  #   - name: fmri74
+  #     features_type: zeros
+  #   - name: toy_network
+  #     features_type: zeros
+  transform:
+    name: ScatterWithExponent
+    parameters:
+      scatter_factor: 3
+
+model:
+  name: SSNetVariantB
+  parameters:
+    input_dim: 5
+    output_dim: auto
+    hidden_channels: 400
+    aggregation_type: LayerwiseAggregation
+
+training:
+  accelerator: gpu # cpu or gpu
+  devices: [0] # list[int] | int | str; default=auto
+  max_epochs: 50
+  loss:
+    name: SListMLELoss
+    args:
+      w_sl: 1
+      w_e: 6
+      w_pin: 1
+      w_pit: 1
+  optimizer:
+    name: AdamW
+    args:
+      weight_decay: 0.00001
+      lr: 0.001
+  scheduler:
+    name: OneCycleLR
+    args:
+      max_lr: 0.003
+      steps_per_epoch: 168
+      epochs: 50
+      pct_start: 0.3
+      anneal_strategy: cos
+      div_factor: 10
+      final_div_factor: 100
+    config:
+      monitor: val_loss
+      interval: epoch
+      frequency: 1
+  logger:
+    name: neptune
+    model_summary_max_depth: -1
+    tags:
+      - name: and
+      - name: BEST_FEATURES
+      - name: ScatterWithExponent
+  callbacks:
+    - name: model_summary
+      max_depth: -1
+    - name: model_checkpoint
+      mode: min
+      monitor: val_loss
+      save_last: True
+      save_top_k: 1
+      verbose: True
+    - name: early_stopping
+      monitor: val_loss
+      mode: min
+      patience: 30

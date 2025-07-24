@@ -1,8 +1,7 @@
 from typing import Literal
 import torch
-from torch_geometric.utils import dropout
 from torch.nn import BatchNorm1d, Linear, Dropout
-from torch_geometric.nn import GINConv, Sequential
+from torch_geometric.nn import GINConv, Sequential, GATConv
 
 from _data_set.nsl_data_utils.loaders.constants import ACTOR
 from src.infmax_models.base.base import BaseHeteroModule
@@ -46,32 +45,32 @@ class SSNetVariantD(BaseHeteroModule):
             "x_actors, x_edges",
             [
                 (
-                    self.get_gin_layer(input_dim, hidden_channels),
+                    GATConv(input_dim, hidden_channels // 4, heads=4),
                     "x_actors, x_edges -> x_interim",
                 ),
                 (BatchNorm1d(hidden_channels), "x_interim -> x_interim"),
-                torch.nn.LeakyReLU(inplace=True),
+                torch.nn.ReLU(inplace=True),
                 (Dropout(p=0.2), "x_interim -> x_interim"),
                 (
                     self.get_gin_layer(hidden_channels, hidden_channels),
                     "x_interim, x_edges -> x_interim",
                 ),
                 (BatchNorm1d(hidden_channels), "x_interim -> x_interim"),
-                torch.nn.LeakyReLU(inplace=True),
+                torch.nn.ReLU(inplace=True),
                 (Dropout(p=0.2), "x_interim -> x_interim"),
                 (
-                    self.get_gin_layer(hidden_channels, hidden_channels // 2),
+                    GATConv(hidden_channels, hidden_channels // 8, heads=4),
                     "x_interim, x_edges -> x_interim",
                 ),
                 (BatchNorm1d(hidden_channels // 2), "x_interim -> x_interim"),
-                torch.nn.LeakyReLU(inplace=True),
+                torch.nn.ReLU(inplace=True),
                 (Dropout(p=0.2), "x_interim -> x_interim"),
                 (
                     self.get_gin_layer(hidden_channels // 2, hidden_channels // 4),
                     "x_interim, x_edges -> x_interim",
                 ),
                 (BatchNorm1d(hidden_channels // 4), "x_interim -> x_interim"),
-                torch.nn.LeakyReLU(inplace=True),
+                torch.nn.ReLU(inplace=True),
                 (Dropout(p=0.2), "x_interim -> x_interim"),
             ],
         )
@@ -92,9 +91,9 @@ class SSNetVariantD(BaseHeteroModule):
             raise AttributeError("Incorrect name of the aggregator!")
 
         self.head = torch.nn.Sequential(
-            torch.nn.Linear(hidden_channels // 4, hidden_channels // 4),
-            torch.nn.LeakyReLU(inplace=True),
-            torch.nn.Linear(hidden_channels // 4, output_dim),
+            torch.nn.Linear(hidden_channels // 4, hidden_channels // 2),
+            torch.nn.ReLU(inplace=True),
+            torch.nn.Linear(hidden_channels // 2, output_dim),
             torch.nn.Sigmoid(),
         )
     
@@ -103,7 +102,7 @@ class SSNetVariantD(BaseHeteroModule):
         return GINConv(
             nn=torch.nn.Sequential(
                 Linear(in_channels, out_channels),
-                torch.nn.LeakyReLU(inplace=True),
+                torch.nn.ReLU(inplace=True),
                 Linear(out_channels, out_channels),
             ),
             train_eps=True,

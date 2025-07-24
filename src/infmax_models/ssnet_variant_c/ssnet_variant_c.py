@@ -1,8 +1,7 @@
 from typing import Literal
 import torch
-from torch_geometric.utils import dropout
-from torch.nn import BatchNorm1d, Linear, Dropout
-from torch_geometric.nn import GINConv, Sequential
+from torch.nn import BatchNorm1d, Linear
+from torch_geometric.nn import GINConv, Sequential, GATConv
 
 from _data_set.nsl_data_utils.loaders.constants import ACTOR
 from src.infmax_models.base.base import BaseHeteroModule
@@ -46,38 +45,34 @@ class SSNetVariantC(BaseHeteroModule):
             "x_actors, x_edges",
             [
                 (
-                    self.get_gin_layer(input_dim, hidden_channels // 4),
+                    GATConv(input_dim, hidden_channels // 4, heads=4),
                     "x_actors, x_edges -> x_interim",
-                ),
-                (BatchNorm1d(hidden_channels // 4), "x_interim -> x_interim"),
-                torch.nn.LeakyReLU(inplace=True),
-                (Dropout(p=0.2), "x_interim -> x_interim"),
-                (
-                    self.get_gin_layer(hidden_channels // 4, hidden_channels // 2),
-                    "x_interim, x_edges -> x_interim",
-                ),
-                (BatchNorm1d(hidden_channels // 2), "x_interim -> x_interim"),
-                torch.nn.LeakyReLU(inplace=True),
-                (Dropout(p=0.2), "x_interim -> x_interim"),
-                (
-                    self.get_gin_layer(hidden_channels // 2, hidden_channels),
-                    "x_interim, x_edges -> x_interim",
                 ),
                 (BatchNorm1d(hidden_channels), "x_interim -> x_interim"),
                 torch.nn.LeakyReLU(inplace=True),
-                (Dropout(p=0.2), "x_interim -> x_interim"),
                 (
                     self.get_gin_layer(hidden_channels, hidden_channels),
                     "x_interim, x_edges -> x_interim",
                 ),
                 (BatchNorm1d(hidden_channels), "x_interim -> x_interim"),
                 torch.nn.LeakyReLU(inplace=True),
-                (Dropout(p=0.2), "x_interim -> x_interim"),
+                (
+                    GATConv(hidden_channels, hidden_channels // 8, heads=4),
+                    "x_interim, x_edges -> x_interim",
+                ),
+                (BatchNorm1d(hidden_channels // 2), "x_interim -> x_interim"),
+                torch.nn.LeakyReLU(inplace=True),
+                (
+                    self.get_gin_layer(hidden_channels // 2, hidden_channels // 4),
+                    "x_interim, x_edges -> x_interim",
+                ),
+                (BatchNorm1d(hidden_channels // 4), "x_interim -> x_interim"),
+                torch.nn.LeakyReLU(inplace=True),
             ],
         )
 
         if aggregation_type == LayerwiseAggregation.__name__:
-            self.layerwise_aggregator = LayerwiseAggregation(hidden_channels)
+            self.layerwise_aggregator = LayerwiseAggregation(hidden_channels // 4)
         elif aggregation_type == MaxAggregation.__name__:
             self.layerwise_aggregator = MaxAggregation()
         elif aggregation_type == MinAggregation.__name__:
@@ -87,13 +82,12 @@ class SSNetVariantC(BaseHeteroModule):
         elif aggregation_type == SumAggregation.__name__:
             self.layerwise_aggregator = SumAggregation()
         elif aggregation_type == AttentionAggregation.__name__:
-            self.layerwise_aggregator = AttentionAggregation(hidden_channels)
+            self.layerwise_aggregator = AttentionAggregation(hidden_channels // 4)
         else:
             raise AttributeError("Incorrect name of the aggregator!")
 
-        # self.edge_dropout = DropoutEdge(p=0.1)
         self.head = torch.nn.Sequential(
-            torch.nn.Linear(hidden_channels, hidden_channels // 2),
+            torch.nn.Linear(hidden_channels // 4, hidden_channels // 2),
             torch.nn.LeakyReLU(inplace=True),
             torch.nn.Linear(hidden_channels // 2, output_dim),
             torch.nn.Sigmoid(),
@@ -133,7 +127,6 @@ class SSNetVariantC(BaseHeteroModule):
             layer_x = x_dict[ACTOR] * z_mask[:, layer_idx].unsqueeze(dim=1).expand_as(
                 x_dict[ACTOR]
             )
-            # edges = self.edge_dropout(layer_edges)
             y_relation = self.layerwise_encoder(layer_x, layer_edges)
             y_relations[layer_name] = y_relation
 
@@ -144,24 +137,3 @@ class SSNetVariantC(BaseHeteroModule):
         y_pred = self.head(y_aggregated)
 
         return {ACTOR: y_pred}
-
-
-class DropoutEdge(torch.nn.Module):
-    def __init__(
-        self,
-        p: float = 0.2,
-        relabel_nodes: bool = False,
-    ) -> None:
-        super().__init__()
-        self._p = p
-        self._force_undirected = relabel_nodes
-        
-    def forward(self, edge_index: torch.Tensor) -> torch.Tensor:
-        edges, edge_mask = dropout.dropout_edge(
-            edge_index=edge_index,
-            p=self._p,
-            force_undirected=self._force_undirected,
-            training=self.training,
-        )
-        
-        return edges

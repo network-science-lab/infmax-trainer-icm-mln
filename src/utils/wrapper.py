@@ -9,6 +9,7 @@ from torch.optim import Optimizer, lr_scheduler
 
 from src.training.loss.mtwae import MTWAE
 from src.training.loss.weighted_mse import WeightedMSE
+from src.training.loss.slistmle import SListMLELoss
 
 
 def get_loss(
@@ -27,6 +28,9 @@ def get_loss(
 
         case MeanAbsoluteError.__name__:
             return MeanAbsoluteError(**loss_args)
+
+        case SListMLELoss.__name__:
+            return SListMLELoss(**loss_args)
 
         case _:
             raise AttributeError(f"Unknown loss function: {loss_name}")

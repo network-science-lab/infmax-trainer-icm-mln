@@ -5,6 +5,8 @@ from torch_geometric.transforms import BaseTransform, Compose
 
 from _data_set.nsl_data_utils.loaders.constants import ACTOR
 from src.data_models.mln_hetero_data import MLNHeteroData
+import networkx as nx
+from _data_set.nsl_data_utils.loaders.net_loader import load_network
 
 
 def plot_distr(data:MLNHeteroData, title: str):
@@ -12,6 +14,43 @@ def plot_distr(data:MLNHeteroData, title: str):
     pd.DataFrame(data[ACTOR].y.numpy()).hist()
     plt.savefig(title, dpi=300, bbox_inches="tight")
     plt.close()
+
+
+class NormaliseByDomain(BaseTransform): # TODO:
+    """Default transformation used in experiments."""
+
+    def __init__(self) -> None:
+        super().__init__()
+    
+    @staticmethod
+    def _get_norm_matrix(x: torch.Tensor) -> torch.Tensor:
+        norm_max = x.max(dim=0).values
+        norm_max[norm_max == 0.] = 1.
+        return norm_max
+
+    def __call__(self, data: MLNHeteroData) -> MLNHeteroData:
+        mln = load_network(
+            data.network_type,
+            data.network_name,
+            as_tensor=False,
+        )
+        
+        diameter = 0 # TODO: CLEAN DIRTY CODE
+        for layer in mln.layers:
+            try:
+                diameter += nx.diameter(mln[layer])
+            except:
+                largest_cc = max(nx.connected_components(mln[layer]), key=len)
+                g_largest_cc = mln[layer].subgraph(largest_cc).copy()
+                diameter += nx.diameter(g_largest_cc)
+        diameter = diameter / len(mln.layers)
+        del mln
+        
+        data[ACTOR].y[:,0] = data[ACTOR].y[:,0] / diameter
+        data[ACTOR].y[:,1] = data[ACTOR].y[:,1] / len(data.actors_map)
+        data[ACTOR].y[:,2] = data[ACTOR].y[:,2] / diameter
+        data[ACTOR].y[:,3] = data[ACTOR].y[:,3] / len(data.actors_map)
+        return data
 
 
 class NormaliseByActorsNumber(BaseTransform):

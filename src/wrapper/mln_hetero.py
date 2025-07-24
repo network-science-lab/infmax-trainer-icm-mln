@@ -243,11 +243,11 @@ class HeteroGNNWrapper(pl.LightningModule):
             all_true_values.append(subgraph[ACTOR].y[:subgraf_batch_size])
             all_actors_idcs.extend(subgraph[ACTOR].input_id.tolist())
 
-            self.log(
-                name=f"test_loss_{graph_name}",
-                value=loss,
-                batch_size=len(batch),
-            )
+        self.log(
+            name=f"test_loss_{graph_name}",
+            value=loss,
+            batch_size=len(batch),
+        )
 
         self.test_preds["preds"][graph_name] = self.transform_labels(
             actors_map=actors_map,
@@ -263,7 +263,7 @@ class HeteroGNNWrapper(pl.LightningModule):
         )
 
         return loss
-    
+
     @torch.no_grad
     def predict_step(
         self,

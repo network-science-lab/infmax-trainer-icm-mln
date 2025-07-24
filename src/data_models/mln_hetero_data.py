@@ -45,7 +45,6 @@ class MLNHeteroData(HeteroData):
         input_dim: int,
         output_dim: int,
     ) -> Self:
-        # read the network itself
         mln_torch = load_network(
             network_info.mln_type,
             network_info.mln_name,
