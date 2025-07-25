@@ -39,7 +39,7 @@ class SSNet(BaseHeteroModule):
         ] = "LayerwiseAggregation"
     ) -> None:
         """Initialise the object."""
-        super().__init__(is_hetero=True)
+        super().__init__()
 
         self.layerwise_encoder = Sequential(
             "x_actors, x_edges",

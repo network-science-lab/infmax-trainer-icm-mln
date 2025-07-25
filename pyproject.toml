@@ -5,11 +5,11 @@ authors = [
     {name = "Michał Czuba"},
     {name = "Adam Piróg"},
     {name = "Mateusz Stolarski"},
-    {name = "Piotr Bródka"}
+    {name = "Piotr Bródka"},
     {name = "Piotr Bielak"}
 ]
 
-version = "1.0.0"
+version = "1.1.0"
 description = "Inf. Max. with ML methods for Multilayer Networks"
 readme = "README.md"
 license = { text="MIT" }

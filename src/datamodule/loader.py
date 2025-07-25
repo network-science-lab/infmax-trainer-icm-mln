@@ -4,16 +4,15 @@ from typing import Any
 import torch
 import torch.utils
 import torch.utils.data
+from torch.utils.data.dataset import Subset
 from torch_geometric.data.lightning import LightningDataset
-from torch_geometric.typing import EdgeType, NodeType
 
 from _data_set.nsl_data_utils.loaders.net_loader import load_net_names
 from src.data_models.mln_info import MLNInfo
 from src.dataset import transforms
 from src.dataset.super_spreaders_dataset import SuperSpreadersDataset
 
-
-CLEAN_AFTER_ME_PLEASE = {
+TEST_ARTIFICIAL_NETWORKS = {
     ("artificial_er", "network_15"),
     ("artificial_er", "network_20"),
     ("artificial_er", "network_40"),
@@ -63,7 +62,9 @@ def _load_mln_info_chunk(
 def get_transform(transform: str):
     """Get data transformation according to provided configuration."""
     tr_class = getattr(transforms, transform["name"], None)
-    tr_params = transform["parameters"] if isinstance(transform["parameters"], dict) else {}
+    tr_params = (
+        transform["parameters"] if isinstance(transform["parameters"], dict) else {}
+    )
     if tr_class:
         return tr_class(**tr_params)
     else:
@@ -99,6 +100,44 @@ def get_dataset(
     raise AttributeError(f"Unknown dataset: {data_name}")
 
 
+def _train_val_test_split(
+    config: dict[str, Any],
+    dataset: SuperSpreadersDataset,
+) -> tuple[Subset, Subset, SuperSpreadersDataset]:
+    train_val_mlninfos, test_mlninfos = [], []
+    for mlninfo in dataset.data_list:
+        if (mlninfo.mln_type, mlninfo.mln_name) in TEST_ARTIFICIAL_NETWORKS:
+            test_mlninfos.append(mlninfo)
+        else:
+            train_val_mlninfos.append(mlninfo)
+
+    train_val_dataset = SuperSpreadersDataset(
+        networks=train_val_mlninfos,
+        input_dim=dataset._input_dim,
+        output_dim=dataset._output_dim,
+        transform=dataset.transform,
+    )
+
+    val_len = int(len(dataset) * config["data"]["val_data_ratio"])
+    train_len = len(dataset) - val_len - len(test_mlninfos)
+    train_dataset, val_dataset = torch.utils.data.random_split(
+        dataset=train_val_dataset,
+        lengths=[train_len, val_len],
+        generator=torch.Generator().manual_seed(config["base"]["random_seed"]),
+    )
+
+    return (
+        train_dataset,
+        val_dataset,
+        SuperSpreadersDataset(
+            networks=test_mlninfos,
+            input_dim=dataset._input_dim,
+            output_dim=dataset._output_dim,
+            transform=dataset.transform,
+        ),
+    )
+
+
 def get_datasets(config: dict[str, Any]) -> dict[str, SuperSpreadersDataset]:
     logging.info(f"Loading dataset (paths).")
     dataset = get_dataset(
@@ -107,56 +146,25 @@ def get_datasets(config: dict[str, Any]) -> dict[str, SuperSpreadersDataset]:
         labels=config["data"]["output_label_name"],
         protocol=config["data"]["icm"]["protocol"],
         p=config["data"]["icm"]["p"],
-        input_dim=config["model"]["parameters"]["input_dim"],  # TODO: a convolved parameter!
+        input_dim=config["model"]["parameters"]["input_dim"],
         transform=config["data"]["transform"],
     )
     logging.info(f"Splitting to train/eval/test dataset (paths).")
-    val_len = int(len(dataset) * config["data"]["val_data_ratio"])
-    ##### ##### ##### dirty deletion - start
-    # test_len = int(len(dataset) * config["data"]["test_data_ratio"])
-    # train_len = len(dataset) - val_len - test_len
-    # train_dataset, val_dataset, test_dataset = torch.utils.data.random_split( # TODO: handle the test data provided explicitly
-    #     dataset=dataset,
-    #     lengths=[train_len, val_len, test_len],
-    #     generator=torch.Generator().manual_seed(config["base"]["random_seed"]),
-    # )
-    ##### ##### ##### dirty deletion - stop
-    ##### ##### ##### dirty addition - start
-    train_val_mlninfos, test_mlninfos = [], []
-    for mlninfo in dataset.data_list:
-        mlninfo_id = (mlninfo.mln_type, mlninfo.mln_name)
-        if mlninfo_id in CLEAN_AFTER_ME_PLEASE:
-            test_mlninfos.append(mlninfo)
-        else:
-            train_val_mlninfos.append(mlninfo)
-    test_dataset = SuperSpreadersDataset(
-        networks=test_mlninfos,
-        input_dim=dataset._input_dim,
-        output_dim=dataset._output_dim,
-        transform=dataset.transform,
+
+    train_dataset, val_dataset, test_dataset = _train_val_test_split(
+        config=config,
+        dataset=dataset,
     )
-    train_val_dataset = SuperSpreadersDataset(
-        networks=train_val_mlninfos,
-        input_dim=dataset._input_dim,
-        output_dim=dataset._output_dim,
-        transform=dataset.transform,
-    )
-    train_len = len(dataset) - val_len - len(test_dataset)
-    train_dataset, val_dataset = torch.utils.data.random_split(
-        dataset=train_val_dataset,
-        lengths=[train_len, val_len],
-        generator=torch.Generator().manual_seed(config["base"]["random_seed"]),
-    )
-    ##### ##### ##### dirty addition - stop
+
     logging.info(f"Loading test dataset (paths).")
-    if config['data'].get("test_data"):
+    if config["data"].get("test_data"):
         _test_dataset = get_dataset(
             data_name=config["data"]["name"],
             networks_config=config["data"]["test_data"],
             labels=config["data"]["output_label_name"],
             protocol=config["data"]["icm"]["protocol"],
             p=config["data"]["icm"]["p"],
-            input_dim=config["model"]["parameters"]["input_dim"],  # TODO: a convolved parameter!
+            input_dim=config["model"]["parameters"]["input_dim"],
             transform=config["data"]["transform"],
         )
         test_dataset = torch.utils.data.ConcatDataset([test_dataset, _test_dataset])
@@ -182,25 +190,3 @@ def get_datamodule(
         num_workers=0,
         pin_memory=True,
     )
-
-
-def get_metadata(
-    datasets: list[SuperSpreadersDataset],
-) -> tuple[list[NodeType], list[EdgeType]]:
-    """
-    Here, we treat as metadata types of relations and types of agents.
-
-    In current approach it's just "actors" for agents and a union of layer names available in the
-    dataset. This function is used only in autoconverters from base torch_geometric models
-    to heterogeneous ones.
-    """
-    nodes_data = set()
-    edges_data = set()
-
-    # for dataset in datasets: # TODO:
-    #     node_data, edge_data = dataset.get_metadata()
-
-    #     nodes_data = nodes_data.union(node_data)
-    #     edges_data = edges_data.union(edge_data)
-
-    return list(nodes_data), list(edges_data)

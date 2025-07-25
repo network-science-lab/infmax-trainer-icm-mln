@@ -30,9 +30,6 @@ class SuperSpreadersDataset(Dataset):
         self.data_list = networks
         self.transform = transform
 
-        # self._metadata = self._prepare_metadata() # TODO: UNCOMMENT TS NETWORK
-        self._metadata = ([], [])
-
     def len(self):
         return len(self.data_list)
 
@@ -45,16 +42,3 @@ class SuperSpreadersDataset(Dataset):
         if self.transform:
             return self.transform(mln_hetero_data)
         return mln_hetero_data
-
-    def _prepare_metadata(self) -> tuple[list[NodeType], list[EdgeType]]:
-        nodes_data = []
-        edges_data = []
-        for i in range(self.data_list):
-            node_data, edge_data = self.get(i).metadata()
-            nodes_data.extend(node_data)
-            edges_data.extend(edge_data)
-
-        return nodes_data, edges_data
-
-    def get_metadata(self) -> tuple[list[NodeType], list[EdgeType]]:
-        return self._metadata
