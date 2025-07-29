@@ -10,10 +10,10 @@ from bidict import bidict
 from torch_geometric.data import HeteroData
 from typing_extensions import Self
 
-from _data_set.nsl_data_utils.loaders.centrality_loader import load_centralities
-from _data_set.nsl_data_utils.loaders.constants import ACTOR, CENTRALITY_FUNCTIONS
-from _data_set.nsl_data_utils.loaders.net_loader import load_network
-from _data_set.nsl_data_utils.loaders.sp_loader import load_sp
+from data.tsds_utils.loaders.centrality_loader import load_centralities
+from data.tsds_utils.loaders.constants import ACTOR, CENTRALITY_FUNCTIONS
+from data.tsds_utils.loaders.net_loader import load_network
+from data.tsds_utils.loaders.sp_loader import load_sp
 from src.data_models.mln_info import MLNInfo
 
 
@@ -113,7 +113,7 @@ class MLNHeteroData(HeteroData):
 
         if network_info.x_type == "zeros":
             return torch.zeros((len(network_torch.actors_map), input_dim))
-    
+
         elif network_info.x_type == "ones":
             return torch.ones((len(network_torch.actors_map), input_dim))
 
@@ -136,7 +136,9 @@ class MLNHeteroData(HeteroData):
             return features_pt[:, :input_dim]
 
         elif network_info.x_type == "scrapped":
-            raise NotImplementedError(f"{network_info.x_type} has not been implemented yet")
+            raise NotImplementedError(
+                f"{network_info.x_type} has not been implemented yet"
+            )
 
         else:
             raise ValueError("Unknown x_type!")

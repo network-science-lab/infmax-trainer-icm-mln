@@ -2,14 +2,14 @@ from typing import Any, Iterator
 
 from torch import cuda, optim
 from torch.nn import MSELoss
-from torchmetrics.regression import MeanAbsoluteError
 from torch.nn.modules.loss import _Loss
 from torch.nn.parameter import Parameter
 from torch.optim import Optimizer, lr_scheduler
+from torchmetrics.regression import MeanAbsoluteError
 
 from src.training.loss.mtwae import MTWAE
-from src.training.loss.weighted_mse import WeightedMSE
 from src.training.loss.slistmle import SListMLELoss
+from src.training.loss.weighted_mse import WeightedMSE
 
 
 def get_loss(

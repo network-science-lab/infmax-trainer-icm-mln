@@ -5,7 +5,7 @@ import yaml
 from hydra.core.hydra_config import HydraConfig
 from omegaconf import DictConfig
 
-from _data_set.nsl_data_utils.loaders.constants import CENTRALITY_FUNCTIONS
+from data.tsds_utils.loaders.constants import CENTRALITY_FUNCTIONS
 from src import CONFIGS_PATH
 
 
@@ -34,7 +34,9 @@ def get_available_configs() -> list[str]:
 def update_config(args: dict[str, Any]) -> dict[str, Any]:
     """Replace all "auto" params with the proper ones."""
     if args["model"]["parameters"]["output_dim"] == "auto":
-        args["model"]["parameters"]["output_dim"] = len(args["data"]["output_label_name"])
+        args["model"]["parameters"]["output_dim"] = len(
+            args["data"]["output_label_name"]
+        )
     return args
 
 
