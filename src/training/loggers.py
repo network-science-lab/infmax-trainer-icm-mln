@@ -7,6 +7,7 @@ import neptune
 from lightning.pytorch import loggers
 from lightning.pytorch.loggers.logger import Logger
 
+
 class DummyLogger:
     def __init__(*args, **kwargs):
         pass
@@ -51,5 +52,5 @@ def get_loggers(config: dict[str, Any]) -> Logger:
             return get_lightning_neptune(config)
         case _:
             logging.warning(f"{config['training']['loggers']['name']} is not supported")
-            logging.info('Using mocked logger')
+            logging.info("Using mocked logger")
             return DummyLogger()

@@ -2,7 +2,7 @@ import ast
 import json
 import re
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from pathlib import Path
 from typing import Any, ClassVar, Self, TypeVar
 
@@ -14,7 +14,7 @@ from pytorch_lightning.utilities.types import STEP_OUTPUT
 from torch.optim import Optimizer
 from torch_geometric.loader.neighbor_loader import NeighborLoader
 
-from _data_set.nsl_data_utils.loaders.constants import ACTOR
+from data.tsds_utils.loaders.constants import ACTOR
 from src.infmax_models.base.base import BaseHeteroModule
 from src.utils.wrapper import get_loss, get_optimizer, get_scheduler
 
@@ -39,6 +39,7 @@ class HetergoGNNWrapperConfig:
 
     @classmethod
     def from_str(cls, obj: str) -> Self:
+        field_names = {f.name for f in fields(cls)}
         config_args_match = re.match(cls.CONFIG_ARGS_PATTERN, obj)
         args_str = config_args_match.group(2)
         args_list = [
@@ -47,6 +48,7 @@ class HetergoGNNWrapperConfig:
         kwargs = {
             arg.split("=")[0]: ast.literal_eval(arg.split("=")[1]) for arg in args_list
         }
+        kwargs = {k: v for k, v in kwargs.items() if k in field_names}
 
         return cls(**kwargs)
 

@@ -34,7 +34,9 @@ def main(cfg: DictConfig) -> None:
         logging.info(f"Setting randomness seed as {random_seed}!")
         set_seed(config["base"]["random_seed"])
 
-    logging.info("Loaded config: {0}".format({k: v for k, v in config.items() if k != 'hydra'}))
+    logging.info(
+        "Loaded config: {0}".format({k: v for k, v in config.items() if k != "hydra"})
+    )
     train(config)
 
 

@@ -1,9 +1,10 @@
 import ast
+import json
 import logging
 import os
 import warnings
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import hydra
 import neptune
@@ -12,13 +13,13 @@ from dotenv import load_dotenv
 from omegaconf import DictConfig
 from tqdm import tqdm
 
-from _data_set.nsl_data_utils.loaders.constants import (
+from data.tsds_utils.loaders.constants import (
     EXPOSED,
     PEAK_INFECTED,
     PEAK_ITERATION,
     SIMULATION_LENGTH,
 )
-from src import CONFIGS_PATH
+from src import CONFIGS_PATH, MODELS_PATH
 from src.data_models.mln_info import MLNInfo
 from src.datamodule.loader import get_transform
 from src.dataset.super_spreaders_dataset import SuperSpreadersDataset
@@ -46,15 +47,22 @@ class HeteroGNN_Predictor:
             logging.info(f"Setting randomness seed as {random_seed}!")
             set_seed(config["base"]["random_seed"])
 
-        self.run = neptune.init_run(
-            api_token=os.getenv(
-                key="NEPTUNE_API_KEY",
-                default=neptune.ANONYMOUS_API_TOKEN,
-            ),
-            project=config["base"]["project"],
-            with_id=config["base"]["run_id"],
+        self.run = (
+            neptune.init_run(
+                api_token=os.getenv(
+                    key="NEPTUNE_API_KEY",
+                    default=neptune.ANONYMOUS_API_TOKEN,
+                ),
+                project=config["base"]["project"],
+                with_id=config["base"]["run_id"],
+            )
+            if config["base"]["neptune"]
+            else None
         )
-        wrapper_obj, wrapper_config = self.from_neptune(config)
+
+        wrapper_obj, wrapper_config = (
+            self.from_neptune(config) if self.run else self.from_local(config)
+        )
         self._wrapper_obj = wrapper_obj
         self._wrapper_obj.eval()
         self._wrapper_config = wrapper_config
@@ -65,7 +73,10 @@ class HeteroGNN_Predictor:
     def upload_result(
         self, network_type: str, network_name: str, result_path: Path
     ) -> None:
-        self.run[f"evaluation/{network_type}/{network_name}"].upload(str(result_path))
+        if self.run:
+            self.run[f"evaluation/{network_type}/{network_name}"].upload(
+                str(result_path)
+            )
 
     def from_neptune(
         self, run_config: dict[str, Any]
@@ -77,15 +88,15 @@ class HeteroGNN_Predictor:
 
         model_config = {
             "model": {
-                "name": self.run["training/hyperparams/model/name"].fetch(),
+                "name": "TopSpreadersNetwork",
                 "parameters": self.run["training/hyperparams/model/parameters"].fetch(),
             }
         }
         model = load_model(model_config)
 
-        wrapper_config = HetergoGNNWrapperConfig.from_str(
-            self.run["training/hyperparams/config"].fetch()
-        )
+        config_str = self.run["training/hyperparams/config"].fetch()
+        wrapper_config = HetergoGNNWrapperConfig.from_str(config_str)
+
         wrapper = HeteroGNNWrapper.load_from_checkpoint(
             checkpoint_path=local_best_ckpt_path,
             model=model,
@@ -97,7 +108,37 @@ class HeteroGNN_Predictor:
             "data": self.run["training/hyperparams/data"].fetch(),
         }
 
+        with open(self.evaluation_dir / "config.json", "w", encoding="utf-8") as f:
+            json.dump(
+                {
+                    "wrapper_config": config_str,
+                    "model_config": model_config,
+                    "run_config": run_config,
+                },
+                f,
+                indent=4,
+            )
+
         return wrapper, run_config
+
+    def from_local(
+        self, run_config: dict[str, Any]
+    ) -> tuple[HeteroGNNWrapper, dict[str, Any]]:
+        run_path = MODELS_PATH / f"{run_config['base']['run_id']}"
+        with open(run_path / "config.json", "r", encoding="utf-8") as f:
+            config = json.load(f)
+
+        local_best_ckpt_path = str(run_path / "best.ckpt")
+        model = load_model(config["model_config"])
+
+        wrapper_config = HetergoGNNWrapperConfig.from_str(config["wrapper_config"])
+        wrapper = HeteroGNNWrapper.load_from_checkpoint(
+            checkpoint_path=local_best_ckpt_path,
+            model=model,
+            config=wrapper_config,
+        ).to(run_config["base"]["device"])
+
+        return wrapper, config["run_config"]
 
     def prepare_dataset(
         self, network_type: str, network_name: str

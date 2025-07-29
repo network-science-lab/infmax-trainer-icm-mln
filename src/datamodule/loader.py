@@ -7,7 +7,7 @@ import torch.utils.data
 from torch.utils.data.dataset import Subset
 from torch_geometric.data.lightning import LightningDataset
 
-from _data_set.nsl_data_utils.loaders.net_loader import load_net_names
+from data.tsds_utils.loaders.net_loader import load_net_names
 from src.data_models.mln_info import MLNInfo
 from src.dataset import transforms
 from src.dataset.super_spreaders_dataset import SuperSpreadersDataset

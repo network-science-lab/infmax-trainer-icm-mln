@@ -2,7 +2,8 @@ import torch
 import torch.nn as nn
 
 DEFAULT_EPS = 1e-10
-PADDED_Y_VALUE=-1
+PADDED_Y_VALUE = -1
+
 
 class SListMLELoss(nn.Module):
     def __init__(
@@ -25,18 +26,26 @@ class SListMLELoss(nn.Module):
         true_values: torch.Tensor,
     ) -> torch.Tensor:
         scores_pred = (
-            (1 - pred_values[:, 0]) * self.w_sl +
-            pred_values[:, 0] * self.w_e +
-            (1 - pred_values[:, 0]) * self.w_pit +
-            pred_values[:, 0] * self.w_pin
-        ).squeeze(-1).unsqueeze(0)
+            (
+                (1 - pred_values[:, 0]) * self.w_sl
+                + pred_values[:, 0] * self.w_e
+                + (1 - pred_values[:, 0]) * self.w_pit
+                + pred_values[:, 0] * self.w_pin
+            )
+            .squeeze(-1)
+            .unsqueeze(0)
+        )
 
         scores_true = (
-            (1 - true_values[:, 0]) * self.w_sl +
-            true_values[:, 0] * self.w_e +
-            (1 - true_values[:, 0]) * self.w_pit +
-            true_values[:, 0] * self.w_pin
-        ).squeeze(-1).unsqueeze(0)
+            (
+                (1 - true_values[:, 0]) * self.w_sl
+                + true_values[:, 0] * self.w_e
+                + (1 - true_values[:, 0]) * self.w_pit
+                + true_values[:, 0] * self.w_pin
+            )
+            .squeeze(-1)
+            .unsqueeze(0)
+        )
 
         # sorted_indices = torch.argsort(scores_true, dim=1, descending=True)
         # sorted_pred = torch.gather(scores_pred, dim=1, index=sorted_indices)
@@ -44,7 +53,7 @@ class SListMLELoss(nn.Module):
         # cumsum = torch.logcumsumexp(sorted_pred, dim=1)
         # loss = (cumsum - sorted_pred).sum(dim=1)
         # loss = loss.mean()
-        
+
         loss = self.listMLE(scores_pred, scores_true)
         return loss
 
@@ -79,7 +88,9 @@ class SListMLELoss(nn.Module):
 
         preds_sorted_by_true_minus_max = preds_sorted_by_true - max_pred_values
 
-        cumsums = torch.cumsum(preds_sorted_by_true_minus_max.exp().flip(dims=[1]), dim=1).flip(dims=[1])
+        cumsums = torch.cumsum(
+            preds_sorted_by_true_minus_max.exp().flip(dims=[1]), dim=1
+        ).flip(dims=[1])
 
         observation_loss = torch.log(cumsums + eps) - preds_sorted_by_true_minus_max
 

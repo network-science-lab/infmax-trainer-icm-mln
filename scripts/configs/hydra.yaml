@@ -1,0 +1,5 @@
+hydra:
+  run:
+    dir: _data_results/model_outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+
+experiment-config: t_scatter_exponent

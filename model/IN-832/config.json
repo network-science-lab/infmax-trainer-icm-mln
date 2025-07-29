@@ -1,0 +1,49 @@
+{
+    "wrapper_config": "HetergoGNNWrapperConfig(loss_name='SListMLELoss', loss_args={'w_sl': 1, 'w_e': 6, 'w_pin': 1, 'w_pit': 1}, optimizer_name='AdamW', optimizer_args={'weight_decay': 1e-05, 'lr': 0.001}, scheduler_name='OneCycleLR', scheduler_args={'max_lr': 0.003, 'steps_per_epoch': 168, 'epochs': 50, 'pct_start': 0.3, 'anneal_strategy': 'cos', 'div_factor': 10, 'final_div_factor': 100}, scheduler_config={'monitor': 'val_loss', 'interval': 'epoch', 'frequency': 1}, batch_size=128, batch_neighbours=[32, 16, 8, 4], batch_subraph_type='induced', num_workers=21, metadata=([], []))",
+    "model_config": {
+        "model": {
+            "name": "TopSpreadersNetwork",
+            "parameters": {
+                "aggregation_type": "LayerwiseAggregation",
+                "hidden_channels": 400,
+                "input_dim": 5,
+                "output_dim": 4
+            }
+        }
+    },
+    "run_config": {
+        "model": {
+            "name": "TopSpreadersNetwork",
+            "parameters": {
+                "aggregation_type": "LayerwiseAggregation",
+                "hidden_channels": 400,
+                "input_dim": 5,
+                "output_dim": 4
+            }
+        },
+        "data": {
+            "batch": {
+                "neighbours_sampling": "[32, 16, 8, 4]",
+                "size": 128,
+                "subgraph_type": "induced"
+            },
+            "icm": {
+                "p": -1,
+                "protocol": "AND"
+            },
+            "name": "SuperSpreadersDataset",
+            "num_workers": -1,
+            "output_label_name": "['simulation_length', 'exposed', 'peak_iteration', 'peak_infected']",
+            "test_data": "[{'name': 'arxiv_netscience_coauthorship', 'features_type': 'zeros'}, {'name': 'aucs', 'features_type': 'zeros'}, {'name': 'ckm_physicians', 'features_type': 'zeros'}, {'name': 'eu_transportation', 'features_type': 'zeros'}, {'name': 'l2_course', 'features_type': 'zeros'}, {'name': 'lazega', 'features_type': 'zeros'}, {'name': 'timik1q2009', 'features_type': 'zeros'}]",
+            "test_data_ratio": 0.1,
+            "train_data": "[{'name': 'artificial_er', 'features_type': 'zeros'}, {'name': 'artificial_pa', 'features_type': 'zeros'}, {'name': 'artificial_small', 'features_type': 'zeros'}]",
+            "transform": {
+                "name": "ScatterWithExponent",
+                "parameters": {
+                    "scatter_factor": 3
+                }
+            },
+            "val_data_ratio": 0.1
+        }
+    }
+}
