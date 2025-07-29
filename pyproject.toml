@@ -9,7 +9,7 @@ authors = [
     {name = "Piotr Bielak"}
 ]
 
-version = "2.0.0"
+version = "2.0.1"
 description = "Inf. Max. with ML methods for Multilayer Networks"
 readme = "README.md"
 license = { text="MIT" }

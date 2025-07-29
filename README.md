@@ -41,6 +41,9 @@ git submodule init && git submodule update
 pip install -e data
 ```
 
+III. The _TopSpreadersDataset_ is managed using DVC. To fetch it, follow the instructions in
+[README.md](https://github.com/network-science-lab/top-spreaders-dataset/README.md).
+
 ## Structure of the repository
 ```
 ├── data                    -> evaluated networks
@@ -65,26 +68,6 @@ pip install -e data
 ├── run_evalation.py        -> entrypoint of evaluation pipeline
 └── run_experiments.py      -> entrypoint of training pipeline
 ```
-
-## Source Data Files
-
-The _TopSpreadersDataset_ is managed using DVC. To fetch it, follow the instructions in
-[README.md](data/top_spreaders_dataset/README.md). Additionally, most of results obtained with this 
-repository is also stored with DVC - below we describe how to fetch them.
-
-### Full Access
-
-To download the result files, you must authenticate with a Google account that has access to the
-shared Google Drive storage:
-https://drive.google.com/drive/u/1/folders/1pLWobDjds8SF5rh9_HlvSd9B3ja8QdqN. If you
-need access, please contact one of the contributors. Then, to fetch the data, run `dvc pull`.
-
-### Paper Version
-
-A public DVC configuration for the result files in a version used in the paper is available
-at: https://drive.google.com/file/d/14p4EDGq4acUOVnqenDyBSbtI9bPF7Jta. To use it, unpack the
-archive, and move its contents into the `.dvc` directory of this project. Then, execute:
-`dvc checkout`.
 
 ## Using the package
 
