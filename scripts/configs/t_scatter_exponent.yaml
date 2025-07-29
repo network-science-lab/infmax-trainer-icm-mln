@@ -61,10 +61,10 @@ model:
     aggregation_type: LayerwiseAggregation
 
 training:
-  # accelerator: gpu # cpu or gpu
-  # devices: [0] # list[int] | int | str; default=auto
   accelerator: cpu # cpu or gpu
   devices: auto # list[int] | int | str; default=auto
+  # accelerator: gpu # cpu or gpu
+  # devices: [0] # list[int] | int | str; default=auto
   max_epochs: 50
   loss:
     name: SListMLELoss
@@ -93,13 +93,13 @@ training:
       interval: epoch
       frequency: 1
   logger:
-    # name: tensor_board
-    name: neptune
-    model_summary_max_depth: -1
-    tags:
-      - name: and
-      - name: BEST_FEATURES
-      - name: ScatterWithExponent
+    name: tensor_board
+    # name: neptune
+    # model_summary_max_depth: -1
+    # tags:
+    #   - name: and
+    #   - name: BEST_FEATURES
+    #   - name: ScatterWithExponent
   callbacks:
     - name: model_summary
       max_depth: -1

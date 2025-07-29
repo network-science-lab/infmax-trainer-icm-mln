@@ -2,6 +2,9 @@
 
 A repository to train and evaluate Influence Maximisation ML models for multilayer networks. This code was used in the preparation of the paper [Identifying Super Spreaders in Multilayer Networks](https://arxiv.org/abs/2505.20980).
 
+### Architecture diagram of TopSpreadersNetwork
+![Architecture diagram of TopSpreadersNetwork](./scripts/analysis/ts-net.png)
+
 This repository is part of a broader research codebase composed of multiple interrelated components, each addressing a specific aspect of the Influence Maximisation pipeline:
 
 I. [infmax-trainer-icm-mln](https://github.com/network-science-lab/infmax-trainer-icm-mln) - training `ts-net`. <br>
