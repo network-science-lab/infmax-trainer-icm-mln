@@ -42,7 +42,7 @@ pip install -e data
 ```
 
 III. The _TopSpreadersDataset_ is managed using DVC. To fetch it, follow the instructions in
-[README.md](https://github.com/network-science-lab/top-spreaders-dataset/README.md).
+[README.md](https://github.com/network-science-lab/top-spreaders-dataset/blob/master/README.md).
 
 ## Structure of the repository
 ```
@@ -99,3 +99,4 @@ This work was supported by the National Science Centre, Poland [grant no. 2022/4
 “International Projects Co-Funded”; and the EU under the Horizon Europe [grant no. 101086321].
 Views and opinions expressed are those of the authors and do not necessarily reflect those of
 the funding agencies.
+
